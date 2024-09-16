@@ -8,6 +8,8 @@ __all__ = [
     "BadRockRecipeSearchContext",
     "ROCK_RECIPE_ALLOW_CREATE",
     "ROCK_RECIPE_PRIVATE_FEATURE_FLAG",
+    "RockRecipeBuildAlreadyPending",
+    "RockRecipeBuildDisallowedArchitecture",
     "RockRecipeBuildRequestStatus",
     "RockRecipeFeatureDisabled",
     "RockRecipeNotOwner",
@@ -125,6 +127,27 @@ class RockRecipePrivacyMismatch(Exception):
 
 class BadRockRecipeSearchContext(Exception):
     """The context is not valid for a rock recipe search."""
+
+
+@error_status(http.client.BAD_REQUEST)
+class RockRecipeBuildAlreadyPending(Exception):
+    """A build was requested when an identical build was already pending."""
+
+    def __init__(self):
+        super().__init__(
+            "An identical build of this rock recipe is already pending."
+        )
+
+
+@error_status(http.client.BAD_REQUEST)
+class RockRecipeBuildDisallowedArchitecture(Exception):
+    """A build was requested for a disallowed architecture."""
+
+    def __init__(self, das):
+        super().__init__(
+            "This rock recipe is not allowed to build for %s/%s."
+            % (das.distroseries.name, das.architecturetag)
+        )
 
 
 class RockRecipeBuildRequestStatus(EnumeratedType):
@@ -256,6 +279,20 @@ class IRockRecipeView(Interface):
 
     def visibleByUser(user):
         """Can the specified user see this rock recipe?"""
+
+    def requestBuild(build_request, distro_arch_series, channels=None):
+        """Request a single build of this rock recipe.
+
+        This method is for internal use; external callers should use
+        `requestBuilds` instead.
+
+        :param build_request: The `IRockRecipeBuildRequest` job being
+            processed.
+        :param distro_arch_series: The architecture to build for.
+        :param channels: A dictionary mapping snap names to channels to use
+            for this build.
+        :return: `IRockRecipeBuild`.
+        """
 
     def requestBuilds(requester, channels=None, architectures=None):
         """Request that the rock recipe be built.

@@ -3,6 +3,7 @@
 
 """Test rock recipes."""
 
+from storm.locals import Store
 from testtools.matchers import (
     Equals,
     Is,
@@ -14,15 +15,25 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueue
+from lp.buildmaster.interfaces.processor import (
+    IProcessorSet,
+    ProcessorNotFound,
+)
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_ALLOW_CREATE,
     IRockRecipe,
     IRockRecipeSet,
     NoSourceForRockRecipe,
+    RockRecipeBuildAlreadyPending,
+    RockRecipeBuildDisallowedArchitecture,
     RockRecipeBuildRequestStatus,
     RockRecipeFeatureDisabled,
     RockRecipePrivateFeatureDisabled,
 )
+from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuild
 from lp.rocks.interfaces.rockrecipejob import IRockRecipeRequestBuildsJobSource
 from lp.services.database.constants import ONE_DAY_AGO, UTC_NOW
 from lp.services.database.interfaces import IStore
@@ -208,6 +219,175 @@ class TestRockRecipe(TestCaseWithFactory):
         self.assertIsNone(
             getUtility(IRockRecipeSet).getByName(owner, project, "condemned")
         )
+
+    def makeBuildableDistroArchSeries(
+        self,
+        architecturetag=None,
+        processor=None,
+        supports_virtualized=True,
+        supports_nonvirtualized=True,
+        **kwargs,
+    ):
+        if architecturetag is None:
+            architecturetag = self.factory.getUniqueUnicode("arch")
+        if processor is None:
+            try:
+                processor = getUtility(IProcessorSet).getByName(
+                    architecturetag
+                )
+            except ProcessorNotFound:
+                processor = self.factory.makeProcessor(
+                    name=architecturetag,
+                    supports_virtualized=supports_virtualized,
+                    supports_nonvirtualized=supports_nonvirtualized,
+                )
+        das = self.factory.makeDistroArchSeries(
+            architecturetag=architecturetag, processor=processor, **kwargs
+        )
+        fake_chroot = self.factory.makeLibraryFileAlias(
+            filename="fake_chroot.tar.gz", db_only=True
+        )
+        das.addOrUpdateChroot(fake_chroot)
+        return das
+
+    def test_requestBuild(self):
+        # requestBuild creates a new RockRecipeBuild.
+        recipe = self.factory.makeRockRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeRockRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(build_request, das)
+        self.assertTrue(IRockRecipeBuild.providedBy(build))
+        self.assertThat(
+            build,
+            MatchesStructure(
+                requester=Equals(recipe.owner.teamowner),
+                distro_arch_series=Equals(das),
+                channels=Is(None),
+                status=Equals(BuildStatus.NEEDSBUILD),
+            ),
+        )
+        store = Store.of(build)
+        store.flush()
+        build_queue = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id
+            == removeSecurityProxy(build).build_farm_job_id,
+        ).one()
+        self.assertProvides(build_queue, IBuildQueue)
+        self.assertEqual(recipe.require_virtualized, build_queue.virtualized)
+        self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
+
+    def test_requestBuild_score(self):
+        # Build requests have a relatively low queue score (2510).
+        recipe = self.factory.makeRockRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeRockRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(build_request, das)
+        queue_record = build.buildqueue_record
+        queue_record.score()
+        self.assertEqual(2510, queue_record.lastscore)
+
+    def test_requestBuild_channels(self):
+        # requestBuild can select non-default channels.
+        recipe = self.factory.makeRockRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeRockRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(
+            build_request, das, channels={"rockcraft": "edge"}
+        )
+        self.assertEqual({"rockcraft": "edge"}, build.channels)
+
+    def test_requestBuild_rejects_repeats(self):
+        # requestBuild refuses if there is already a pending build.
+        recipe = self.factory.makeRockRecipe()
+        distro_series = self.factory.makeDistroSeries()
+        arches = [
+            self.makeBuildableDistroArchSeries(distroseries=distro_series)
+            for _ in range(2)
+        ]
+        build_request = self.factory.makeRockRecipeBuildRequest(recipe=recipe)
+        old_build = recipe.requestBuild(build_request, arches[0])
+        self.assertRaises(
+            RockRecipeBuildAlreadyPending,
+            recipe.requestBuild,
+            build_request,
+            arches[0],
+        )
+        # We can build for a different distroarchseries.
+        recipe.requestBuild(build_request, arches[1])
+        # channels=None and channels={} are treated as equivalent, but
+        # anything else allows a new build.
+        self.assertRaises(
+            RockRecipeBuildAlreadyPending,
+            recipe.requestBuild,
+            build_request,
+            arches[0],
+            channels={},
+        )
+        recipe.requestBuild(
+            build_request, arches[0], channels={"core": "edge"}
+        )
+        self.assertRaises(
+            RockRecipeBuildAlreadyPending,
+            recipe.requestBuild,
+            build_request,
+            arches[0],
+            channels={"core": "edge"},
+        )
+        # Changing the status of the old build allows a new build.
+        old_build.updateStatus(BuildStatus.BUILDING)
+        old_build.updateStatus(BuildStatus.FULLYBUILT)
+        recipe.requestBuild(build_request, arches[0])
+
+    def test_requestBuild_virtualization(self):
+        # New builds are virtualized if any of the processor or recipe
+        # require it.
+        recipe = self.factory.makeRockRecipe()
+        distro_series = self.factory.makeDistroSeries()
+        dases = {}
+        for proc_nonvirt in True, False:
+            das = self.makeBuildableDistroArchSeries(
+                distroseries=distro_series,
+                supports_virtualized=True,
+                supports_nonvirtualized=proc_nonvirt,
+            )
+            dases[proc_nonvirt] = das
+        for proc_nonvirt, recipe_virt, build_virt in (
+            (True, False, False),
+            (True, True, True),
+            (False, False, True),
+            (False, True, True),
+        ):
+            das = dases[proc_nonvirt]
+            recipe = self.factory.makeRockRecipe(
+                require_virtualized=recipe_virt
+            )
+            build_request = self.factory.makeRockRecipeBuildRequest(
+                recipe=recipe
+            )
+            build = recipe.requestBuild(build_request, das)
+            self.assertEqual(build_virt, build.virtualized)
+
+    def test_requestBuild_nonvirtualized(self):
+        # A non-virtualized processor can build a rock recipe iff the
+        # recipe has require_virtualized set to False.
+        recipe = self.factory.makeRockRecipe()
+        distro_series = self.factory.makeDistroSeries()
+        das = self.makeBuildableDistroArchSeries(
+            distroseries=distro_series,
+            supports_virtualized=False,
+            supports_nonvirtualized=True,
+        )
+        build_request = self.factory.makeRockRecipeBuildRequest(recipe=recipe)
+        self.assertRaises(
+            RockRecipeBuildDisallowedArchitecture,
+            recipe.requestBuild,
+            build_request,
+            das,
+        )
+        with admin_logged_in():
+            recipe.require_virtualized = False
+        recipe.requestBuild(build_request, das)
 
 
 class TestRockRecipeSet(TestCaseWithFactory):

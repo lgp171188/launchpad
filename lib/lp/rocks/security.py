@@ -7,6 +7,8 @@ __all__ = []
 
 from lp.app.security import AuthorizationBase, DelegatedAuthorization
 from lp.rocks.interfaces.rockrecipe import IRockRecipe, IRockRecipeBuildRequest
+from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuild
+from lp.security import AdminByBuilddAdmin
 
 
 class ViewRockRecipe(AuthorizationBase):
@@ -57,3 +59,32 @@ class ViewCharmRecipeBuildRequest(DelegatedAuthorization):
 
     def __init__(self, obj):
         super().__init__(obj, obj.recipe, "launchpad.View")
+
+
+class ViewRockRecipeBuild(DelegatedAuthorization):
+    permission = "launchpad.View"
+    usedfor = IRockRecipeBuild
+
+    def iter_objects(self):
+        yield self.obj.recipe
+
+
+class EditRockRecipeBuild(AdminByBuilddAdmin):
+    permission = "launchpad.Edit"
+    usedfor = IRockRecipeBuild
+
+    def checkAuthenticated(self, user):
+        """Check edit access for rock recipe builds.
+
+        Allow admins, buildd admins, and the owner of the rock recipe.
+        (Note that the requester of the build is required to be in the team
+        that owns the rock recipe.)
+        """
+        auth_recipe = EditRockRecipe(self.obj.recipe)
+        if auth_recipe.checkAuthenticated(user):
+            return True
+        return super().checkAuthenticated(user)
+
+
+class AdminRockRecipeBuild(AdminByBuilddAdmin):
+    usedfor = IRockRecipeBuild
