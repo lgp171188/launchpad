@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test rock package build features."""
-
 from datetime import datetime, timedelta, timezone
 
+import six
 from testtools.matchers import Equals
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -14,6 +14,7 @@ from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.series import SeriesStatus
 from lp.rocks.interfaces.rockrecipe import (
@@ -24,6 +25,7 @@ from lp.rocks.interfaces.rockrecipebuild import (
     IRockRecipeBuild,
     IRockRecipeBuildSet,
 )
+from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
@@ -32,7 +34,20 @@ from lp.testing import (
     person_logged_in,
 )
 from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
+
+expected_body = """\
+ * Rock Recipe: rock-1
+ * Project: rock-project
+ * Distroseries: distro unstable
+ * Architecture: i386
+ * State: Failed to build
+ * Duration: 10 minutes
+ * Build Log: %s
+ * Upload Log: %s
+ * Builder: http://launchpad.test/builders/bob
+"""
 
 
 class TestRockRecipeBuild(TestCaseWithFactory):
@@ -256,6 +271,73 @@ class TestRockRecipeBuild(TestCaseWithFactory):
             BuildStatus.BUILDING, worker_status={"revision_id": "dummy"}
         )
         self.assertEqual("dummy", self.build.revision_id)
+
+    def test_notify_fullybuilt(self):
+        # notify does not send mail when a recipe build completes normally.
+        build = self.factory.makeRockRecipeBuild(status=BuildStatus.FULLYBUILT)
+        build.notify()
+        self.assertEqual(0, len(pop_notifications()))
+
+    def test_notify_packagefail(self):
+        # notify sends mail when a recipe build fails.
+        person = self.factory.makePerson(name="person")
+        project = self.factory.makeProduct(name="rock-project")
+        distribution = self.factory.makeDistribution(name="distro")
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, name="unstable"
+        )
+        processor = getUtility(IProcessorSet).getByName("386")
+        das = self.factory.makeDistroArchSeries(
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
+        build = self.factory.makeRockRecipeBuild(
+            name="rock-1",
+            requester=person,
+            owner=person,
+            project=project,
+            distro_arch_series=das,
+            status=BuildStatus.FAILEDTOBUILD,
+            builder=self.factory.makeBuilder(name="bob"),
+            duration=timedelta(minutes=10),
+        )
+        build.setLog(self.factory.makeLibraryFileAlias())
+        build.notify()
+        [notification] = pop_notifications()
+        self.assertEqual(
+            config.canonical.noreply_from_address, notification["From"]
+        )
+        self.assertEqual(
+            "Person <%s>" % person.preferredemail.email, notification["To"]
+        )
+        subject = notification["Subject"].replace("\n ", " ")
+        self.assertEqual(
+            "[Rock recipe build #%d] i386 build of "
+            "/~person/rock-project/+rock/rock-1" % build.id,
+            subject,
+        )
+        self.assertEqual(
+            "Requester", notification["X-Launchpad-Message-Rationale"]
+        )
+        self.assertEqual(person.name, notification["X-Launchpad-Message-For"])
+        self.assertEqual(
+            "rock-recipe-build-status",
+            notification["X-Launchpad-Notification-Type"],
+        )
+        self.assertEqual(
+            "FAILEDTOBUILD", notification["X-Launchpad-Build-State"]
+        )
+        body, footer = six.ensure_text(
+            notification.get_payload(decode=True)
+        ).split("\n-- \n")
+        self.assertEqual(expected_body % (build.log_url, ""), body)
+        self.assertEqual(
+            "http://launchpad.test/~person/rock-project/+rock/rock-1/"
+            "+build/%d\n"
+            "You are the requester of the build.\n" % build.id,
+            footer,
+        )
 
     def addFakeBuildLog(self, build):
         build.setLog(self.factory.makeLibraryFileAlias("mybuildlog.txt"))
