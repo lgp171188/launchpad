@@ -44,7 +44,6 @@ worst of the results from the various changes files found (in the order
 above, failed being worst).
 
 """
-
 import os
 import shutil
 import sys
@@ -61,6 +60,7 @@ from lp.archiveuploader.nascentupload import (
     NascentUpload,
 )
 from lp.archiveuploader.ocirecipeupload import OCIRecipeUpload
+from lp.archiveuploader.rockrecipeupload import RockRecipeUpload
 from lp.archiveuploader.snapupload import SnapUpload
 from lp.archiveuploader.uploadpolicy import (
     BuildDaemonUploadPolicy,
@@ -77,6 +77,7 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
+from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuild
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.adapter import (
@@ -775,6 +776,32 @@ class BuildUploadHandler(UploadHandler):
             self.processor.ztm.abort()
             raise
 
+    def processRockRecipe(self, logger=None):
+        """Process a rock recipe upload."""
+        assert IRockRecipeBuild.providedBy(self.build)
+        if logger is None:
+            logger = self.processor.log
+        try:
+            logger.info("Processing rock upload %s" % self.upload_path)
+            RockRecipeUpload(self.upload_path, logger).process(self.build)
+
+            if self.processor.dry_run:
+                logger.info("Dry run, aborting transaction.")
+                self.processor.ztm.abort()
+            else:
+                logger.info(
+                    "Committing the transaction and any mails associated "
+                    "with this upload."
+                )
+                self.processor.ztm.commit()
+            return UploadStatusEnum.ACCEPTED
+        except UploadError as e:
+            logger.error(str(e))
+            return UploadStatusEnum.REJECTED
+        except BaseException:
+            self.processor.ztm.abort()
+            raise
+
     def process(self):
         """Process an upload that is the result of a build.
 
@@ -830,6 +857,8 @@ class BuildUploadHandler(UploadHandler):
                 result = self.processOCIRecipe(logger)
             elif ICharmRecipeBuild.providedBy(self.build):
                 result = self.processCharmRecipe(logger)
+            elif IRockRecipeBuild.providedBy(self.build):
+                result = self.processRockRecipe(logger)
             elif ICIBuild.providedBy(self.build):
                 result = self.processCIResult(logger)
             else:
