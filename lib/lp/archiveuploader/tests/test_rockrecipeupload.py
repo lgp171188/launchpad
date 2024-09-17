@@ -39,7 +39,7 @@ class TestRockRecipeUploads(TestUploadProcessorBase):
             self.layer.txn, builds=True
         )
 
-    def test_sets_build_and_state_123(self):
+    def test_sets_build_and_state(self):
         # The upload processor uploads files and sets the correct status.
         self.assertFalse(self.build.verifySuccessfulUpload())
         upload_dir = os.path.join(
