@@ -29,6 +29,10 @@
             for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
             factory="lp.rocks.browser.rockrecipe.RockRecipeBreadcrumb"
             permission="zope.Public" />
+         <lp:url
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipeSet"
+            path_expression="string:+rock-recipes"
+            parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
         <lp:url
             for="lp.rocks.interfaces.rockrecipe.IRockRecipeBuildRequest"
             path_expression="string:+build-request/${id}"
