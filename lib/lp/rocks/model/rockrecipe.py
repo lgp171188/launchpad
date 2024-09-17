@@ -7,6 +7,7 @@ __all__ = [
     "RockRecipe",
     "get_rock_recipe_privacy_filter",
 ]
+
 from datetime import timezone
 from operator import attrgetter, itemgetter
 
@@ -64,6 +65,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.product import Product
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.rocks.adapters.buildarch import determine_instances_to_build
+from lp.rocks.interfaces.rockbase import IRockBaseSet, NoSuchRockBase
 from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_ALLOW_CREATE,
     ROCK_RECIPE_PRIVATE_FEATURE_FLAG,
@@ -87,6 +89,7 @@ from lp.rocks.interfaces.rockrecipe import (
 )
 from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuildSet
 from lp.rocks.interfaces.rockrecipejob import IRockRecipeRequestBuildsJobSource
+from lp.rocks.model.rockbase import RockBase
 from lp.rocks.model.rockrecipebuild import RockRecipeBuild
 from lp.rocks.model.rockrecipejob import RockRecipeJob
 from lp.services.database.bulk import load_related
@@ -393,22 +396,27 @@ class RockRecipe(StormBase):
             .is_empty()
         )
 
-    def _isBuildableArchitectureAllowed(self, das):
+    def _isBuildableArchitectureAllowed(self, das, rock_base=None):
         """Check whether we may build for a buildable `DistroArchSeries`.
 
         The caller is assumed to have already checked that a suitable chroot
         is available (either directly or via
         `DistroSeries.buildable_architectures`).
         """
-        return das.enabled and (
-            das.processor.supports_virtualized or not self.require_virtualized
+        return (
+            das.enabled
+            and (
+                das.processor.supports_virtualized
+                or not self.require_virtualized
+            )
+            and (rock_base is None or das.processor in rock_base.processors)
         )
 
-    def _isArchitectureAllowed(self, das):
+    def _isArchitectureAllowed(self, das, rock_base=None):
         """Check whether we may build for a `DistroArchSeries`."""
         return (
             das.getChroot() is not None
-            and self._isBuildableArchitectureAllowed(das)
+            and self._isBuildableArchitectureAllowed(das, rock_base=rock_base)
         )
 
     def getAllowedArchitectures(self):
@@ -433,10 +441,21 @@ class RockRecipe(StormBase):
             DistroSeries.status.is_in(ACTIVE_STATUSES),
         )
         all_buildable_dases = DecoratedResultSet(results, itemgetter(0))
+        rock_bases = {
+            rock_base.distro_series_id: rock_base
+            for rock_base in store.find(
+                RockBase,
+                RockBase.distro_series_id.is_in(
+                    {das.distroseries_id for das in all_buildable_dases}
+                ),
+            )
+        }
         return [
             das
             for das in all_buildable_dases
-            if self._isBuildableArchitectureAllowed(das)
+            if self._isBuildableArchitectureAllowed(
+                das, rock_base=rock_bases.get(das.id)
+            )
         ]
 
     def _checkRequestBuild(self, requester):
@@ -447,7 +466,9 @@ class RockRecipe(StormBase):
                 % (requester.display_name, self.owner.display_name)
             )
 
-    def requestBuild(self, build_request, distro_arch_series, channels=None):
+    def requestBuild(
+        self, build_request, distro_arch_series, rock_base=None, channels=None
+    ):
         """Request a single build of this rock recipe.
 
         This method is for internal use; external callers should use
@@ -461,7 +482,9 @@ class RockRecipe(StormBase):
         :return: `IRockRecipeBuild`.
         """
         self._checkRequestBuild(build_request.requester)
-        if not self._isArchitectureAllowed(distro_arch_series):
+        if not self._isArchitectureAllowed(
+            distro_arch_series, rock_base=rock_base
+        ):
             raise RockRecipeBuildDisallowedArchitecture(distro_arch_series)
 
         if not channels:
@@ -546,8 +569,23 @@ class RockRecipe(StormBase):
         builds = []
         for das in instances_to_build:
             try:
+                rock_base = getUtility(IRockBaseSet).getByDistroSeries(
+                    das.distroseries
+                )
+            except NoSuchRockBase:
+                rock_base = None
+            if rock_base is not None:
+                arch_channels = dict(rock_base.build_channels)
+                channels_by_arch = arch_channels.pop("_byarch", {})
+                if das.architecturetag in channels_by_arch:
+                    arch_channels.update(channels_by_arch[das.architecturetag])
+                if channels is not None:
+                    arch_channels.update(channels)
+            else:
+                arch_channels = channels
+            try:
                 build = self.requestBuild(
-                    build_request, das, channels=channels
+                    build_request, das, channels=arch_channels
                 )
                 if logger is not None:
                     logger.debug(

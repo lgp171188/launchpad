@@ -14,6 +14,7 @@ __all__ = [
     "remove_security_proxy_and_shout_at_engineer",
 ]
 
+
 import base64
 import hashlib
 import os
@@ -208,6 +209,7 @@ from lp.registry.model.karma import KarmaTotalCache
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.packaging import Packaging
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
+from lp.rocks.interfaces.rockbase import IRockBaseSet
 from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuildSet
 from lp.rocks.model.rockrecipebuild import RockFile
@@ -7039,6 +7041,29 @@ class LaunchpadObjectFactory(ObjectFactory):
         if library_file is None:
             library_file = self.makeLibraryFileAlias()
         return ProxyFactory(RockFile(build=build, library_file=library_file))
+
+    def makeRockBase(
+        self,
+        registrant=None,
+        distro_series=None,
+        build_channels=None,
+        processors=None,
+        date_created=DEFAULT,
+    ):
+        """Make a new RockBase."""
+        if registrant is None:
+            registrant = self.makePerson()
+        if distro_series is None:
+            distro_series = self.makeDistroSeries()
+        if build_channels is None:
+            build_channels = {"rockcraft": "stable"}
+        return getUtility(IRockBaseSet).new(
+            registrant,
+            distro_series,
+            build_channels,
+            processors=processors,
+            date_created=date_created,
+        )
 
     def makeCIBuild(
         self,

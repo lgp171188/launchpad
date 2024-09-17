@@ -10,12 +10,15 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
+    "IRockBase",
+    "IRockBaseSet",
     "IRockRecipe",
     "IRockRecipeBuild",
     "IRockRecipeBuildRequest",
     "IRockRecipeSet",
 ]
 
+from lp.rocks.interfaces.rockbase import IRockBase, IRockBaseSet
 from lp.rocks.interfaces.rockrecipe import (
     IRockRecipe,
     IRockRecipeBuildRequest,
