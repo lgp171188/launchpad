@@ -273,6 +273,8 @@ class RockRecipe(StormBase):
 
     _store_channels = JSON("store_channels", allow_none=True)
 
+    use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
+
     def __init__(
         self,
         registrant,
@@ -291,6 +293,7 @@ class RockRecipe(StormBase):
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """Construct a `RockRecipe`."""
         if not getFeatureFlag(ROCK_RECIPE_ALLOW_CREATE):
@@ -316,6 +319,7 @@ class RockRecipe(StormBase):
         self.store_name = store_name
         self.store_secrets = store_secrets
         self.store_channels = store_channels
+        self.use_fetch_service = use_fetch_service
 
     def __repr__(self):
         return "<RockRecipe ~%s/%s/+rock/%s>" % (
@@ -741,6 +745,7 @@ class RockRecipeSet:
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """See `IRockRecipeSet`."""
         if not registrant.inTeam(owner):
@@ -785,6 +790,7 @@ class RockRecipeSet:
             store_secrets=store_secrets,
             store_channels=store_channels,
             date_created=date_created,
+            use_fetch_service=use_fetch_service,
         )
         store.add(recipe)
 
