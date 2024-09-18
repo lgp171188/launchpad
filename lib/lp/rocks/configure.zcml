@@ -1,0 +1,102 @@
+<!-- Copyright 2024 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
+    xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
+    i18n_domain="launchpad">
+
+    <lp:authorizations module=".security" />
+    <include package=".browser" />
+
+    <!-- RockRecipe -->
+    <class class="lp.rocks.model.rockrecipe.RockRecipe">
+        <require
+            permission="launchpad.View"
+            interface="lp.rocks.interfaces.rockrecipe.IRockRecipeView
+                       lp.rocks.interfaces.rockrecipe.IRockRecipeEditableAttributes
+                       lp.rocks.interfaces.rockrecipe.IRockRecipeAdminAttributes" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.rocks.interfaces.rockrecipe.IRockRecipeEdit"
+            set_schema="lp.rocks.interfaces.rockrecipe.IRockRecipeEditableAttributes" />
+        <require
+            permission="launchpad.Admin"
+            set_schema="lp.rocks.interfaces.rockrecipe.IRockRecipeAdminAttributes" />
+    </class>
+    <subscriber
+        for="lp.rocks.interfaces.rockrecipe.IRockRecipe
+             zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+        handler="lp.rocks.model.rockrecipe.rock_recipe_modified" />
+
+    <!-- RockRecipeSet -->
+    <lp:securedutility
+        class="lp.rocks.model.rockrecipe.RockRecipeSet"
+        provides="lp.rocks.interfaces.rockrecipe.IRockRecipeSet">
+        <allow interface="lp.rocks.interfaces.rockrecipe.IRockRecipeSet" />
+    </lp:securedutility>
+
+    <!-- RockRecipeBuildRequest -->
+    <class class="lp.rocks.model.rockrecipe.RockRecipeBuildRequest">
+        <require
+            permission="launchpad.View"
+            interface="lp.rocks.interfaces.rockrecipe.IRockRecipeBuildRequest" />
+    </class>
+
+    <!-- RockRecipeBuild -->
+    <class class="lp.rocks.model.rockrecipebuild.RockRecipeBuild">
+        <require
+            permission="launchpad.View"
+            interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildView" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildEdit" />
+        <require
+            permission="launchpad.Admin"
+            interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildAdmin" />
+    </class>
+
+    <!-- RockRecipeBuildSet -->
+    <lp:securedutility
+        class="lp.rocks.model.rockrecipebuild.RockRecipeBuildSet"
+        provides="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildSet">
+        <allow interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildSet" />
+    </lp:securedutility>
+    <lp:securedutility
+        class="lp.rocks.model.rockrecipebuild.RockRecipeBuildSet"
+        provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
+        name="ROCKRECIPEBUILD">
+        <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
+    </lp:securedutility>
+
+    <!-- RockFile -->
+    <class class="lp.rocks.model.rockrecipebuild.RockFile">
+        <allow interface="lp.rocks.interfaces.rockrecipebuild.IRockFile" />
+    </class>
+
+    <!-- RockRecipeBuildBehaviour -->
+    <adapter
+        for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+        provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
+        factory="lp.rocks.model.rockrecipebuildbehaviour.RockRecipeBuildBehaviour"
+        permission="zope.Public" />
+
+    <!-- rock-related jobs -->
+    <class class="lp.rocks.model.rockrecipejob.RockRecipeJob">
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
+    </class>
+    <lp:securedutility
+        component="lp.rocks.model.rockrecipejob.RockRecipeRequestBuildsJob"
+        provides="lp.rocks.interfaces.rockrecipejob.IRockRecipeRequestBuildsJobSource">
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeRequestBuildsJobSource" />
+    </lp:securedutility>
+    <class class="lp.rocks.model.rockrecipejob.RockRecipeRequestBuildsJob">
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeRequestBuildsJob" />
+    </class>
+
+</configure>

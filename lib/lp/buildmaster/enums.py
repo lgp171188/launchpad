@@ -249,6 +249,15 @@ class BuildFarmJobType(DBEnumeratedType):
         """,
     )
 
+    ROCKRECIPEBUILD = DBItem(
+        10,
+        """
+        Rock recipe build
+
+        Build a rock from a recipe.
+        """,
+    )
+
 
 class BuildQueueStatus(DBEnumeratedType):
     """Build queue status.

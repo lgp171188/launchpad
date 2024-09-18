@@ -208,6 +208,9 @@ from lp.registry.model.karma import KarmaTotalCache
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.packaging import Packaging
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
+from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
+from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuildSet
+from lp.rocks.model.rockrecipebuild import RockFile
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.utils import create_access_token_secret
 from lp.services.compat import message_as_bytes
@@ -6886,6 +6889,154 @@ class LaunchpadObjectFactory(ObjectFactory):
             processors=processors,
             date_created=date_created,
         )
+
+    def makeRockRecipe(
+        self,
+        registrant=None,
+        owner=None,
+        project=None,
+        name=None,
+        description=None,
+        git_ref=None,
+        build_path=None,
+        require_virtualized=True,
+        information_type=InformationType.PUBLIC,
+        auto_build=False,
+        auto_build_channels=None,
+        is_stale=None,
+        store_upload=False,
+        store_name=None,
+        store_secrets=None,
+        store_channels=None,
+        date_created=DEFAULT,
+    ):
+        """Make a new rock recipe."""
+        if registrant is None:
+            registrant = self.makePerson()
+        private = information_type not in PUBLIC_INFORMATION_TYPES
+        if owner is None:
+            # Private rock recipes cannot be owned by non-moderated teams.
+            membership_policy = (
+                TeamMembershipPolicy.OPEN
+                if private
+                else TeamMembershipPolicy.MODERATED
+            )
+            owner = self.makeTeam(
+                registrant, membership_policy=membership_policy
+            )
+        if project is None:
+            branch_sharing_policy = (
+                BranchSharingPolicy.PUBLIC
+                if not private
+                else BranchSharingPolicy.PROPRIETARY
+            )
+            project = self.makeProduct(
+                owner=registrant,
+                registrant=registrant,
+                information_type=information_type,
+                branch_sharing_policy=branch_sharing_policy,
+            )
+        if name is None:
+            name = self.getUniqueUnicode("rock-name")
+        if git_ref is None:
+            git_ref = self.makeGitRefs()[0]
+        recipe = getUtility(IRockRecipeSet).new(
+            registrant=registrant,
+            owner=owner,
+            project=project,
+            name=name,
+            description=description,
+            git_ref=git_ref,
+            build_path=build_path,
+            require_virtualized=require_virtualized,
+            information_type=information_type,
+            auto_build=auto_build,
+            auto_build_channels=auto_build_channels,
+            store_upload=store_upload,
+            store_name=store_name,
+            store_secrets=store_secrets,
+            store_channels=store_channels,
+            date_created=date_created,
+        )
+        if is_stale is not None:
+            removeSecurityProxy(recipe).is_stale = is_stale
+        IStore(recipe).flush()
+        return recipe
+
+    def makeRockRecipeBuildRequest(
+        self, recipe=None, requester=None, channels=None, architectures=None
+    ):
+        """Make a new RockRecipeBuildRequest."""
+        if recipe is None:
+            recipe = self.makeRockRecipe()
+        if requester is None:
+            requester = recipe.owner.teamowner
+        if recipe.owner.is_team:
+            requester = recipe.owner.teamowner
+        else:
+            requester = recipe.owner
+        return recipe.requestBuilds(
+            requester, channels=channels, architectures=architectures
+        )
+
+    def makeRockRecipeBuild(
+        self,
+        registrant=None,
+        recipe=None,
+        build_request=None,
+        requester=None,
+        distro_arch_series=None,
+        channels=None,
+        store_upload_metadata=None,
+        date_created=DEFAULT,
+        status=BuildStatus.NEEDSBUILD,
+        builder=None,
+        duration=None,
+        **kwargs,
+    ):
+        if recipe is None:
+            if registrant is None:
+                if build_request is not None:
+                    registrant = build_request.requester
+                else:
+                    registrant = requester
+            recipe = self.makeRockRecipe(registrant=registrant, **kwargs)
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
+        if build_request is None:
+            build_request = self.makeRockRecipeBuildRequest(
+                recipe=recipe, requester=requester, channels=channels
+            )
+        build = getUtility(IRockRecipeBuildSet).new(
+            build_request,
+            recipe,
+            distro_arch_series,
+            channels=channels,
+            store_upload_metadata=store_upload_metadata,
+            date_created=date_created,
+        )
+        if duration is not None:
+            removeSecurityProxy(build).updateStatus(
+                BuildStatus.BUILDING,
+                builder=builder,
+                date_started=build.date_created,
+            )
+            removeSecurityProxy(build).updateStatus(
+                status,
+                builder=builder,
+                date_finished=build.date_started + duration,
+            )
+        else:
+            removeSecurityProxy(build).updateStatus(status, builder=builder)
+        IStore(build).flush()
+        return build
+
+    def makeRockFile(self, build=None, library_file=None):
+        if build is None:
+            build = self.makeRockRecipeBuild()
+        if library_file is None:
+            library_file = self.makeLibraryFileAlias()
+        return ProxyFactory(RockFile(build=build, library_file=library_file))
 
     def makeCIBuild(
         self,
