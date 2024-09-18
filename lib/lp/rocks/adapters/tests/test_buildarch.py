@@ -343,17 +343,6 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
                 ),
             },
         ),
-        (
-            "no bases specified",
-            {
-                "bases": None,
-                "expected": [
-                    ("20.04", "amd64"),
-                    ("20.04", "arm64"),
-                    ("20.04", "riscv64"),
-                ],
-            },
-        ),
     ]
 
     def test_parser(self):
@@ -387,7 +376,6 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
             determine_instances_to_build,
             rockcraft_data,
             dases,
-            distro_serieses[0],
         )
         if hasattr(self, "expected_exception"):
             self.assertThat(
