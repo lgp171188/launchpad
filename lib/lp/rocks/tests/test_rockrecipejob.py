@@ -125,15 +125,10 @@ class TestRockRecipeRequestBuildsJob(TestCaseWithFactory):
         )
         rockcraft_yaml = dedent(
             """\
-            bases:
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [avr2001]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [x32]
+            base: ubuntu@20.04
+            platforms:
+                avr2001:
+                x32:
             """
         )
         self.useFixture(GitHostingFixture(blob=rockcraft_yaml))
@@ -188,15 +183,9 @@ class TestRockRecipeRequestBuildsJob(TestCaseWithFactory):
         )
         rockcraft_yaml = dedent(
             """\
-            bases:
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [avr2001]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [x32]
+            base: ubuntu@20.04
+            platforms:
+                x32:
             """
         )
         self.useFixture(GitHostingFixture(blob=rockcraft_yaml))
