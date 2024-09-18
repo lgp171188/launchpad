@@ -6,6 +6,8 @@
 __all__ = [
     "BadRockRecipeSource",
     "BadRockRecipeSearchContext",
+    "CannotFetchRockcraftYaml",
+    "CannotParseRockcraftYaml",
     "ROCK_RECIPE_ALLOW_CREATE",
     "ROCK_RECIPE_PRIVATE_FEATURE_FLAG",
     "RockRecipeBuildAlreadyPending",
@@ -19,6 +21,7 @@ __all__ = [
     "IRockRecipe",
     "IRockRecipeBuildRequest",
     "IRockRecipeSet",
+    "MissingRockcraftYaml",
     "NoSourceForRockRecipe",
     "NoSuchRockRecipe",
 ]
@@ -127,6 +130,21 @@ class RockRecipePrivacyMismatch(Exception):
 
 class BadRockRecipeSearchContext(Exception):
     """The context is not valid for a rock recipe search."""
+
+
+class MissingRockcraftYaml(Exception):
+    """The repository for this rock recipe does not have a rockcraft.yaml."""
+
+    def __init__(self, branch_name):
+        super().__init__("Cannot find rockcraft.yaml in %s" % branch_name)
+
+
+class CannotFetchRockcraftYaml(Exception):
+    """Launchpad cannot fetch this rock recipe's rockcraft.yaml."""
+
+
+class CannotParseRockcraftYaml(Exception):
+    """Launchpad cannot parse this rock recipe's rockcraft.yaml."""
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -308,6 +326,31 @@ class IRockRecipeView(Interface):
             with these architecture tags (in addition to any other
             applicable constraints).
         :return: An `IRockRecipeBuildRequest`.
+        """
+
+    def requestBuildsFromJob(
+        build_request,
+        channels=None,
+        architectures=None,
+        allow_failures=False,
+        logger=None,
+    ):
+        """Synchronous part of `RockRecipe.requestBuilds`.
+
+        Request that the rock recipe be built for relevant architectures.
+
+        :param build_request: The `IRockRecipeBuildRequest` job being
+            processed.
+        :param channels: A dictionary mapping snap names to channels to use
+            for these builds.
+        :param architectures: If not None, limit builds to architectures
+            with these architecture tags (in addition to any other
+            applicable constraints).
+        :param allow_failures: If True, log exceptions other than "already
+            pending" from individual build requests; if False, raise them to
+            the caller.
+        :param logger: An optional logger.
+        :return: A sequence of `IRockRecipeBuild` instances.
         """
 
     def getBuildRequest(job_id):
@@ -539,6 +582,23 @@ class IRockRecipeSet(Interface):
 
     def preloadDataForRecipes(recipes, user):
         """Load the data related to a list of rock recipes."""
+
+    def getRockcraftYaml(context, logger=None):
+        """Fetch a recipe's rockcraft.yaml from code hosting, if possible.
+
+        :param context: Either an `IRockRecipe` or the source branch for a
+            rock recipe.
+        :param logger: An optional logger.
+
+        :return: The recipe's parsed rockcraft.yaml.
+        :raises MissingRockcraftYaml: if this recipe has no
+            rockcraft.yaml.
+        :raises CannotFetchRockcraftYaml: if it was not possible to fetch
+            rockcraft.yaml from the code hosting backend for some other
+            reason.
+        :raises CannotParseRockcraftYaml: if the fetched rockcraft.yaml
+            cannot be parsed.
+        """
 
     def findByGitRepository(repository, paths=None):
         """Return all rock recipes for the given Git repository.
