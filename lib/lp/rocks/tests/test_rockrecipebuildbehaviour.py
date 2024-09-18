@@ -3,17 +3,24 @@
 
 """Test rock recipe build behaviour."""
 
+import base64
 import os.path
+import time
+import uuid
+from datetime import datetime
+from urllib.parse import urlsplit
 
-import transaction
+from fixtures import MockPatch
 from pymacaroons import Macaroon
 from testtools import ExpectedException
 from testtools.matchers import (
+    ContainsDict,
     Equals,
     Is,
     IsInstance,
     MatchesDict,
     MatchesListwise,
+    StartsWith,
 )
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
@@ -28,12 +35,22 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
 from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
+from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.buildmaster.tests.mock_workers import MockBuilder, OkWorker
+from lp.buildmaster.tests.builderproxy import (
+    InProcessProxyAuthAPIFixture,
+    ProxyURLMatcher,
+    RevocationEndpointMatcher,
+)
+from lp.buildmaster.tests.mock_workers import (
+    MockBuilder,
+    OkWorker,
+    WorkerTestHelpers,
+)
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     TestHandleStatusMixin,
@@ -88,12 +105,7 @@ class TestRockRecipeBuildBehaviourBase(TestCaseWithFactory):
         build = self.factory.makeRockRecipeBuild(
             distro_arch_series=distroarchseries, name="test-rock", **kwargs
         )
-        job = IBuildFarmJobBehaviour(build)
-        if with_builder:
-            builder = MockBuilder()
-            builder.processor = processor
-            job.setBuilder(builder, None)
-        return job
+        return IBuildFarmJobBehaviour(build)
 
 
 class TestRockRecipeBuildBehaviour(TestRockRecipeBuildBehaviourBase):
@@ -115,7 +127,6 @@ class TestRockRecipeBuildBehaviour(TestRockRecipeBuildBehaviourBase):
         # valid builder set.
         job = self.makeJob()
         lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -128,7 +139,6 @@ class TestRockRecipeBuildBehaviour(TestRockRecipeBuildBehaviourBase):
         # build on a non-virtual builder.
         job = self.makeJob()
         lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder(virtualized=False)
         job.setBuilder(builder, OkWorker())
@@ -156,13 +166,45 @@ class TestAsyncRockRecipeBuildBehaviour(
         timeout=30
     )
 
+    @defer.inlineCallbacks
     def setUp(self):
         super().setUp()
+        build_username = "OCIBUILD-1"
+        self.token = {
+            "secret": uuid.uuid4().hex,
+            "username": build_username,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        self.proxy_url = (
+            "http://{username}:{password}"
+            "@{host}:{port}".format(
+                username=self.token["username"],
+                password=self.token["secret"],
+                host=config.builddmaster.builder_proxy_host,
+                port=config.builddmaster.builder_proxy_port,
+            )
+        )
+        self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
+        yield self.proxy_api.start()
+        self.now = time.time()
+        self.useFixture(MockPatch("time.time", return_value=self.now))
+        self.addCleanup(shut_down_default_process_pool)
         self.setUpStats()
+
+    def makeJob(self, **kwargs):
+        # We need a builder in these tests, in order that requesting a proxy
+        # token can piggyback on its reactor and pool.
+        job = super().makeJob(**kwargs)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        worker = self.useFixture(WorkerTestHelpers()).getClientWorker()
+        job.setBuilder(builder, worker)
+        self.addCleanup(worker.pool.closeCachedConnections)
+        return job
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
-        job = self.makeJob(with_builder=True)
+        job = self.makeJob()
         lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         build_request = yield job.composeBuildRequest(None)
@@ -177,6 +219,66 @@ class TestAsyncRockRecipeBuildBehaviour(
                     IsInstance(dict),
                 ]
             ),
+        )
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken_unconfigured(self):
+        self.pushConfig("builddmaster", builder_proxy_host=None)
+        job = self.makeJob()
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual([], self.proxy_api.tokens.requests)
+        self.assertNotIn("proxy_url", args)
+        self.assertNotIn("revocation_endpoint", args)
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken_no_secret(self):
+        self.pushConfig(
+            "builddmaster", builder_proxy_auth_api_admin_secret=None
+        )
+        job = self.makeJob()
+        expected_exception_msg = (
+            "builder_proxy_auth_api_admin_secret is not configured."
+        )
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.extraBuildArgs()
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken(self):
+        job = self.makeJob()
+        yield job.extraBuildArgs()
+        expected_uri = urlsplit(
+            config.builddmaster.builder_proxy_auth_api_endpoint
+        ).path.encode("UTF-8")
+        request_matcher = MatchesDict(
+            {
+                "method": Equals(b"POST"),
+                "uri": Equals(expected_uri),
+                "headers": ContainsDict(
+                    {
+                        b"Authorization": MatchesListwise(
+                            [
+                                Equals(
+                                    b"Basic "
+                                    + base64.b64encode(
+                                        b"admin-launchpad.test:admin-secret"
+                                    )
+                                )
+                            ]
+                        ),
+                        b"Content-Type": MatchesListwise(
+                            [Equals(b"application/json")]
+                        ),
+                    }
+                ),
+                "json": MatchesDict(
+                    {"username": StartsWith(job.build.build_cookie + "-")}
+                ),
+            }
+        )
+        self.assertThat(
+            self.proxy_api.tokens.requests,
+            MatchesListwise([request_matcher]),
         )
 
     @defer.inlineCallbacks
@@ -209,8 +311,13 @@ class TestAsyncRockRecipeBuildBehaviour(
                     "git_path": Equals(ref.name),
                     "name": Equals("test-rock"),
                     "private": Is(False),
+                    "proxy_url": ProxyURLMatcher(job, self.now),
+                    "revocation_endpoint": RevocationEndpointMatcher(
+                        job, self.now
+                    ),
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -247,8 +354,13 @@ class TestAsyncRockRecipeBuildBehaviour(
                     "git_repository": Equals(ref.repository.git_https_url),
                     "name": Equals("test-rock"),
                     "private": Is(False),
+                    "proxy_url": ProxyURLMatcher(job, self.now),
+                    "revocation_endpoint": RevocationEndpointMatcher(
+                        job, self.now
+                    ),
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -257,7 +369,7 @@ class TestAsyncRockRecipeBuildBehaviour(
     def test_extraBuildArgs_prefers_store_name(self):
         # For the "name" argument, extraBuildArgs prefers
         # RockRecipe.store_name over RockRecipe.name if the former is set.
-        job = self.makeJob(store_name="something-else", with_builder=True)
+        job = self.makeJob(store_name="something-else")
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertEqual("something-else", args["name"])
@@ -271,7 +383,7 @@ class TestAsyncRockRecipeBuildBehaviour(
         yield IArchiveGPGSigningKey(distribution.main_archive).setSigningKey(
             key_path, async_keyserver=True
         )
-        job = self.makeJob(distribution=distribution, with_builder=True)
+        job = self.makeJob(distribution=distribution)
         self.factory.makeBinaryPackagePublishingHistory(
             distroarchseries=job.build.distro_arch_series,
             pocket=job.build.pocket,
@@ -295,11 +407,6 @@ class TestAsyncRockRecipeBuildBehaviour(
     def test_extraBuildArgs_build_path(self):
         # If the recipe specifies a build path, extraBuildArgs sends it.
         job = self.makeJob(build_path="src", with_builder=True)
-        expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(
-                job, job.build.distro_arch_series, None
-            )
-        )
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertEqual("src", args["build_path"])
@@ -308,11 +415,6 @@ class TestAsyncRockRecipeBuildBehaviour(
     def test_extraBuildArgs_channels(self):
         # If the build needs particular channels, extraBuildArgs sends them.
         job = self.makeJob(channels={"rockcraft": "edge"}, with_builder=True)
-        expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(
-                job, job.build.distro_arch_series, None
-            )
-        )
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertFalse(isProxy(args["channels"]))
@@ -347,12 +449,19 @@ class TestAsyncRockRecipeBuildBehaviour(
                 }
             )
         )
-        job = self.makeJob(
-            information_type=InformationType.PROPRIETARY, with_builder=True
-        )
+        job = self.makeJob(information_type=InformationType.PROPRIETARY)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertTrue(args["private"])
+
+    @defer.inlineCallbacks
+    def test_composeBuildRequest_proxy_url_set(self):
+        job = self.makeJob()
+        build_request = yield job.composeBuildRequest(None)
+        self.assertThat(
+            build_request[4]["proxy_url"], ProxyURLMatcher(job, self.now)
+        )
+        self.assertFalse(build_request[4]["use_fetch_service"])
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_git_ref_deleted(self):
@@ -367,7 +476,6 @@ class TestAsyncRockRecipeBuildBehaviour(
             owner=owner,
             project=project,
             git_ref=ref,
-            with_builder=True,
         )
         repository.removeRefs([ref.path])
         self.assertIsNone(job.build.recipe.git_ref)
@@ -380,6 +488,7 @@ class TestAsyncRockRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToWorker_prefers_lxd(self):
+        self.pushConfig("builddmaster", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
         builder.processor = job.build.processor
@@ -410,6 +519,7 @@ class TestAsyncRockRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToWorker_falls_back_to_chroot(self):
+        self.pushConfig("builddmaster", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
         builder.processor = job.build.processor
