@@ -6,10 +6,10 @@
 __all__ = [
     "RockRecipe",
 ]
-
 from datetime import timezone
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 
+import yaml
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import (
@@ -33,6 +33,7 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.buildmaster.enums import BuildStatus
+from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
@@ -40,13 +41,17 @@ from lp.registry.interfaces.person import IPersonSet, validate_public_person
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
+from lp.rocks.adapters.buildarch import determine_instances_to_build
 from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_ALLOW_CREATE,
     ROCK_RECIPE_PRIVATE_FEATURE_FLAG,
+    CannotFetchRockcraftYaml,
+    CannotParseRockcraftYaml,
     DuplicateRockRecipeName,
     IRockRecipe,
     IRockRecipeBuildRequest,
     IRockRecipeSet,
+    MissingRockcraftYaml,
     NoSourceForRockRecipe,
     RockRecipeBuildAlreadyPending,
     RockRecipeBuildDisallowedArchitecture,
@@ -442,6 +447,88 @@ class RockRecipe(StormBase):
         )
         return self.getBuildRequest(job.job_id)
 
+    def requestBuildsFromJob(
+        self,
+        build_request,
+        channels=None,
+        architectures=None,
+        allow_failures=False,
+        logger=None,
+    ):
+        """See `IRockRecipe`."""
+        try:
+            rockcraft_data = removeSecurityProxy(
+                getUtility(IRockRecipeSet).getRockcraftYaml(self)
+            )
+
+            # Sort by (Distribution.id, DistroSeries.id, Processor.id) for
+            # determinism.  This is chosen to be a similar order as in
+            # BinaryPackageBuildSet.createForSource, to minimize confusion.
+            supported_arches = [
+                das
+                for das in sorted(
+                    self.getAllowedArchitectures(),
+                    key=attrgetter(
+                        "distroseries.distribution.id",
+                        "distroseries.id",
+                        "processor.id",
+                    ),
+                )
+                if (
+                    architectures is None
+                    or das.architecturetag in architectures
+                )
+            ]
+            instances_to_build = determine_instances_to_build(
+                rockcraft_data, supported_arches
+            )
+        except Exception as e:
+            if not allow_failures:
+                raise
+            elif logger is not None:
+                logger.exception(
+                    " - %s/%s/%s: %s",
+                    self.owner.name,
+                    self.project.name,
+                    self.name,
+                    e,
+                )
+
+        builds = []
+        for das in instances_to_build:
+            try:
+                build = self.requestBuild(
+                    build_request, das, channels=channels
+                )
+                if logger is not None:
+                    logger.debug(
+                        " - %s/%s/%s %s/%s/%s: Build requested.",
+                        self.owner.name,
+                        self.project.name,
+                        self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name,
+                        das.architecturetag,
+                    )
+                builds.append(build)
+            except RockRecipeBuildAlreadyPending:
+                pass
+            except Exception as e:
+                if not allow_failures:
+                    raise
+                elif logger is not None:
+                    logger.exception(
+                        " - %s/%s/%s %s/%s/%s: %s",
+                        self.owner.name,
+                        self.project.name,
+                        self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name,
+                        das.architecturetag,
+                        e,
+                    )
+        return builds
+
     def getBuildRequest(self, job_id):
         """See `IRockRecipe`."""
         return RockRecipeBuildRequest(self, job_id)
@@ -574,6 +661,53 @@ class RockRecipeSet:
                 person_ids, need_validity=True
             )
         )
+
+    def getRockcraftYaml(self, context, logger=None):
+        """See `IRockRecipeSet`."""
+        if IRockRecipe.providedBy(context):
+            recipe = context
+            source = context.git_ref
+        else:
+            recipe = None
+            source = context
+        if source is None:
+            raise CannotFetchRockcraftYaml("Rock source is not defined")
+        try:
+            path = "rockcraft.yaml"
+            if recipe is not None and recipe.build_path is not None:
+                path = "/".join((recipe.build_path, path))
+            try:
+                blob = source.getBlob(path)
+            except GitRepositoryBlobNotFound:
+                if logger is not None:
+                    logger.exception(
+                        "Cannot find rockcraft.yaml in %s", source.unique_name
+                    )
+                raise MissingRockcraftYaml(source.unique_name)
+        except GitRepositoryScanFault as e:
+            msg = "Failed to get rockcraft.yaml from %s"
+            if logger is not None:
+                logger.exception(msg, source.unique_name)
+            raise CannotFetchRockcraftYaml(
+                "%s: %s" % (msg % source.unique_name, e)
+            )
+
+        try:
+            rockcraft_data = yaml.safe_load(blob)
+        except Exception as e:
+            # Don't bother logging parsing errors from user-supplied YAML.
+            raise CannotParseRockcraftYaml(
+                "Cannot parse rockcraft.yaml from %s: %s"
+                % (source.unique_name, e)
+            )
+
+        if not isinstance(rockcraft_data, dict):
+            raise CannotParseRockcraftYaml(
+                "The top level of rockcraft.yaml from %s is not a mapping"
+                % source.unique_name
+            )
+
+        return rockcraft_data
 
     def findByGitRepository(self, repository, paths=None):
         """See `IRockRecipeSet`."""

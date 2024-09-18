@@ -122,42 +122,17 @@ class RockBaseConfiguration:
         return cls(build_on, run_on=run_on)
 
 
-def determine_instances_to_build(
-    rockcraft_data, supported_arches, default_distro_series
-):
+def determine_instances_to_build(rockcraft_data, supported_arches):
     """Return a list of instances to build based on rockcraft.yaml.
 
     :param rockcraft_data: A parsed rockcraft.yaml.
     :param supported_arches: An ordered list of all `DistroArchSeries` that
         we can create builds for.  Note that these may span multiple
         `DistroSeries`.
-    :param default_distro_series: The default `DistroSeries` to use if
-        rockcraft.yaml does not explicitly declare any bases.
     :return: A list of `DistroArchSeries`.
     """
     bases_list = rockcraft_data.get("bases")
-
-    if bases_list:
-        configs = [
-            RockBaseConfiguration.from_dict(item) for item in bases_list
-        ]
-    else:
-        # If no bases are specified, build one for each supported
-        # architecture for the default series.
-        configs = [
-            RockBaseConfiguration(
-                [
-                    RockBase(
-                        default_distro_series.distribution.name,
-                        default_distro_series.version,
-                        das.architecturetag,
-                    ),
-                ]
-            )
-            for das in supported_arches
-            if das.distroseries == default_distro_series
-        ]
-
+    configs = [RockBaseConfiguration.from_dict(item) for item in bases_list]
     # Ensure that multiple `run-on` items don't overlap; this is ambiguous
     # and forbidden by rockcraft.
     run_ons = Counter()
