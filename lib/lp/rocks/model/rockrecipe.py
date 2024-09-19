@@ -13,12 +13,16 @@ import yaml
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import (
+    And,
     Bool,
     DateTime,
+    Desc,
     Int,
     Join,
+    Not,
     Or,
     Reference,
+    Select,
     Store,
     Unicode,
 )
@@ -33,6 +37,10 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.model.builder import Builder
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
@@ -53,6 +61,7 @@ from lp.rocks.interfaces.rockrecipe import (
     IRockRecipeSet,
     MissingRockcraftYaml,
     NoSourceForRockRecipe,
+    NoSuchRockRecipe,
     RockRecipeBuildAlreadyPending,
     RockRecipeBuildDisallowedArchitecture,
     RockRecipeBuildRequestStatus,
@@ -64,14 +73,17 @@ from lp.rocks.interfaces.rockrecipe import (
 from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuildSet
 from lp.rocks.interfaces.rockrecipejob import IRockRecipeRequestBuildsJobSource
 from lp.rocks.model.rockrecipebuild import RockRecipeBuild
+from lp.rocks.model.rockrecipejob import RockRecipeJob
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import Greatest, NullsLast
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.model.distroarchseries import DistroArchSeries, PocketChroot
@@ -321,6 +333,11 @@ class RockRecipe(StormBase):
             self.git_path = None
 
     @property
+    def source(self):
+        """See `IRockRecipe`."""
+        return self.git_ref
+
+    @property
     def store_channels(self):
         """See `IRockRecipe`."""
         return self._store_channels or []
@@ -533,9 +550,139 @@ class RockRecipe(StormBase):
         """See `IRockRecipe`."""
         return RockRecipeBuildRequest(self, job_id)
 
+    @property
+    def pending_build_requests(self):
+        """See `IRockRecipe`."""
+        job_source = getUtility(IRockRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(
+            self, statuses=(JobStatus.WAITING, JobStatus.RUNNING)
+        )
+        return DecoratedResultSet(
+            jobs, result_decorator=RockRecipeBuildRequest.fromJob
+        )
+
+    @property
+    def failed_build_requests(self):
+        """See `IRockRecipe`."""
+        job_source = getUtility(IRockRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(self, statuses=(JobStatus.FAILED,))
+        return DecoratedResultSet(
+            jobs, result_decorator=RockRecipeBuildRequest.fromJob
+        )
+
+    def _getBuilds(self, filter_term, order_by):
+        """The actual query to get the builds."""
+        query_args = [
+            RockRecipeBuild.recipe == self,
+        ]
+        if filter_term is not None:
+            query_args.append(filter_term)
+        result = Store.of(self).find(RockRecipeBuild, *query_args)
+        result.order_by(order_by)
+
+        def eager_load(rows):
+            getUtility(IRockRecipeBuildSet).preloadBuildsData(rows)
+            getUtility(IBuildQueueSet).preloadForBuildFarmJobs(rows)
+            load_related(Builder, rows, ["builder_id"])
+
+        return DecoratedResultSet(result, pre_iter_hook=eager_load)
+
+    @property
+    def builds(self):
+        """See `IRockRecipe`."""
+        order_by = (
+            NullsLast(
+                Desc(
+                    Greatest(
+                        RockRecipeBuild.date_started,
+                        RockRecipeBuild.date_finished,
+                    )
+                )
+            ),
+            Desc(RockRecipeBuild.date_created),
+            Desc(RockRecipeBuild.id),
+        )
+        return self._getBuilds(None, order_by)
+
+    @property
+    def _pending_states(self):
+        """All the build states we consider pending (non-final)."""
+        return [
+            BuildStatus.NEEDSBUILD,
+            BuildStatus.BUILDING,
+            BuildStatus.UPLOADING,
+            BuildStatus.CANCELLING,
+        ]
+
+    @property
+    def completed_builds(self):
+        """See `IRockRecipe`."""
+        filter_term = Not(RockRecipeBuild.status.is_in(self._pending_states))
+        order_by = (
+            NullsLast(
+                Desc(
+                    Greatest(
+                        RockRecipeBuild.date_started,
+                        RockRecipeBuild.date_finished,
+                    )
+                )
+            ),
+            Desc(RockRecipeBuild.id),
+        )
+        return self._getBuilds(filter_term, order_by)
+
+    @property
+    def pending_builds(self):
+        """See `IRockRecipe`."""
+        filter_term = RockRecipeBuild.status.is_in(self._pending_states)
+        # We want to order by date_created but this is the same as ordering
+        # by id (since id increases monotonically) and is less expensive.
+        order_by = Desc(RockRecipeBuild.id)
+        return self._getBuilds(filter_term, order_by)
+
     def destroySelf(self):
         """See `IRockRecipe`."""
-        IStore(RockRecipe).remove(self)
+        store = IStore(self)
+        # Remove build jobs. There won't be many queued builds, so we can
+        # afford to do this the safe but slow way via BuildQueue.destroySelf
+        # rather than in bulk.
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id == RockRecipeBuild.build_farm_job_id,
+            RockRecipeBuild.recipe == self,
+        )
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(
+            store.find(
+                RockRecipeBuild.build_farm_job_id,
+                RockRecipeBuild.recipe == self,
+            )
+        )
+        store.execute(
+            """
+            DELETE FROM RockFile
+            USING RockRecipeBuild
+            WHERE
+                RockFile.build = RockRecipeBuild.id AND
+                RockRecipeBuild.recipe = ?
+            """,
+            (self.id,),
+        )
+        store.find(RockRecipeBuild, RockRecipeBuild.recipe == self).remove()
+        affected_jobs = Select(
+            [RockRecipeJob.job_id],
+            And(RockRecipeJob.job == Job.id, RockRecipeJob.recipe == self),
+        )
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        # XXX jugmac00 2024-09-10: we need to remove webhooks once implemented
+        # getUtility(IWebhookSet).delete(self.webhooks)
+        store.remove(self)
+        store.find(
+            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)
+        ).remove()
 
 
 @implementer(IRockRecipeSet)
@@ -576,7 +723,7 @@ class RockRecipeSet:
 
         if git_ref is None:
             raise NoSourceForRockRecipe
-        if self.getByName(owner, project, name) is not None:
+        if self.exists(owner, project, name):
             raise DuplicateRockRecipeName
 
         # The relevant validators will do their own checks as well, but we
@@ -609,13 +756,23 @@ class RockRecipeSet:
 
         return recipe
 
-    def getByName(self, owner, project, name):
-        """See `IRockRecipeSet`."""
+    def _getByName(self, owner, project, name):
         return (
             IStore(RockRecipe)
             .find(RockRecipe, owner=owner, project=project, name=name)
             .one()
         )
+
+    def exists(self, owner, project, name):
+        """See `IRockRecipeSet."""
+        return self._getByName(owner, project, name) is not None
+
+    def getByName(self, owner, project, name):
+        """See `IRockRecipeSet`."""
+        recipe = self._getByName(owner, project, name)
+        if recipe is None:
+            raise NoSuchRockRecipe(name)
+        return recipe
 
     def isValidInformationType(self, information_type, owner, git_ref=None):
         """See `IRockRecipeSet`."""

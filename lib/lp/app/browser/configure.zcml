@@ -596,6 +596,13 @@
       />
 
   <adapter
+      for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.BuildImageDisplayAPI"
+      name="image"
+      />
+
+  <adapter
       for="lp.soyuz.interfaces.archive.IArchive"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.ArchiveImageDisplayAPI"
@@ -893,6 +900,12 @@
       for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.CharmRecipeFormatterAPI"
+      name="fmt"
+      />
+   <adapter
+      for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.RockRecipeFormatterAPI"
       name="fmt"
       />
   <adapter

@@ -12,9 +12,23 @@
         <lp:url
             for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
             urldata="lp.rocks.browser.rockrecipe.RockRecipeURL" />
+        <browser:defaultView
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+            name="+index" />
+        <browser:page
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+            class="lp.rocks.browser.rockrecipe.RockRecipeView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/rockrecipe-index.pt" />
         <lp:navigation
             module="lp.rocks.browser.rockrecipe"
             classes="RockRecipeNavigation" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+            factory="lp.rocks.browser.rockrecipe.RockRecipeBreadcrumb"
+            permission="zope.Public" />
         <lp:url
             for="lp.rocks.interfaces.rockrecipe.IRockRecipeBuildRequest"
             path_expression="string:+build-request/${id}"
@@ -23,5 +37,43 @@
             for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="recipe" />
+        <lp:menus
+            module="lp.rocks.browser.rockrecipebuild"
+            classes="RockRecipeBuildContextMenu" />
+        <lp:navigation
+            module="lp.rocks.browser.rockrecipebuild"
+            classes="RockRecipeBuildNavigation" />
+        <browser:defaultView
+            for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+            name="+index" />
+        <browser:page
+            for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+            class="lp.rocks.browser.rockrecipebuild.RockRecipeBuildView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/rockrecipebuild-index.pt" />
+        <browser:page
+            for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+            class="lp.rocks.browser.rockrecipebuild.RockRecipeBuildRetryView"
+            permission="launchpad.Edit"
+            name="+retry"
+            template="../templates/rockrecipebuild-retry.pt" />
+        <browser:page
+            for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+            class="lp.rocks.browser.rockrecipebuild.RockRecipeBuildCancelView"
+            permission="launchpad.Edit"
+            name="+cancel"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+            class="lp.rocks.browser.rockrecipebuild.RockRecipeBuildRescoreView"
+            permission="launchpad.Admin"
+            name="+rescore"
+            template="../../app/templates/generic-edit.pt" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+            factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
+            permission="zope.Public" />
     </lp:facet>
 </configure>
