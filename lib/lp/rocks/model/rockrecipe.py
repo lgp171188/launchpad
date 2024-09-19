@@ -5,6 +5,7 @@
 
 __all__ = [
     "RockRecipe",
+    "get_rock_recipe_privacy_filter",
 ]
 from datetime import timezone
 from operator import attrgetter, itemgetter
@@ -42,17 +43,31 @@ from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
+from lp.code.interfaces.gitcollection import (
+    IAllGitRepositories,
+    IGitCollection,
+)
+from lp.code.interfaces.gitref import IGitRef
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.gitcollection import GenericGitCollection
+from lp.code.model.gitref import GitRef
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.person import IPersonSet, validate_public_person
+from lp.registry.interfaces.person import (
+    IPerson,
+    IPersonSet,
+    validate_public_person,
+)
+from lp.registry.interfaces.product import IProduct
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.product import Product
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.rocks.adapters.buildarch import determine_instances_to_build
 from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_ALLOW_CREATE,
     ROCK_RECIPE_PRIVATE_FEATURE_FLAG,
+    BadRockRecipeSearchContext,
     CannotFetchRockcraftYaml,
     CannotParseRockcraftYaml,
     DuplicateRockRecipeName,
@@ -314,13 +329,17 @@ class RockRecipe(StormBase):
         """See `IRockRecipe`."""
         return self.information_type not in PUBLIC_INFORMATION_TYPES
 
-    @property
-    def git_ref(self):
-        """See `IRockRecipe`."""
+    @cachedproperty
+    def _git_ref(self):
         if self.git_repository is not None:
             return self.git_repository.getRefByPath(self.git_path)
         else:
             return None
+
+    @property
+    def git_ref(self):
+        """See `IRockRecipe`."""
+        return self._git_ref
 
     @git_ref.setter
     def git_ref(self, value):
@@ -331,6 +350,7 @@ class RockRecipe(StormBase):
         else:
             self.git_repository = None
             self.git_path = None
+        get_property_cache(self)._git_ref = value
 
     @property
     def source(self):
@@ -357,9 +377,17 @@ class RockRecipe(StormBase):
         """See `IRockRecipe`."""
         if self.information_type in PUBLIC_INFORMATION_TYPES:
             return True
-        # XXX jugmac00 2024-08-29: Finish implementing this once we have
-        # more privacy infrastructure.
-        return False
+        if user is None:
+            return False
+        return (
+            not IStore(RockRecipe)
+            .find(
+                RockRecipe,
+                RockRecipe.id == self.id,
+                get_rock_recipe_privacy_filter(user),
+            )
+            .is_empty()
+        )
 
     def _isBuildableArchitectureAllowed(self, das):
         """Check whether we may build for a buildable `DistroArchSeries`.
@@ -774,6 +802,99 @@ class RockRecipeSet:
             raise NoSuchRockRecipe(name)
         return recipe
 
+    def _getRecipesFromCollection(
+        self, collection, owner=None, visible_by_user=None
+    ):
+        id_column = RockRecipe.git_repository_id
+        ids = collection.getRepositoryIds()
+        expressions = [id_column.is_in(ids._get_select())]
+        if owner is not None:
+            expressions.append(RockRecipe.owner == owner)
+        expressions.append(get_rock_recipe_privacy_filter(visible_by_user))
+        return IStore(RockRecipe).find(RockRecipe, *expressions)
+
+    def findByPerson(self, person, visible_by_user=None):
+        """See `IRockRecipeSet`."""
+
+        def _getRecipes(collection):
+            collection = collection.visibleByUser(visible_by_user)
+            owned = self._getRecipesFromCollection(
+                collection.ownedBy(person), visible_by_user=visible_by_user
+            )
+            packaged = self._getRecipesFromCollection(
+                collection, owner=person, visible_by_user=visible_by_user
+            )
+            return owned.union(packaged)
+
+        git_collection = removeSecurityProxy(getUtility(IAllGitRepositories))
+        git_recipes = _getRecipes(git_collection)
+        return git_recipes
+
+    def findByProject(self, project, visible_by_user=None):
+        """See `IRockRecipeSet`."""
+
+        def _getRecipes(collection):
+            return self._getRecipesFromCollection(
+                collection.visibleByUser(visible_by_user),
+                visible_by_user=visible_by_user,
+            )
+
+        recipes_for_project = IStore(RockRecipe).find(
+            RockRecipe,
+            RockRecipe.project == project,
+            get_rock_recipe_privacy_filter(visible_by_user),
+        )
+        git_collection = removeSecurityProxy(IGitCollection(project))
+        return recipes_for_project.union(_getRecipes(git_collection))
+
+    def findByGitRepository(
+        self,
+        repository,
+        paths=None,
+        visible_by_user=None,
+        check_permissions=True,
+    ):
+        """See `IRockRecipeSet`."""
+        clauses = [RockRecipe.git_repository == repository]
+        if paths is not None:
+            clauses.append(RockRecipe.git_path.is_in(paths))
+        if check_permissions:
+            clauses.append(get_rock_recipe_privacy_filter(visible_by_user))
+        return IStore(RockRecipe).find(RockRecipe, *clauses)
+
+    def findByGitRef(self, ref, visible_by_user=None):
+        """See `IRockRecipeSet`."""
+        return IStore(RockRecipe).find(
+            RockRecipe,
+            RockRecipe.git_repository == ref.repository,
+            RockRecipe.git_path == ref.path,
+            get_rock_recipe_privacy_filter(visible_by_user),
+        )
+
+    def findByContext(self, context, visible_by_user=None, order_by_date=True):
+        """See `IRockRecipeSet`."""
+        if IPerson.providedBy(context):
+            recipes = self.findByPerson(
+                context, visible_by_user=visible_by_user
+            )
+        elif IProduct.providedBy(context):
+            recipes = self.findByProject(
+                context, visible_by_user=visible_by_user
+            )
+        elif IGitRepository.providedBy(context):
+            recipes = self.findByGitRepository(
+                context, visible_by_user=visible_by_user
+            )
+        elif IGitRef.providedBy(context):
+            recipes = self.findByGitRef(
+                context, visible_by_user=visible_by_user
+            )
+        else:
+            raise BadRockRecipeSearchContext(context)
+        if order_by_date:
+            recipes = recipes.order_by(Desc(RockRecipe.date_last_modified))
+        return recipes
+
     def isValidInformationType(self, information_type, owner, git_ref=None):
         """See `IRockRecipeSet`."""
         private = information_type not in PUBLIC_INFORMATION_TYPES
@@ -797,6 +918,8 @@ class RockRecipeSet:
         """See `IRockRecipeSet`."""
         recipes = [removeSecurityProxy(recipe) for recipe in recipes]
 
+        load_related(Product, recipes, ["project_id"])
+
         person_ids = set()
         for recipe in recipes:
             person_ids.add(recipe.registrant_id)
@@ -807,6 +930,14 @@ class RockRecipeSet:
         )
         if repositories:
             GenericGitCollection.preloadDataForRepositories(repositories)
+
+        git_refs = GitRef.findByReposAndPaths(
+            [(recipe.git_repository, recipe.git_path) for recipe in recipes]
+        )
+        for recipe in recipes:
+            git_ref = git_refs.get((recipe.git_repository, recipe.git_path))
+            if git_ref is not None:
+                get_property_cache(recipe)._git_ref = git_ref
 
         # Add repository owners to the list of pre-loaded persons. We need
         # the target repository owner as well, since repository unique names
@@ -866,21 +997,24 @@ class RockRecipeSet:
 
         return rockcraft_data
 
-    def findByGitRepository(self, repository, paths=None):
-        """See `IRockRecipeSet`."""
-        clauses = [RockRecipe.git_repository == repository]
-        if paths is not None:
-            clauses.append(RockRecipe.git_path.is_in(paths))
-        # XXX jugmac00 2024-08-29: Check permissions once we have some
-        # privacy infrastructure.
-        return IStore(RockRecipe).find(RockRecipe, *clauses)
-
     def findByOwner(self, owner):
         """See `ICharmRecipeSet`."""
         return IStore(RockRecipe).find(RockRecipe, owner=owner)
 
     def detachFromGitRepository(self, repository):
-        """See `IRockRecipeSet`."""
-        self.findByGitRepository(repository).set(
+        """See `ICharmRecipeSet`."""
+        recipes = self.findByGitRepository(repository)
+        for recipe in recipes:
+            get_property_cache(recipe)._git_ref = None
+        recipes.set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
         )
+
+
+def get_rock_recipe_privacy_filter(user):
+    """Return a Storm query filter to find rock recipes visible to `user`."""
+    public_filter = RockRecipe.information_type.is_in(PUBLIC_INFORMATION_TYPES)
+
+    # XXX jugmac00 2024-09-016: Flesh this out once we have more privacy
+    # infrastructure.
+    return [public_filter]

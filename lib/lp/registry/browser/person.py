@@ -167,6 +167,7 @@ from lp.registry.interfaces.teammembership import (
 from lp.registry.interfaces.wikiname import IWikiNameSet
 from lp.registry.mail.notification import send_direct_contact_email
 from lp.registry.model.person import get_recipients
+from lp.rocks.browser.hasrockrecipes import HasRockRecipesMenuMixin
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.sqlbase import flush_database_updates
@@ -819,6 +820,7 @@ class PersonOverviewMenu(
     HasSnapsMenuMixin,
     HasOCIRecipesMenuMixin,
     HasCharmRecipesMenuMixin,
+    HasRockRecipesMenuMixin,
 ):
     usedfor = IPerson
     facet = "overview"
@@ -851,6 +853,7 @@ class PersonOverviewMenu(
         "related_software_summary",
         "view_charm_recipes",
         "view_recipes",
+        "view_rock_recipes",
         "view_snaps",
         "view_oci_recipes",
         "subscriptions",

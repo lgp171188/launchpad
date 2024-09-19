@@ -43,6 +43,10 @@ from lp.code.interfaces.gitrepository import (
     IGitRepositorySet,
 )
 from lp.registry.interfaces.person import IPerson
+from lp.rocks.browser.hasrockrecipes import (
+    HasRockRecipesMenuMixin,
+    HasRockRecipesViewMixin,
+)
 from lp.services.config import config
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
@@ -58,6 +62,7 @@ class GitRefContextMenu(
     HasRecipesMenuMixin,
     HasSnapsMenuMixin,
     HasCharmRecipesMenuMixin,
+    HasRockRecipesMenuMixin,
 ):
     """Context menu for Git references."""
 
@@ -72,6 +77,7 @@ class GitRefContextMenu(
         "source",
         "view_charm_recipes",
         "view_recipes",
+        "view_rock_recipes",
     ]
 
     def source(self):
@@ -106,6 +112,7 @@ class GitRefView(
     HasSnapsViewMixin,
     HasCharmRecipesViewMixin,
     HasRevisionStatusReportsMixin,
+    HasRockRecipesViewMixin,
 ):
     # This is set at self.commit_infos, and should be accessed by the view
     # as self.commit_info_message.
