@@ -670,6 +670,12 @@ class RockRecipe(StormBase):
         order_by = Desc(RockRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def can_upload_to_store(self):
+        # no store upload planned for the initial implementation, as artifacts
+        # get pulled from Launchpad for now only.
+        return False
+
     def destroySelf(self):
         """See `IRockRecipe`."""
         store = IStore(self)
@@ -1009,6 +1015,10 @@ class RockRecipeSet:
         recipes.set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
         )
+
+    def empty_list(self):
+        """See `IRockRecipeSet`."""
+        return []
 
 
 def get_rock_recipe_privacy_filter(user):

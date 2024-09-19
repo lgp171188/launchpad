@@ -180,6 +180,11 @@ class RockRecipeBuild(PackageBuildMixin, StormBase):
         return self.distro_arch_series.distroseries
 
     @property
+    def arch_tag(self):
+        """See `IRockRecipeBuild`."""
+        return self.distro_arch_series.architecturetag
+
+    @property
     def archive(self):
         """See `IPackageBuild`."""
         return self.distribution.main_archive

@@ -21,6 +21,7 @@ __all__ = [
     "IRockRecipe",
     "IRockRecipeBuildRequest",
     "IRockRecipeSet",
+    "IRockRecipeView",
     "MissingRockcraftYaml",
     "NoSourceForRockRecipe",
     "NoSuchRockRecipe",
@@ -29,8 +30,24 @@ __all__ = [
 import http.client
 
 from lazr.enum import EnumeratedType, Item
-from lazr.restful.declarations import error_status, exported
+from lazr.lifecycle.snapshot import doNotSnapshot
+from lazr.restful.declarations import (
+    REQUEST_USER,
+    call_with,
+    collection_default_content,
+    error_status,
+    export_destructor_operation,
+    export_factory_operation,
+    export_read_operation,
+    exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
+    operation_for_version,
+    operation_parameters,
+    operation_returns_entry,
+)
 from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
+from lazr.restful.interface import copy_field
 from zope.interface import Attribute, Interface
 from zope.schema import (
     Bool,
@@ -196,48 +213,63 @@ class RockRecipeBuildRequestStatus(EnumeratedType):
     )
 
 
+# XXX jugmac00 2024-09-16 https://bugs.launchpad.net/lazr.restful/+bug/760849:
+# "beta" is a lie to get WADL generation working.
+# Individual attributes must set their version to "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IRockRecipeBuildRequest(Interface):
     """A request to build a rock recipe."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_requested = Datetime(
-        title=_("The time when this request was made"),
-        required=True,
-        readonly=True,
+    date_requested = exported(
+        Datetime(
+            title=_("The time when this request was made"),
+            required=True,
+            readonly=True,
+        )
     )
 
-    date_finished = Datetime(
-        title=_("The time when this request finished"),
-        required=False,
-        readonly=True,
+    date_finished = exported(
+        Datetime(
+            title=_("The time when this request finished"),
+            required=False,
+            readonly=True,
+        )
     )
 
-    recipe = Reference(
-        # Really IRockRecipe.
-        Interface,
-        title=_("Rock recipe"),
-        required=True,
-        readonly=True,
+    recipe = exported(
+        Reference(
+            # Really IRockRecipe, patched in lp.rocks.interfaces.webservice
+            Interface,
+            title=_("Rock recipe"),
+            required=True,
+            readonly=True,
+        )
     )
 
-    status = Choice(
-        title=_("Status"),
-        vocabulary=RockRecipeBuildRequestStatus,
-        required=True,
-        readonly=True,
+    status = exported(
+        Choice(
+            title=_("Status"),
+            vocabulary=RockRecipeBuildRequestStatus,
+            required=True,
+            readonly=True,
+        )
     )
 
-    error_message = TextLine(
-        title=_("Error message"), required=True, readonly=True
+    error_message = exported(
+        TextLine(title=_("Error message"), required=True, readonly=True)
     )
 
-    builds = CollectionField(
-        title=_("Builds produced by this request"),
-        # Really IRockRecipeBuild.
-        value_type=Reference(schema=Interface),
-        required=True,
-        readonly=True,
+    builds = exported(
+        CollectionField(
+            title=_("Builds produced by this request"),
+            # Really IRockRecipeBuild, patched in
+            # lp.rocks.interfaces.webservice
+            value_type=Reference(schema=Interface),
+            required=True,
+            readonly=True,
+        )
     )
 
     requester = Reference(
@@ -267,28 +299,44 @@ class IRockRecipeView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_created = Datetime(
-        title=_("Date created"), required=True, readonly=True
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True, readonly=True)
     )
-    date_last_modified = Datetime(
-        title=_("Date last modified"), required=True, readonly=True
+    date_last_modified = exported(
+        Datetime(title=_("Date last modified"), required=True, readonly=True)
     )
 
-    registrant = PublicPersonChoice(
-        title=_("Registrant"),
-        required=True,
-        readonly=True,
-        vocabulary="ValidPersonOrTeam",
-        description=_("The person who registered this rock recipe."),
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who registered this rock recipe."),
+        )
     )
 
     source = Attribute("The source branch for this rock recipe.")
 
-    private = Bool(
-        title=_("Private"),
-        required=False,
-        readonly=False,
-        description=_("Whether this rock recipe is private."),
+    private = exported(
+        Bool(
+            title=_("Private"),
+            required=False,
+            readonly=False,
+            description=_("Whether this rock recipe is private."),
+        )
+    )
+
+    can_upload_to_store = exported(
+        Bool(
+            title=_("Can upload to the RockStore"),
+            required=True,
+            readonly=True,
+            description=_(
+                "Whether everything is set up to allow uploading builds of "
+                "this rockrecipe to the RockStore."
+            ),
+        )
     )
 
     def getAllowedInformationTypes(user):
@@ -314,6 +362,21 @@ class IRockRecipeView(Interface):
         :return: `IRockRecipeBuild`.
         """
 
+    @call_with(requester=REQUEST_USER)
+    @operation_parameters(
+        channels=Dict(
+            title=_("Source snap channels to use for these builds."),
+            description=_(
+                "A dictionary mapping snap names to channels to use for these "
+                "builds.  Currently only 'rockcraft', 'core', 'core18', "
+                "'core20', and 'core22' keys are supported."
+            ),
+            key_type=TextLine(),
+            required=False,
+        )
+    )
+    @export_factory_operation(IRockRecipeBuildRequest, [])
+    @operation_for_version("devel")
     def requestBuilds(requester, channels=None, architectures=None):
         """Request that the rock recipe be built.
 
@@ -362,57 +425,80 @@ class IRockRecipeView(Interface):
         :return: `IRockRecipeBuildRequest`.
         """
 
-    pending_build_requests = CollectionField(
-        title=_("Pending build requests for this rock recipe."),
-        value_type=Reference(IRockRecipeBuildRequest),
-        required=True,
-        readonly=True,
+    pending_build_requests = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Pending build requests for this rock recipe."),
+                value_type=Reference(IRockRecipeBuildRequest),
+                required=True,
+                readonly=True,
+            )
+        )
     )
 
-    failed_build_requests = CollectionField(
-        title=_("Failed build requests for this rock recipe."),
-        value_type=Reference(IRockRecipeBuildRequest),
-        required=True,
-        readonly=True,
+    failed_build_requests = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Failed build requests for this rock recipe."),
+                value_type=Reference(IRockRecipeBuildRequest),
+                required=True,
+                readonly=True,
+            )
+        )
     )
 
-    builds = CollectionField(
-        title=_("All builds of this rock recipe."),
-        description=_(
-            "All builds of this rock recipe, sorted in descending order "
-            "of finishing (or starting if not completed successfully)."
-        ),
-        # Really IRockRecipeBuild.
-        value_type=Reference(schema=Interface),
-        readonly=True,
+    builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("All builds of this rock recipe."),
+                description=_(
+                    "All builds of this rock recipe, sorted in descending "
+                    "order of finishing (or starting if not completed "
+                    "successfully)."
+                ),
+                # Really IRockRecipeBuild.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
     )
 
-    completed_builds = CollectionField(
-        title=_("Completed builds of this rock recipe."),
-        description=_(
-            "Completed builds of this rock recipe, sorted in descending "
-            "order of finishing."
-        ),
-        # Really IRockRecipeBuild.
-        value_type=Reference(schema=Interface),
-        readonly=True,
+    completed_builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Completed builds of this rock recipe."),
+                description=_(
+                    "Completed builds of this rock recipe, sorted in "
+                    "descending order of finishing."
+                ),
+                # Really IRockRecipeBuild.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
     )
 
-    pending_builds = CollectionField(
-        title=_("Pending builds of this rock recipe."),
-        description=_(
-            "Pending builds of this rock recipe, sorted in descending "
-            "order of creation."
-        ),
-        # Really IRockRecipeBuild.
-        value_type=Reference(schema=Interface),
-        readonly=True,
+    pending_builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Pending builds of this rock recipe."),
+                description=_(
+                    "Pending builds of this rock recipe, sorted in descending "
+                    "order of creation."
+                ),
+                # Really IRockRecipeBuild.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
     )
 
 
 class IRockRecipeEdit(Interface):
     """`IRockRecipe` methods that require launchpad.Edit permission."""
 
+    @export_destructor_operation()
+    @operation_for_version("devel")
     def destroySelf():
         """Delete this rock recipe, provided that it has no builds."""
 
@@ -433,27 +519,33 @@ class IRockRecipeEditableAttributes(Interface):
         )
     )
 
-    project = ReferenceChoice(
-        title=_("The project that this rock recipe is associated with"),
-        schema=IProduct,
-        vocabulary="Product",
-        required=True,
-        readonly=False,
+    project = exported(
+        ReferenceChoice(
+            title=_("The project that this rock recipe is associated with"),
+            schema=IProduct,
+            vocabulary="Product",
+            required=True,
+            readonly=False,
+        )
     )
 
-    name = TextLine(
-        title=_("Rock recipe name"),
-        required=True,
-        readonly=False,
-        constraint=name_validator,
-        description=_("The name of the rock recipe."),
+    name = exported(
+        TextLine(
+            title=_("Rock recipe name"),
+            required=True,
+            readonly=False,
+            constraint=name_validator,
+            description=_("The name of the rock recipe."),
+        )
     )
 
-    description = Text(
-        title=_("Description"),
-        required=False,
-        readonly=False,
-        description=_("A description of the rock recipe."),
+    description = exported(
+        Text(
+            title=_("Description"),
+            required=False,
+            readonly=False,
+            description=_("A description of the rock recipe."),
+        )
     )
 
     git_repository = ReferenceChoice(
@@ -477,77 +569,96 @@ class IRockRecipeEditableAttributes(Interface):
         ),
     )
 
-    git_ref = Reference(
-        IGitRef,
-        title=_("Git branch"),
-        required=False,
-        readonly=False,
-        description=_("The Git branch containing a rockcraft.yaml recipe."),
+    git_ref = exported(
+        Reference(
+            IGitRef,
+            title=_("Git branch"),
+            required=False,
+            readonly=False,
+            description=_(
+                "The Git branch containing a rockcraft.yaml recipe."
+            ),
+        )
     )
 
-    build_path = TextLine(
-        title=_("Build path"),
-        description=_(
-            "Subdirectory within the branch containing rockcraft.yaml."
-        ),
-        constraint=path_does_not_escape,
-        required=False,
-        readonly=False,
-    )
-    information_type = Choice(
-        title=_("Information type"),
-        vocabulary=InformationType,
-        required=True,
-        readonly=False,
-        default=InformationType.PUBLIC,
-        description=_(
-            "The type of information contained in this rock recipe."
-        ),
+    build_path = exported(
+        TextLine(
+            title=_("Build path"),
+            description=_(
+                "Subdirectory within the branch containing rockcraft.yaml."
+            ),
+            constraint=path_does_not_escape,
+            required=False,
+            readonly=False,
+        )
     )
 
-    auto_build = Bool(
-        title=_("Automatically build when branch changes"),
-        required=True,
-        readonly=False,
-        description=_(
-            "Whether this rock recipe is built automatically when the branch "
-            "containing its rockcraft.yaml recipe changes."
-        ),
+    information_type = exported(
+        Choice(
+            title=_("Information type"),
+            vocabulary=InformationType,
+            required=True,
+            readonly=False,
+            default=InformationType.PUBLIC,
+            description=_(
+                "The type of information contained in this rock recipe."
+            ),
+        )
     )
 
-    auto_build_channels = Dict(
-        title=_("Source snap channels for automatic builds"),
-        key_type=TextLine(),
-        required=False,
-        readonly=False,
-        description=_(
-            "A dictionary mapping snap names to channels to use when building "
-            "this rock recipe.  Currently only 'core', 'core18', 'core20', "
-            "and 'rockcraft' keys are supported."
-        ),
+    auto_build = exported(
+        Bool(
+            title=_("Automatically build when branch changes"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Whether this rock recipe is built automatically when the "
+                "branch containing its rockcraft.yaml recipe changes."
+            ),
+        )
     )
 
-    is_stale = Bool(
-        title=_("Rock recipe is stale and is due to be rebuilt."),
-        required=True,
-        readonly=True,
+    auto_build_channels = exported(
+        Dict(
+            title=_("Source snap channels for automatic builds"),
+            key_type=TextLine(),
+            required=False,
+            readonly=False,
+            description=_(
+                "A dictionary mapping snap names to channels to use when"
+                " building this rock recipe. Currently only 'core', 'core18', "
+                "'core20', and 'rockcraft' keys are supported."
+            ),
+        )
     )
 
-    store_upload = Bool(
-        title=_("Automatically upload to store"),
-        required=True,
-        readonly=False,
-        description=_(
-            "Whether builds of this rock recipe are automatically uploaded "
-            "to the store."
-        ),
+    is_stale = exported(
+        Bool(
+            title=_("Rock recipe is stale and is due to be rebuilt."),
+            required=True,
+            readonly=True,
+        )
     )
 
-    store_name = TextLine(
-        title=_("Registered store name"),
-        required=False,
-        readonly=False,
-        description=_("The registered name of this rock in the store."),
+    store_upload = exported(
+        Bool(
+            title=_("Automatically upload to store"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Whether builds of this rock recipe are automatically "
+                "uploaded to the store."
+            ),
+        )
+    )
+
+    store_name = exported(
+        TextLine(
+            title=_("Registered store name"),
+            required=False,
+            readonly=False,
+            description=_("The registered name of this rock in the store."),
+        )
     )
 
     store_secrets = List(
@@ -561,18 +672,20 @@ class IRockRecipeEditableAttributes(Interface):
         ),
     )
 
-    store_channels = List(
-        title=_("Store channels"),
-        required=False,
-        readonly=False,
-        constraint=channels_validator,
-        description=_(
-            "Channels to release this rock to after uploading it to the "
-            "store. A channel is defined by a combination of an optional "
-            "track, a risk, and an optional branch, e.g. "
-            "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
-            "'stable'."
-        ),
+    store_channels = exported(
+        List(
+            title=_("Store channels"),
+            required=False,
+            readonly=False,
+            constraint=channels_validator,
+            description=_(
+                "Channels to release this rock to after uploading it to the "
+                "store. A channel is defined by a combination of an optional "
+                "track, a risk, and an optional branch, e.g. "
+                "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
+                "'stable'."
+            ),
+        )
     )
 
 
@@ -582,14 +695,20 @@ class IRockRecipeAdminAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Admin to change.
     """
 
-    require_virtualized = Bool(
-        title=_("Require virtualized builders"),
-        required=True,
-        readonly=False,
-        description=_("Only build this rock recipe on virtual builders."),
+    require_virtualized = exported(
+        Bool(
+            title=_("Require virtualized builders"),
+            required=True,
+            readonly=False,
+            description=_("Only build this rock recipe on virtual builders."),
+        )
     )
 
 
+# XXX jugmac00 2024-09-16 https://bugs.launchpad.net/lazr.restful/+bug/760849:
+# "beta" is a lie to get WADL generation working.
+# Individual attributes must set their version to "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IRockRecipe(
     IRockRecipeView,
     IRockRecipeEdit,
@@ -600,9 +719,33 @@ class IRockRecipe(
     """A buildable rock recipe."""
 
 
+@exported_as_webservice_collection(IRockRecipe)
 class IRockRecipeSet(Interface):
     """A utility to create and access rock recipes."""
 
+    @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        information_type=copy_field(
+            IRockRecipe["information_type"], required=False
+        )
+    )
+    @export_factory_operation(
+        IRockRecipe,
+        [
+            "owner",
+            "project",
+            "name",
+            "description",
+            "git_ref",
+            "build_path",
+            "auto_build",
+            "auto_build_channels",
+            "store_upload",
+            "store_name",
+            "store_channels",
+        ],
+    )
+    @operation_for_version("devel")
     def new(
         registrant,
         owner,
@@ -623,6 +766,14 @@ class IRockRecipeSet(Interface):
     ):
         """Create an `IRockRecipe`."""
 
+    @operation_parameters(
+        owner=Reference(IPerson, title=_("Owner"), required=True),
+        project=Reference(IProduct, title=_("Project"), required=True),
+        name=TextLine(title=_("Recipe name"), required=True),
+    )
+    @operation_returns_entry(IRockRecipe)
+    @export_read_operation()
+    @operation_for_version("devel")
     def getByName(owner, project, name):
         """Returns the appropriate `IRockRecipe` for the given objects."""
 
@@ -703,4 +854,11 @@ class IRockRecipeSet(Interface):
 
         After this, any rock recipes that previously used this repository
         will have no source and so cannot dispatch new builds.
+        """
+
+    @collection_default_content()
+    def empty_list():
+        """Return an empty collection of rock recipes.
+
+        This only exists to keep lazr.restful happy.
         """
