@@ -902,6 +902,12 @@
       factory="lp.app.browser.tales.CharmRecipeFormatterAPI"
       name="fmt"
       />
+   <adapter
+      for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.RockRecipeFormatterAPI"
+      name="fmt"
+      />
   <adapter
       for="lp.blueprints.interfaces.specification.ISpecification"
       provides="zope.traversing.interfaces.IPathAdapter"
