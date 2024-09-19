@@ -577,6 +577,9 @@ class IRockRecipeSet(Interface):
     def getByName(owner, project, name):
         """Returns the appropriate `IRockRecipe` for the given objects."""
 
+    def exists(owner, project, name):
+        """Check to see if a matching rock recipe exists."""
+
     def isValidInformationType(information_type, owner, git_ref=None):
         """Whether the information type context is valid."""
 
