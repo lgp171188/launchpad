@@ -13,6 +13,8 @@
     <lp:authorizations module=".security" />
     <include package=".browser" />
 
+    <lp:help-folder folder="help" name="+help-rocks" />
+
     <!-- RockRecipe -->
     <class class="lp.rocks.model.rockrecipe.RockRecipe">
         <require

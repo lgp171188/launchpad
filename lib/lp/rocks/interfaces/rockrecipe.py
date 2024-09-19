@@ -31,7 +31,7 @@ import http.client
 from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import error_status, exported
 from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
-from zope.interface import Interface
+from zope.interface import Attribute, Interface
 from zope.schema import (
     Bool,
     Choice,
@@ -282,6 +282,8 @@ class IRockRecipeView(Interface):
         description=_("The person who registered this rock recipe."),
     )
 
+    source = Attribute("The source branch for this rock recipe.")
+
     private = Bool(
         title=_("Private"),
         required=False,
@@ -359,6 +361,53 @@ class IRockRecipeView(Interface):
         :param job_id: The ID of the build request.
         :return: `IRockRecipeBuildRequest`.
         """
+
+    pending_build_requests = CollectionField(
+        title=_("Pending build requests for this rock recipe."),
+        value_type=Reference(IRockRecipeBuildRequest),
+        required=True,
+        readonly=True,
+    )
+
+    failed_build_requests = CollectionField(
+        title=_("Failed build requests for this rock recipe."),
+        value_type=Reference(IRockRecipeBuildRequest),
+        required=True,
+        readonly=True,
+    )
+
+    builds = CollectionField(
+        title=_("All builds of this rock recipe."),
+        description=_(
+            "All builds of this rock recipe, sorted in descending order "
+            "of finishing (or starting if not completed successfully)."
+        ),
+        # Really IRockRecipeBuild.
+        value_type=Reference(schema=Interface),
+        readonly=True,
+    )
+
+    completed_builds = CollectionField(
+        title=_("Completed builds of this rock recipe."),
+        description=_(
+            "Completed builds of this rock recipe, sorted in descending "
+            "order of finishing."
+        ),
+        # Really IRockRecipeBuild.
+        value_type=Reference(schema=Interface),
+        readonly=True,
+    )
+
+    pending_builds = CollectionField(
+        title=_("Pending builds of this rock recipe."),
+        description=_(
+            "Pending builds of this rock recipe, sorted in descending "
+            "order of creation."
+        ),
+        # Really IRockRecipeBuild.
+        value_type=Reference(schema=Interface),
+        readonly=True,
+    )
 
 
 class IRockRecipeEdit(Interface):

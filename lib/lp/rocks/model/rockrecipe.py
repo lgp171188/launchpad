@@ -16,8 +16,10 @@ from storm.locals import (
     And,
     Bool,
     DateTime,
+    Desc,
     Int,
     Join,
+    Not,
     Or,
     Reference,
     Select,
@@ -35,6 +37,8 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
@@ -76,6 +80,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import Greatest, NullsLast
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
@@ -328,6 +333,11 @@ class RockRecipe(StormBase):
             self.git_path = None
 
     @property
+    def source(self):
+        """See `IRockRecipe`."""
+        return self.git_ref
+
+    @property
     def store_channels(self):
         """See `IRockRecipe`."""
         return self._store_channels or []
@@ -539,6 +549,98 @@ class RockRecipe(StormBase):
     def getBuildRequest(self, job_id):
         """See `IRockRecipe`."""
         return RockRecipeBuildRequest(self, job_id)
+
+    @property
+    def pending_build_requests(self):
+        """See `IRockRecipe`."""
+        job_source = getUtility(IRockRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(
+            self, statuses=(JobStatus.WAITING, JobStatus.RUNNING)
+        )
+        return DecoratedResultSet(
+            jobs, result_decorator=RockRecipeBuildRequest.fromJob
+        )
+
+    @property
+    def failed_build_requests(self):
+        """See `IRockRecipe`."""
+        job_source = getUtility(IRockRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(self, statuses=(JobStatus.FAILED,))
+        return DecoratedResultSet(
+            jobs, result_decorator=RockRecipeBuildRequest.fromJob
+        )
+
+    def _getBuilds(self, filter_term, order_by):
+        """The actual query to get the builds."""
+        query_args = [
+            RockRecipeBuild.recipe == self,
+        ]
+        if filter_term is not None:
+            query_args.append(filter_term)
+        result = Store.of(self).find(RockRecipeBuild, *query_args)
+        result.order_by(order_by)
+
+        def eager_load(rows):
+            getUtility(IRockRecipeBuildSet).preloadBuildsData(rows)
+            getUtility(IBuildQueueSet).preloadForBuildFarmJobs(rows)
+            load_related(Builder, rows, ["builder_id"])
+
+        return DecoratedResultSet(result, pre_iter_hook=eager_load)
+
+    @property
+    def builds(self):
+        """See `IRockRecipe`."""
+        order_by = (
+            NullsLast(
+                Desc(
+                    Greatest(
+                        RockRecipeBuild.date_started,
+                        RockRecipeBuild.date_finished,
+                    )
+                )
+            ),
+            Desc(RockRecipeBuild.date_created),
+            Desc(RockRecipeBuild.id),
+        )
+        return self._getBuilds(None, order_by)
+
+    @property
+    def _pending_states(self):
+        """All the build states we consider pending (non-final)."""
+        return [
+            BuildStatus.NEEDSBUILD,
+            BuildStatus.BUILDING,
+            BuildStatus.UPLOADING,
+            BuildStatus.CANCELLING,
+        ]
+
+    @property
+    def completed_builds(self):
+        """See `IRockRecipe`."""
+        filter_term = Not(RockRecipeBuild.status.is_in(self._pending_states))
+        order_by = (
+            NullsLast(
+                Desc(
+                    Greatest(
+                        RockRecipeBuild.date_started,
+                        RockRecipeBuild.date_finished,
+                    )
+                )
+            ),
+            Desc(RockRecipeBuild.id),
+        )
+        return self._getBuilds(filter_term, order_by)
+
+    @property
+    def pending_builds(self):
+        """See `IRockRecipe`."""
+        filter_term = RockRecipeBuild.status.is_in(self._pending_states)
+        # We want to order by date_created but this is the same as ordering
+        # by id (since id increases monotonically) and is less expensive.
+        order_by = Desc(RockRecipeBuild.id)
+        return self._getBuilds(filter_term, order_by)
 
     def destroySelf(self):
         """See `IRockRecipe`."""
