@@ -88,6 +88,26 @@
         factory="lp.rocks.model.rockrecipebuildbehaviour.RockRecipeBuildBehaviour"
         permission="zope.Public" />
 
+    <!-- Bases for rocks -->
+    <class class="lp.rocks.model.rockbase.RockBase">
+        <allow
+            interface="lp.rocks.interfaces.rockbase.IRockBaseView
+                       lp.rocks.interfaces.rockbase.IRockBaseEditableAttributes" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.rocks.interfaces.rockbase.IRockBaseEdit"
+            set_schema="lp.rocks.interfaces.rockbase.IRockBaseEditableAttributes" />
+    </class>
+    <lp:securedutility
+        class="lp.rocks.model.rockbase.RockBaseSet"
+        provides="lp.rocks.interfaces.rockbase.IRockBaseSet">
+        <allow
+            interface="lp.rocks.interfaces.rockbase.IRockBaseSet" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.rocks.interfaces.rockbase.IRockBaseSetEdit" />
+    </lp:securedutility>
+
     <!-- rock-related jobs -->
     <class class="lp.rocks.model.rockrecipejob.RockRecipeJob">
         <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />

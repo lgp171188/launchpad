@@ -4,11 +4,16 @@
 """Security adapters for the rocks package."""
 
 __all__ = []
-
-from lp.app.security import AuthorizationBase, DelegatedAuthorization
+from lp.app.security import (
+    AnonymousAuthorization,
+    AuthorizationBase,
+    DelegatedAuthorization,
+)
+from lp.rocks.interfaces.rockbase import IRockBase, IRockBaseSet
 from lp.rocks.interfaces.rockrecipe import IRockRecipe, IRockRecipeBuildRequest
 from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuild
 from lp.security import AdminByBuilddAdmin
+from lp.services.webapp.security import EditByRegistryExpertsOrAdmins
 
 
 class ViewRockRecipe(AuthorizationBase):
@@ -53,7 +58,7 @@ class AdminRockRecipe(AuthorizationBase):
         ).checkAuthenticated(user)
 
 
-class ViewCharmRecipeBuildRequest(DelegatedAuthorization):
+class ViewRockRecipeBuildRequest(DelegatedAuthorization):
     permission = "launchpad.View"
     usedfor = IRockRecipeBuildRequest
 
@@ -88,3 +93,17 @@ class EditRockRecipeBuild(AdminByBuilddAdmin):
 
 class AdminRockRecipeBuild(AdminByBuilddAdmin):
     usedfor = IRockRecipeBuild
+
+
+class ViewRockBase(AnonymousAuthorization):
+    """Anyone can view an `IRockBase`."""
+
+    usedfor = IRockBase
+
+
+class EditRockBase(EditByRegistryExpertsOrAdmins):
+    usedfor = IRockBase
+
+
+class EditRockBaseSet(EditByRegistryExpertsOrAdmins):
+    usedfor = IRockBaseSet

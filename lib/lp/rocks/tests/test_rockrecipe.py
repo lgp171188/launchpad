@@ -307,6 +307,118 @@ class TestRockRecipe(TestCaseWithFactory):
             ),
         )
 
+    def test_requestBuildsFromJob_rock_base_architectures(self):
+        # requestBuildsFromJob intersects the architectures supported by the
+        # rock base with any other constraints.
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+            name: foo
+            bases:
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [sparc]
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [i386]
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [avr]
+            """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("20.04", ["sparc", "i386", "avr"])
+        distroseries = getUtility(ILaunchpadCelebrities).ubuntu.getSeries(
+            "20.04"
+        )
+        with admin_logged_in():
+            self.factory.makeRockBase(
+                distro_series=distroseries,
+                build_channels={"rockcraft": "stable/launchpad-buildd"},
+                processors=[
+                    distroseries[arch_tag].processor
+                    for arch_tag in ("sparc", "avr")
+                ],
+            )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["sparc", "avr"], job.channels
+        )
+
+    def test_requestBuildsFromJob_rock_base_build_channels_by_arch(self):
+        # If the rock base declares different build channels for specific
+        # architectures, then requestBuildsFromJob uses those when
+        # requesting builds for those architectures.
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+            name: foo
+            bases:
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [sparc]
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [i386]
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [avr]
+            """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("20.04", ["avr"])
+        distroseries = getUtility(ILaunchpadCelebrities).ubuntu.getSeries(
+            "20.04"
+        )
+        with admin_logged_in():
+            self.factory.makeRockBase(
+                distro_series=distroseries,
+                build_channels={
+                    "core20": "stable",
+                    "_byarch": {"riscv64": {"core20": "candidate"}},
+                },
+            )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertThat(
+            builds,
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        requester=Equals(job.requester),
+                        recipe=Equals(job.recipe),
+                        distro_arch_series=MatchesStructure(
+                            distroseries=MatchesStructure.byEquality(
+                                version="20.04"
+                            ),
+                            architecturetag=Equals(arch_tag),
+                        ),
+                        channels=Equals(channels),
+                    )
+                    for arch_tag, channels in (
+                        ("avr", {"rockcraft": "edge", "core20": "stable"}),
+                    )
+                )
+            ),
+        )
+
     def test_requestBuildsFromJob_restricts_explicit_list(self):
         # requestBuildsFromJob limits builds targeted at an explicit list of
         # architectures to those allowed for the recipe.
@@ -348,7 +460,6 @@ class TestRockRecipe(TestCaseWithFactory):
         # If an explicit set of architectures was given as a parameter,
         # requestBuildsFromJob intersects those with any other constraints
         # when requesting builds.
-        # self.useFixture(GitHostingFixture(blob="name: foo\n"))
         self.useFixture(
             GitHostingFixture(
                 blob=dedent(

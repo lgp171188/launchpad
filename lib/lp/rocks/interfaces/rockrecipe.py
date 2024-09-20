@@ -348,7 +348,9 @@ class IRockRecipeView(Interface):
     def visibleByUser(user):
         """Can the specified user see this rock recipe?"""
 
-    def requestBuild(build_request, distro_arch_series, channels=None):
+    def requestBuild(
+        build_request, distro_arch_series, rock_base=None, channels=None
+    ):
         """Request a single build of this rock recipe.
 
         This method is for internal use; external callers should use
@@ -357,6 +359,7 @@ class IRockRecipeView(Interface):
         :param build_request: The `IRockRecipeBuildRequest` job being
             processed.
         :param distro_arch_series: The architecture to build for.
+        :param rock_base: The `IRockBase` to use for this build.
         :param channels: A dictionary mapping snap names to channels to use
             for this build.
         :return: `IRockRecipeBuild`.

@@ -79,6 +79,17 @@
             for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
+        <lp:url
+            for="lp.rocks.interfaces.rockbase.IRockBase"
+            path_expression="string:${id}"
+            parent_utility="lp.rocks.interfaces.rockbase.IRockBaseSet" />
+        <lp:url
+            for="lp.rocks.interfaces.rockbase.IRockBaseSet"
+            path_expression="string:+rock-bases"
+            parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
+        <lp:navigation
+            module="lp.rocks.browser.rockbase"
+            classes="RockBaseSetNavigation" />
         <browser:page
             for="*"
             class="lp.app.browser.launchpad.Macro"
