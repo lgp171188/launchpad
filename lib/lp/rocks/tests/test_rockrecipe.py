@@ -21,6 +21,7 @@ from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
 )
+from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -41,6 +42,7 @@ from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
+from lp.rocks.adapters.buildarch import BadPropertyError, MissingPropertyError
 from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_ALLOW_CREATE,
     ROCK_RECIPE_PRIVATE_FEATURE_FLAG,
@@ -315,19 +317,10 @@ class TestRockRecipe(TestCaseWithFactory):
                 blob=dedent(
                     """\
             name: foo
-            bases:
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [sparc]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [i386]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [avr]
+            base: ubuntu@20.04
+            platforms:
+                sparc:
+                avr:
             """
                 )
             )
@@ -363,19 +356,9 @@ class TestRockRecipe(TestCaseWithFactory):
                 blob=dedent(
                     """\
             name: foo
-            bases:
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [sparc]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [i386]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [avr]
+            base: ubuntu@20.04
+            platforms:
+                avr:
             """
                 )
             )
@@ -426,19 +409,9 @@ class TestRockRecipe(TestCaseWithFactory):
             GitHostingFixture(
                 blob=dedent(
                     """\
-            bases:
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [sparc]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [i386]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [avr]
+            base: ubuntu@20.04
+            platforms:
+                avr:
             """
                 )
             )
@@ -453,7 +426,277 @@ class TestRockRecipe(TestCaseWithFactory):
                 job.build_request, channels=removeSecurityProxy(job.channels)
             )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["sparc", "avr"], job.channels
+            builds, job, "20.04", ["avr"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_invalid_short_base(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: ubuntu-24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            with ExpectedException(
+                BadPropertyError,
+                "Invalid value for base 'ubuntu-24.04'. "
+                "Expected value should be like 'ubuntu@24.04'",
+            ):
+                job.recipe.requestBuildsFromJob(
+                    job.build_request,
+                    channels=removeSecurityProxy(job.channels),
+                )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_platforms_missing(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: ubuntu@24.04
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            with ExpectedException(
+                MissingPropertyError, "The 'platforms' property is required"
+            ):
+                job.recipe.requestBuildsFromJob(
+                    job.build_request,
+                    channels=removeSecurityProxy(job.channels),
+                )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_fully_expanded(self):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_multi_platforms(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                        ubuntu-arm64:
+                            build-on: [arm64]
+                            build-for: [arm64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64", "arm64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_arch_as_str(self):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: amd64
+                            build-for: amd64
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_base_short_form(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: ubuntu@24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_unknown_arch(self):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        foobar:
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            with ExpectedException(
+                BadPropertyError,
+                "'foobar' is not a supported architecture for "
+                "'ubuntu@24.04'",
+            ):
+                job.recipe.requestBuildsFromJob(
+                    job.build_request,
+                    channels=removeSecurityProxy(job.channels),
+                )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_platforms_short_form(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        amd64:
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_2_platforms_short(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        amd64:
+                        arm64:
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64", "arm64"], job.channels
         )
 
     def test_requestBuildsFromJob_architectures_parameter(self):
@@ -464,23 +707,10 @@ class TestRockRecipe(TestCaseWithFactory):
             GitHostingFixture(
                 blob=dedent(
                     """\
-            bases:
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [sparc]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [i386]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [avr]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [riscv64]
+            base: ubuntu@20.04
+            platforms:
+                avr:
+                riscv64:
             """
                 )
             )
@@ -726,24 +956,21 @@ class TestRockRecipeDeleteWithBuilds(TestCaseWithFactory):
                 filename="fake_chroot.tar.gz", db_only=True
             )
         )
-        self.useFixture(
-            GitHostingFixture(
-                blob=dedent(
-                    """\
-            bases:
-              - build-on:
-                  - name: "%s"
-                    channel: "%s"
-                    architectures: [%s]
+        rockcraft_yaml = (
+            dedent(
+                """\
+            base: %s@%s
+            platforms:
+                %s:
             """
-                    % (
-                        distroseries.distribution.name,
-                        distroseries.name,
-                        processor.name,
-                    )
-                )
+            )
+            % (
+                distroseries.distribution.name,
+                distroseries.version,
+                processor.name,
             )
         )
+        self.useFixture(GitHostingFixture(blob=rockcraft_yaml))
         [git_ref] = self.factory.makeGitRefs()
         condemned_recipe = self.factory.makeRockRecipe(
             registrant=owner,
@@ -1516,15 +1743,11 @@ class TestRockRecipeWebservice(TestCaseWithFactory):
         )
         self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
         with person_logged_in(self.person):
-            rockcraft_yaml = "bases:\n"
+            rockcraft_yaml = (
+                "base: ubuntu@%s\nplatforms:\n" % distroseries.version
+            )
             for processor in processors:
-                rockcraft_yaml += (
-                    "  - build-on:\n"
-                    "    - name: ubuntu\n"
-                    '      channel: "%s"\n'
-                    "      architectures: [%s]\n"
-                    % (distroseries.version, processor.name)
-                )
+                rockcraft_yaml += "    %s:\n" % processor.name
             self.useFixture(GitHostingFixture(blob=rockcraft_yaml))
             [job] = getUtility(IRockRecipeRequestBuildsJobSource).iterReady()
             with dbuser(config.IRockRecipeRequestBuildsJobSource.dbuser):
@@ -1695,15 +1918,11 @@ class TestRockRecipeWebservice(TestCaseWithFactory):
         )
         self.assertEqual(201, response.status)
         with person_logged_in(self.person):
-            rockcraft_yaml = "bases:\n"
+            rockcraft_yaml = (
+                "base: ubuntu@%s\nplatforms:\n" % distroseries.version
+            )
             for processor in processors:
-                rockcraft_yaml += (
-                    "  - build-on:\n"
-                    "    - name: ubuntu\n"
-                    '      channel: "%s"\n'
-                    "      architectures: [%s]\n"
-                    % (distroseries.version, processor.name)
-                )
+                rockcraft_yaml += "    %s:\n" % processor.name
             self.useFixture(GitHostingFixture(blob=rockcraft_yaml))
             [job] = getUtility(IRockRecipeRequestBuildsJobSource).iterReady()
             with dbuser(config.IRockRecipeRequestBuildsJobSource.dbuser):
