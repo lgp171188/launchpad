@@ -314,6 +314,34 @@
                 <xsl:text>/+build-request/</xsl:text>
                 <var>&lt;id&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'rock_recipe'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;project.name&gt;</var>
+                <xsl:text>/+rock/</xsl:text>
+                <var>&lt;recipe.name&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'rock_recipe_build'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;project.name&gt;</var>
+                <xsl:text>/+rock/</xsl:text>
+                <var>&lt;recipe.name&gt;</var>
+                <xsl:text>/+build/</xsl:text>
+                <var>&lt;id&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'rock_recipe_build_request'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;project.name&gt;</var>
+                <xsl:text>/+rock/</xsl:text>
+                <var>&lt;recipe.name&gt;</var>
+                <xsl:text>/+build-request/</xsl:text>
+                <var>&lt;id&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'cve'">
                 <xsl:text>/bugs/cve/</xsl:text>
                 <var>&lt;sequence&gt;</var>
@@ -809,6 +837,9 @@
             </xsl:when>
             <xsl:when test="@id = 'snaps'">
                 <xsl:text>/+snaps</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'rock_recipes'">
+                <xsl:text>/+rock-recipes</xsl:text>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:text>/</xsl:text><xsl:value-of select="@id" />
