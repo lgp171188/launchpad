@@ -44,6 +44,7 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
+    operation_returns_collection_of,
     operation_returns_entry,
 )
 from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
@@ -862,6 +863,12 @@ class IRockRecipeSet(Interface):
             cannot be parsed.
         """
 
+    @operation_parameters(
+        owner=Reference(IPerson, title=_("Owner"), required=True)
+    )
+    @operation_returns_collection_of(IRockRecipe)
+    @export_read_operation()
+    @operation_for_version("devel")
     def findByOwner(owner):
         """Return all rock recipes with the given `owner`."""
 
