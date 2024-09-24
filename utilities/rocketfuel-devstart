@@ -1,0 +1,195 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+# Provide a --download flag to pull in the required lpdev image 
+DOWNLOAD=false
+
+# Virtual hosts we need for LP setup on host and container
+domains="launchpad.test answers.launchpad.test archive.launchpad.test api.launchpad.test bazaar.launchpad.test bazaar-internal.launchpad.test blueprints.launchpad.test bugs.launchpad.test code.launchpad.test feeds.launchpad.test keyserver.launchpad.test lists.launchpad.test ppa.launchpad.test private-ppa.launchpad.test testopenid.test translations.launchpad.test xmlrpc-private.launchpad.test xmlrpc.launchpad.test"
+
+
+for arg in "$@"; do
+  case $arg in
+    --download)
+      DOWNLOAD=true
+      shift
+      ;;
+    --help)
+      echo "Usage: script.sh [options]"
+      echo "Options:"
+      echo "  --download   Pass this flag to download and import Launchpad development image from source. Pass this flag on the very first run."
+      echo "  --debug   Pass this flag to enable set -x mode."
+      exit 0
+      ;;
+    --debug)
+      set -x
+      shift
+      ;;
+    *)
+  esac
+done
+
+IMAGE_NAME=lpdev-image
+
+if [ "$DOWNLOAD" = true ]; then
+
+# As we don't have any public lxd server to host images, for now we are using google drive to pull images from.
+# The images are maintained by the LP team. 
+echo "Downloading Launchpad Dev image"
+wget 'https://drive.usercontent.google.com/download?id=1jn_w2Uu_sVVMP9UVY-ut4aN1LDPSeIJh&export=download&confirm=t&uuid=59e70493-ae64-4502-b510-fc8f12fb356a' -O /tmp/lpdev-image.tar.xz
+
+echo "Importing image into LXD"
+lxc image import /tmp/lpdev-image.tar.xz --alias lpdev-image
+fi
+
+default_path="~/launchpad-mount"
+
+# Prompt user for work dir path
+read -p "Enter a empty folder location which will be used to setup volumes between host and Launchpad container (default: $default_path): " folder_path
+read -p "Enter Launchpad ID to bootstrap ssh keys in developmenet lxc instance and setup git remote accordingly (leave empty to skip): " lp_id
+
+folder_path=${folder_path:-$default_path}
+
+folder_path=$(eval echo "$folder_path")
+
+mkdir -p $folder_path
+
+if [ "$(ls -A "$folder_path")" ]; then
+   echo "The folder is not empty! $folder_path"
+   exit 1
+fi
+
+# We create hash of the folder effectively to create new LXC profiles for each new folder path specified. 
+# We are using different profiles for different workspaces to prevent any volume-overrides
+folder_hash=$(echo -n "$folder_path" | md5sum | cut -c 1-8)
+
+# Create the LXC profile
+id=400000  # some large uid outside of typical range, and outside of already mapped ranges in /etc/sub{u,g}id
+uid=$(id -u)
+gid=$(id -g)
+user=$(id -un)
+group=$(id -gn)
+
+# give lxc permission to map your user/group id through
+sudo usermod --add-subuids ${uid}-${uid} --add-subgids ${gid}-${gid} root
+
+# create a profile to control this
+lxc profile create $user-$folder_hash >/dev/null 2>&1 || true
+
+# Copy the Launchpad dir to mount directory after the instance starts. 
+# We use the "-pR" flags to copy the files with same timestamps to prevent re-compiling the compile target. 
+# We map ubuntu(1000) user with the host system's user to allow for git operations on host system 
+profile_config=$(cat << EOF 
+name: $user
+description: Mounts for Launchpad Development
+config:
+  raw.idmap: |
+    uid $uid 1000
+    gid $gid 1000
+  user.user-data: |
+    #cloud-config
+    runcmd:
+      - "echo '127.0.0.88 $domains' >> /etc/hosts"
+      - "sudo -u ubuntu cp -pR /home/ubuntu/launchpad/* /home/ubuntu/launchpad-workdir"
+      - "sudo -u ubuntu ln -sfn /home/ubuntu/launchpad-workdir/lp-sourcedeps/download-cache /home/ubuntu/launchpad-workdir/launchpad/download-cache"
+      - "sudo -u ubuntu mv /home/ubuntu/launchpad /home/ubuntu/.launchpad"
+      - "sudo -u ubuntu bash -c 'cd /home/ubuntu/launchpad-workdir/launchpad && sudo make LISTEN_ADDRESS=* install'"
+EOF
+)
+
+# configure git repo if the user has provided their Launchpad ID
+if [ ! -z "$lp_id" ]; then
+  profile_config+=$(cat << EOF
+
+      - "sudo -u ubuntu git -C /home/ubuntu/launchpad-workdir/launchpad remote set-url origin git+ssh://$lp_id@git.launchpad.net/~$lp_id/launchpad"
+      - "sudo -u ubuntu git -C /home/ubuntu/launchpad-workdir/launchpad remote add upstream git+ssh://$lp_id@git.launchpad.net/launchpad"
+EOF
+  )
+fi
+
+# Create volume mounts host_dir:container_dir
+profile_config+=$(cat << EOF
+
+devices:
+  home:
+    type: disk
+    source: $folder_path
+    path: /home/ubuntu/launchpad-workdir
+EOF
+)
+
+echo "$profile_config" | lxc profile edit $USER-$folder_hash
+
+adjectives=("brave" "calm" "clever" "cool" "friendly" "gentle" "happy" "kind" "lucky" "peaceful")
+nouns=("panda" "tiger" "koala" "eagle" "lion" "falcon" "zebra" "giraffe" "dolphin" "whale")
+
+
+# Generate random alphanumeric adjective and noun
+adj=${adjectives[$RANDOM % ${#adjectives[@]}]}
+noun=${nouns[$RANDOM % ${#nouns[@]}]}
+rnd_n=$((RANDOM % 1000))
+
+container_name="${adj,,}-${noun,,}-$rnd_n"
+
+read -p "Enter a container name or press Enter to use the (default $container_name) : " custom_container_name
+
+if [ -n "$custom_container_name" ]; then
+    container_name=$custom_container_name
+fi
+
+lxc launch $IMAGE_NAME -p default -p $USER-$folder_hash $container_name
+
+lxc exec $container_name -- cloud-init status --wait
+
+# Edit the /etc/hosts file to take in the changes
+echo "Updating the hosts file with test virtual hosts for Launchpad"
+container_ip=$(lxc list $container_name -c 4 | awk '/eth0/{print $2}')
+
+# If no IPv4 address is found, fallback to IPv6
+if [ -z "$container_ip" ]; then
+  container_ip=$(lxc list $container_name -c 6 | awk '/eth0/{print $2}')
+fi
+
+if [[ -z "$container_ip" ]]; then
+  echo "Failed to get the IP address for container: $container_name"
+  exit 1
+fi
+
+echo "Container IP: $container_ip"
+
+# Backup the /etc/hosts file before modifying
+sudo cp /etc/hosts /etc/hosts.bak
+
+# Remove any existing entry for these domains from /etc/hosts
+sudo sed -i "/launchpad.test/d" /etc/hosts
+
+# Add the new entry with the correct IP address
+echo "$container_ip      $domains" | sudo tee -a /etc/hosts > /dev/null
+
+echo "Updated /etc/hosts with IP: $container_ip for the Launchpad Virtual domains"
+
+# If a Launchpad ID is provided, import the associated public key on Launchpad into the container
+if [ -n "$lp_id" ]; then
+    echo "Using Launchpad ID: $lp_id"
+    
+    # Run for root user
+    lxc exec "$container_name" -- sudo -u root ssh-import-id lp:"$lp_id"
+
+    if [ $? -eq 0 ]; then
+        echo "SSH key for Launchpad ID '$lp_id' imported successfully."
+        echo "Setup a remote host in VSCode using 'ssh root@$container_ip'"
+    else
+        echo "Failed to import SSH key for Launchpad ID '$lp_id'."
+    fi
+else
+    echo "No Launchpad ID provided. Skipping SSH key import."
+fi
+
+echo -e "\n"
+echo "=============== SETUP COMPLETED ==============="
+echo "Please setup pre-commit on your host system and use the following directories for development."
+echo "Host workspace directory: $folder_path"
+echo "Remote workspace directory: /home/ubuntu/launchpad-workdir"
