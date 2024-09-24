@@ -53,6 +53,7 @@ from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitref import GitRef
 from lp.code.model.gitrepository import GitRepository
+from lp.code.model.reciperegistry import recipe_registry
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.person import (
     IPerson,
@@ -761,6 +762,9 @@ class RockRecipe(StormBase):
         ).remove()
 
 
+@recipe_registry.register_recipe_type(
+    IRockRecipeSet, "Some rock recipes build from this repository."
+)
 @implementer(IRockRecipeSet)
 class RockRecipeSet:
     """See `IRockRecipeSet`."""

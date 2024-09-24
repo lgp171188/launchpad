@@ -134,6 +134,7 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
 )
 from lp.code.model.diff import Diff, PreviewDiff
 from lp.code.tests.helpers import GitHostingFixture
+from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -6891,6 +6892,79 @@ class LaunchpadObjectFactory(ObjectFactory):
             processors=processors,
             date_created=date_created,
         )
+
+    def makeCraftRecipe(
+        self,
+        registrant=None,
+        owner=None,
+        project=None,
+        name=None,
+        description=None,
+        git_ref=None,
+        build_path=None,
+        require_virtualized=True,
+        information_type=InformationType.PUBLIC,
+        auto_build=False,
+        auto_build_channels=None,
+        is_stale=None,
+        store_upload=False,
+        store_name=None,
+        store_secrets=None,
+        store_channels=None,
+        date_created=DEFAULT,
+    ):
+        """Make a new craft recipe."""
+        if registrant is None:
+            registrant = self.makePerson()
+        private = information_type not in PUBLIC_INFORMATION_TYPES
+        if owner is None:
+            # Private craft recipes cannot be owned by non-moderated teams.
+            membership_policy = (
+                TeamMembershipPolicy.OPEN
+                if private
+                else TeamMembershipPolicy.MODERATED
+            )
+            owner = self.makeTeam(
+                registrant, membership_policy=membership_policy
+            )
+        if project is None:
+            branch_sharing_policy = (
+                BranchSharingPolicy.PUBLIC
+                if not private
+                else BranchSharingPolicy.PROPRIETARY
+            )
+            project = self.makeProduct(
+                owner=registrant,
+                registrant=registrant,
+                information_type=information_type,
+                branch_sharing_policy=branch_sharing_policy,
+            )
+        if name is None:
+            name = self.getUniqueUnicode("craft-name")
+        if git_ref is None:
+            git_ref = self.makeGitRefs()[0]
+        recipe = getUtility(ICraftRecipeSet).new(
+            registrant=registrant,
+            owner=owner,
+            project=project,
+            name=name,
+            description=description,
+            git_ref=git_ref,
+            build_path=build_path,
+            require_virtualized=require_virtualized,
+            information_type=information_type,
+            auto_build=auto_build,
+            auto_build_channels=auto_build_channels,
+            store_upload=store_upload,
+            store_name=store_name,
+            store_secrets=store_secrets,
+            store_channels=store_channels,
+            date_created=date_created,
+        )
+        if is_stale is not None:
+            removeSecurityProxy(recipe).is_stale = is_stale
+        IStore(recipe).flush()
+        return recipe
 
     def makeRockRecipe(
         self,

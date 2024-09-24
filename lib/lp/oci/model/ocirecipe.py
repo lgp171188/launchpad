@@ -40,6 +40,7 @@ from lp.buildmaster.model.processor import Processor
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitref import GitRef
 from lp.code.model.gitrepository import GitRepository
+from lp.code.model.reciperegistry import recipe_registry
 from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import (
@@ -883,6 +884,7 @@ class OCIRecipeArch(StormBase):
         self.processor = processor
 
 
+@recipe_registry.register_recipe_type(IOCIRecipeSet, "oci")
 @implementer(IOCIRecipeSet)
 class OCIRecipeSet:
     def new(

@@ -17,6 +17,7 @@ from lp.app.errors import NotFoundError
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.browser.vcslisting import PersonTargetDefaultVCSNavigationMixin
 from lp.code.interfaces.branchnamespace import get_branch_namespace
+from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
@@ -71,6 +72,12 @@ class PersonProductNavigation(
     @stepthrough("+rock")
     def traverse_rock(self, name):
         return getUtility(IRockRecipeSet).getByName(
+            owner=self.context.person, project=self.context.product, name=name
+        )
+
+    @stepthrough("+craft")
+    def traverse_craft(self, name):
+        return getUtility(ICraftRecipeSet).getByName(
             owner=self.context.person, project=self.context.product, name=name
         )
 

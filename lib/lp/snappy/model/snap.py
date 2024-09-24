@@ -84,6 +84,7 @@ from lp.code.model.branchnamespace import (
 )
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
+from lp.code.model.reciperegistry import recipe_registry
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
@@ -1504,6 +1505,9 @@ class SnapArch(StormBase):
     processor = Reference(processor_id, "Processor.id")
 
 
+@recipe_registry.register_recipe_type(
+    ISnapSet, "Some snap packages build from this repository."
+)
 @implementer(ISnapSet)
 class SnapSet:
     """See `ISnapSet`."""
