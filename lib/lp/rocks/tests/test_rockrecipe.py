@@ -462,6 +462,66 @@ class TestRockRecipe(TestCaseWithFactory):
                     channels=removeSecurityProxy(job.channels),
                 )
 
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_base_bare(self):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: bare
+                    build-base: ubuntu@20.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+            """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("20.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_rockcraft_yaml_missing_build_base(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: bare
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            with ExpectedException(
+                BadPropertyError,
+                "If base is 'bare', then build-base must be specified.",
+            ):
+                job.recipe.requestBuildsFromJob(
+                    job.build_request,
+                    channels=removeSecurityProxy(job.channels),
+                )
+
     def test_requestBuildsFromJob_unified_rockcraft_yaml_platforms_missing(
         self,
     ):
