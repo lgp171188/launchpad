@@ -134,6 +134,12 @@ class UnifiedRockBaseConfiguration:
     def from_dict(cls, rockcraft_data, supported_arches):
         base = rockcraft_data["base"]
         if isinstance(base, str):
+            if base == "bare" and "build-base" not in rockcraft_data:
+                raise BadPropertyError(
+                    "If base is 'bare', then build-base must be specified."
+                )
+            if base == "bare":
+                base = rockcraft_data["build-base"]
             # Expected short-form value looks like 'ubuntu@24.04'
             match = re.match(r"(.+)@(.+)", base)
             if not match:
