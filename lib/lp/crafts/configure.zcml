@@ -40,4 +40,25 @@
         <allow interface="lp.crafts.interfaces.craftrecipe.ICraftRecipeSet" />
     </lp:securedutility>
 
+    <!-- CraftRecipeBuildRequest -->
+    <class class="lp.crafts.model.craftrecipe.CraftRecipeBuildRequest">
+        <require
+            permission="launchpad.View"
+            interface="lp.crafts.interfaces.craftrecipe.ICraftRecipeBuildRequest" />
+    </class>
+
+    <!-- crafts-related jobs -->
+    <class class="lp.crafts.model.craftrecipejob.CraftRecipeJob">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
+    </class>
+    <lp:securedutility
+        component="lp.crafts.model.craftrecipejob.CraftRecipeRequestBuildsJob"
+        provides="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJobSource">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJobSource" />
+    </lp:securedutility>
+    <class class="lp.crafts.model.craftrecipejob.CraftRecipeRequestBuildsJob">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJob" />
+    </class>
+
 </configure>

@@ -5,8 +5,11 @@
 
 __all__ = []
 
-from lp.app.security import AuthorizationBase
-from lp.crafts.interfaces.craftrecipe import ICraftRecipe
+from lp.app.security import AuthorizationBase, DelegatedAuthorization
+from lp.crafts.interfaces.craftrecipe import (
+    ICraftRecipe,
+    ICraftRecipeBuildRequest,
+)
 
 
 class ViewCraftRecipe(AuthorizationBase):
@@ -49,3 +52,11 @@ class AdminCraftRecipe(AuthorizationBase):
         return user.in_ppa_self_admins and EditCraftRecipe(
             self.obj
         ).checkAuthenticated(user)
+
+
+class ViewCraftRecipeBuildRequest(DelegatedAuthorization):
+    permission = "launchpad.View"
+    usedfor = ICraftRecipeBuildRequest
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.recipe, "launchpad.View")

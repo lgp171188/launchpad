@@ -25,14 +25,19 @@ from lp.code.model.reciperegistry import recipe_registry
 from lp.crafts.interfaces.craftrecipe import (
     CRAFT_RECIPE_ALLOW_CREATE,
     CRAFT_RECIPE_PRIVATE_FEATURE_FLAG,
+    CraftRecipeBuildRequestStatus,
     CraftRecipeFeatureDisabled,
     CraftRecipeNotOwner,
     CraftRecipePrivacyMismatch,
     CraftRecipePrivateFeatureDisabled,
     DuplicateCraftRecipeName,
     ICraftRecipe,
+    ICraftRecipeBuildRequest,
     ICraftRecipeSet,
     NoSourceForCraftRecipe,
+)
+from lp.crafts.interfaces.craftrecipejob import (
+    ICraftRecipeRequestBuildsJobSource,
 )
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.person import validate_public_person
@@ -41,6 +46,8 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
+from lp.services.job.interfaces.job import JobStatus
+from lp.services.propertycache import cachedproperty, get_property_cache
 
 
 def craft_recipe_modified(recipe, event):
@@ -242,6 +249,26 @@ class CraftRecipe(StormBase):
         """See `ICraftRecipe`."""
         IStore(CraftRecipe).remove(self)
 
+    def _checkRequestBuild(self, requester):
+        """May `requester` request builds of this craft recipe?"""
+        if not requester.inTeam(self.owner):
+            raise CraftRecipeNotOwner(
+                "%s cannot create craft recipe builds owned by %s."
+                % (requester.display_name, self.owner.display_name)
+            )
+
+    def requestBuilds(self, requester, channels=None, architectures=None):
+        """See `ICraftRecipe`."""
+        self._checkRequestBuild(requester)
+        job = getUtility(ICraftRecipeRequestBuildsJobSource).create(
+            self, requester, channels=channels, architectures=architectures
+        )
+        return self.getBuildRequest(job.job_id)
+
+    def getBuildRequest(self, job_id):
+        """See `ICraftRecipe`."""
+        return CraftRecipeBuildRequest(self, job_id)
+
 
 @recipe_registry.register_recipe_type(
     ICraftRecipeSet, "Some craft recipes build from this repository."
@@ -358,3 +385,65 @@ class CraftRecipeSet:
         self.findByGitRepository(repository).set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
         )
+
+
+@implementer(ICraftRecipeBuildRequest)
+class CraftRecipeBuildRequest:
+    """See `ICraftRecipeBuildRequest`.
+
+    This is not directly backed by a database table; instead, it is a
+    webservice-friendly view of an asynchronous build request.
+    """
+
+    def __init__(self, recipe, id):
+        self.recipe = recipe
+        self.id = id
+
+    @classmethod
+    def fromJob(cls, job):
+        """See `ICraftRecipeBuildRequest`."""
+        request = cls(job.recipe, job.job_id)
+        get_property_cache(request)._job = job
+        return request
+
+    @cachedproperty
+    def _job(self):
+        job_source = getUtility(ICraftRecipeRequestBuildsJobSource)
+        return job_source.getByRecipeAndID(self.recipe, self.id)
+
+    @property
+    def date_requested(self):
+        """See `ICraftRecipeBuildRequest`."""
+        return self._job.date_created
+
+    @property
+    def date_finished(self):
+        """See `ICraftRecipeBuildRequest`."""
+        return self._job.date_finished
+
+    @property
+    def status(self):
+        """See `ICraftRecipeBuildRequest`."""
+        status_map = {
+            JobStatus.WAITING: CraftRecipeBuildRequestStatus.PENDING,
+            JobStatus.RUNNING: CraftRecipeBuildRequestStatus.PENDING,
+            JobStatus.COMPLETED: CraftRecipeBuildRequestStatus.COMPLETED,
+            JobStatus.FAILED: CraftRecipeBuildRequestStatus.FAILED,
+            JobStatus.SUSPENDED: CraftRecipeBuildRequestStatus.PENDING,
+        }
+        return status_map[self._job.job.status]
+
+    @property
+    def error_message(self):
+        """See `ICraftRecipeBuildRequest`."""
+        return self._job.error_message
+
+    @property
+    def channels(self):
+        """See `ICraftRecipeBuildRequest`."""
+        return self._job.channels
+
+    @property
+    def architectures(self):
+        """See `ICraftRecipeBuildRequest`."""
+        return self._job.architectures

@@ -8,12 +8,14 @@ __all__ = [
     "BadCraftRecipeSearchContext",
     "CRAFT_RECIPE_ALLOW_CREATE",
     "CRAFT_RECIPE_PRIVATE_FEATURE_FLAG",
+    "CraftRecipeBuildRequestStatus",
     "CraftRecipeFeatureDisabled",
     "CraftRecipeNotOwner",
     "CraftRecipePrivacyMismatch",
     "CraftRecipePrivateFeatureDisabled",
     "DuplicateCraftRecipeName",
     "ICraftRecipe",
+    "ICraftRecipeBuildRequest",
     "ICraftRecipeSet",
     "NoSourceForCraftRecipe",
     "NoSuchCraftRecipe",
@@ -21,10 +23,21 @@ __all__ = [
 
 import http.client
 
+from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import error_status, exported
 from lazr.restful.fields import Reference, ReferenceChoice
 from zope.interface import Interface
-from zope.schema import Bool, Choice, Datetime, Dict, Int, List, Text, TextLine
+from zope.schema import (
+    Bool,
+    Choice,
+    Datetime,
+    Dict,
+    Int,
+    List,
+    Set,
+    Text,
+    TextLine,
+)
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -114,6 +127,85 @@ class BadCraftRecipeSearchContext(Exception):
     """The context is not valid for a craft recipe search."""
 
 
+class CraftRecipeBuildRequestStatus(EnumeratedType):
+    """The status of a request to build a craft recipe."""
+
+    PENDING = Item(
+        """
+        Pending
+
+        This craft recipe build request is pending.
+        """
+    )
+
+    FAILED = Item(
+        """
+        Failed
+
+        This craft recipe build request failed.
+        """
+    )
+
+    COMPLETED = Item(
+        """
+        Completed
+
+        This craft recipe build request completed successfully.
+        """
+    )
+
+
+class ICraftRecipeBuildRequest(Interface):
+    """A request to build a craft recipe."""
+
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    date_requested = Datetime(
+        title=_("The time when this request was made"),
+        required=True,
+        readonly=True,
+    )
+
+    date_finished = Datetime(
+        title=_("The time when this request finished"),
+        required=False,
+        readonly=True,
+    )
+
+    recipe = Reference(
+        # Really ICraftRecipe.
+        Interface,
+        title=_("Craft recipe"),
+        required=True,
+        readonly=True,
+    )
+
+    status = Choice(
+        title=_("Status"),
+        vocabulary=CraftRecipeBuildRequestStatus,
+        required=True,
+        readonly=True,
+    )
+
+    error_message = TextLine(
+        title=_("Error message"), required=True, readonly=True
+    )
+
+    channels = Dict(
+        title=_("Source snap channels for builds produced by this request"),
+        key_type=TextLine(),
+        required=False,
+        readonly=True,
+    )
+
+    architectures = Set(
+        title=_("If set, this request is limited to these architecture tags"),
+        value_type=TextLine(),
+        required=False,
+        readonly=True,
+    )
+
+
 class ICraftRecipeView(Interface):
     """`ICraftRecipe` attributes that require launchpad.View permission."""
 
@@ -149,6 +241,29 @@ class ICraftRecipeView(Interface):
 
     def visibleByUser(user):
         """Can the specified user see this craft recipe?"""
+
+    def requestBuilds(requester, channels=None, architectures=None):
+        """Request that the craft recipe be built.
+
+        This is an asynchronous operation; once the operation has finished,
+        the resulting build request's C{status} will be "Completed" and its
+        C{builds} collection will return the resulting builds.
+
+        :param requester: The person requesting the builds.
+        :param channels: A dictionary mapping snap names to channels to use
+            for these builds.
+        :param architectures: If not None, limit builds to architectures
+            with these architecture tags (in addition to any other
+            applicable constraints).
+        :return: An `ICraftRecipeBuildRequest`.
+        """
+
+    def getBuildRequest(job_id):
+        """Get an asynchronous build request by ID.
+
+        :param job_id: The ID of the build request.
+        :return: `ICraftRecipeBuildRequest`.
+        """
 
 
 class ICraftRecipeEdit(Interface):
