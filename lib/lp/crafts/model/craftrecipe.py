@@ -20,6 +20,7 @@ from lp.app.enums import (
     PUBLIC_INFORMATION_TYPES,
     InformationType,
 )
+from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.code.model.reciperegistry import recipe_registry
 from lp.crafts.interfaces.craftrecipe import (
@@ -40,7 +41,8 @@ from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeRequestBuildsJobSource,
 )
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.person import validate_public_person
+from lp.registry.interfaces.person import IPersonSet, validate_public_person
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
@@ -386,6 +388,31 @@ class CraftRecipeSet:
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
         )
 
+    def preloadDataForRecipes(self, recipes, user=None):
+        """See `ICraftRecipeSet`."""
+        recipes = [removeSecurityProxy(recipe) for recipe in recipes]
+        person_ids = set()
+        for recipe in recipes:
+            person_ids.add(recipe.registrant_id)
+            person_ids.add(recipe.owner_id)
+
+        repositories = load_related(
+            GitRepository, recipes, ["git_repository_id"]
+        )
+        if repositories:
+            GenericGitCollection.preloadDataForRepositories(repositories)
+
+        # Add repository owners to the list of pre-loaded persons. We need
+        # the target repository owner as well, since repository unique names
+        # aren't trigger-maintained.
+        person_ids.update(repository.owner_id for repository in repositories)
+
+        list(
+            getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                person_ids, need_validity=True
+            )
+        )
+
 
 @implementer(ICraftRecipeBuildRequest)
 class CraftRecipeBuildRequest:
@@ -437,6 +464,16 @@ class CraftRecipeBuildRequest:
     def error_message(self):
         """See `ICraftRecipeBuildRequest`."""
         return self._job.error_message
+
+    @property
+    def builds(self):
+        """See `ICraftRecipeBuildRequest`."""
+        return self._job.builds
+
+    @property
+    def requester(self):
+        """See `ICraftRecipeBuildRequest`."""
+        return self._job.requester
 
     @property
     def channels(self):

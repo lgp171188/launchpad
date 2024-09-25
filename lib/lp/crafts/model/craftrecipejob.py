@@ -14,6 +14,7 @@ from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
 from storm.databases.postgres import JSON
 from storm.locals import Desc, Int, Reference
+from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer, provider
 
@@ -23,6 +24,7 @@ from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeRequestBuildsJob,
     ICraftRecipeRequestBuildsJobSource,
 )
+from lp.crafts.model.craftrecipebuild import CraftRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -276,6 +278,22 @@ class CraftRecipeRequestBuildsJob(CraftRecipeJobDerived):
     def build_request(self):
         """See `ICraftRecipeRequestBuildsJob`."""
         return self.recipe.getBuildRequest(self.job.id)
+
+    @property
+    def builds(self):
+        """See `ICraftRecipeRequestBuildsJob`."""
+        build_ids = self.metadata.get("builds")
+        if build_ids:
+            return IStore(CraftRecipeBuild).find(
+                CraftRecipeBuild, CraftRecipeBuild.id.is_in(build_ids)
+            )
+        else:
+            return EmptyResultSet()
+
+    @builds.setter
+    def builds(self, builds):
+        """See `ICraftRecipeRequestBuildsJob`."""
+        self.metadata["builds"] = [build.id for build in builds]
 
     def run(self):
         """See `IRunnableJob`."""

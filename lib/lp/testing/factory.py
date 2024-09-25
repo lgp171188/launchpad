@@ -135,6 +135,8 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
 from lp.code.model.diff import Diff, PreviewDiff
 from lp.code.tests.helpers import GitHostingFixture
 from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
+from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuildSet
+from lp.crafts.model.craftrecipebuild import CraftFile
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -6977,6 +6979,65 @@ class LaunchpadObjectFactory(ObjectFactory):
         return recipe.requestBuilds(
             requester, channels=channels, architectures=architectures
         )
+
+    def makeCraftRecipeBuild(
+        self,
+        registrant=None,
+        recipe=None,
+        build_request=None,
+        requester=None,
+        distro_arch_series=None,
+        channels=None,
+        store_upload_metadata=None,
+        date_created=DEFAULT,
+        status=BuildStatus.NEEDSBUILD,
+        builder=None,
+        duration=None,
+        **kwargs,
+    ):
+        if recipe is None:
+            if registrant is None:
+                if build_request is not None:
+                    registrant = build_request.requester
+                else:
+                    registrant = requester
+            recipe = self.makeCraftRecipe(registrant=registrant, **kwargs)
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
+        if build_request is None:
+            build_request = self.makeCraftRecipeBuildRequest(
+                recipe=recipe, requester=requester, channels=channels
+            )
+        build = getUtility(ICraftRecipeBuildSet).new(
+            build_request,
+            recipe,
+            distro_arch_series,
+            channels=channels,
+            store_upload_metadata=store_upload_metadata,
+            date_created=date_created,
+        )
+        if duration is not None:
+            removeSecurityProxy(build).updateStatus(
+                BuildStatus.BUILDING,
+                builder=builder,
+                date_started=build.date_created,
+            )
+            removeSecurityProxy(build).updateStatus(
+                status,
+                builder=builder,
+                date_finished=build.date_started + duration,
+            )
+        else:
+            removeSecurityProxy(build).updateStatus(status, builder=builder)
+        IStore(build).flush()
+        return build
+
+    def makeCraftFile(self, build=None, library_file=None):
+        if build is None:
+            build = self.makeCraftRecipeBuild()
+        if library_file is None:
+            library_file = self.makeLibraryFileAlias()
+        return ProxyFactory(CraftFile(build=build, library_file=library_file))
 
     def makeRockRecipe(
         self,

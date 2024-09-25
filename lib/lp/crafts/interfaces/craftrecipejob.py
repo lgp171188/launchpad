@@ -11,13 +11,14 @@ __all__ = [
 
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Datetime, Dict, Set, TextLine
+from zope.schema import Datetime, Dict, List, Set, TextLine
 
 from lp import _
 from lp.crafts.interfaces.craftrecipe import (
     ICraftRecipe,
     ICraftRecipeBuildRequest,
 )
+from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
 from lp.registry.interfaces.person import IPerson
 from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
@@ -90,6 +91,13 @@ class ICraftRecipeRequestBuildsJob(IRunnableJob):
     build_request = Reference(
         title=_("The build request corresponding to this job."),
         schema=ICraftRecipeBuildRequest,
+        required=True,
+        readonly=True,
+    )
+
+    builds = List(
+        title=_("The builds created by this request."),
+        value_type=Reference(schema=ICraftRecipeBuild),
         required=True,
         readonly=True,
     )

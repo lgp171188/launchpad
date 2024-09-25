@@ -258,6 +258,15 @@ class BuildFarmJobType(DBEnumeratedType):
         """,
     )
 
+    CRAFTRECIPEBUILD = DBItem(
+        11,
+        """
+        Craft recipe build
+
+        Build a craft from a recipe.
+        """,
+    )
+
 
 class BuildQueueStatus(DBEnumeratedType):
     """Build queue status.

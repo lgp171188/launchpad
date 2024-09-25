@@ -12,5 +12,16 @@
         <lp:url
             for="lp.crafts.interfaces.craftrecipe.ICraftRecipe"
             urldata="lp.crafts.browser.craftrecipe.CraftRecipeURL" />
+        <lp:navigation
+            module="lp.crafts.browser.craftrecipe"
+            classes="CraftRecipeNavigation" />
+        <lp:url
+            for="lp.crafts.interfaces.craftrecipe.ICraftRecipeBuildRequest"
+            path_expression="string:+build-request/${id}"
+            attribute_to_parent="recipe" />
+        <lp:url
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            path_expression="string:+build/${id}"
+            attribute_to_parent="recipe" />
     </lp:facet>
 </configure>

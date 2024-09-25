@@ -25,7 +25,7 @@ import http.client
 
 from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import error_status, exported
-from lazr.restful.fields import Reference, ReferenceChoice
+from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -48,6 +48,7 @@ from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.services.fields import PersonChoice, PublicPersonChoice
 from lp.snappy.validators.channels import channels_validator
@@ -202,6 +203,21 @@ class ICraftRecipeBuildRequest(Interface):
         title=_("If set, this request is limited to these architecture tags"),
         value_type=TextLine(),
         required=False,
+        readonly=True,
+    )
+
+    builds = CollectionField(
+        title=_("Builds produced by this request"),
+        # Really ICraftRecipeBuild.
+        value_type=Reference(schema=Interface),
+        required=True,
+        readonly=True,
+    )
+
+    requester = Reference(
+        title=_("The person requesting the builds."),
+        schema=IPerson,
+        required=True,
         readonly=True,
     )
 
@@ -496,3 +512,6 @@ class ICraftRecipeSet(Interface):
         After this, any craft recipes that previously used this repository
         will have no source and so cannot dispatch new builds.
         """
+
+    def preloadDataForRecipes(recipes, user):
+        """Load the data related to a list of craft recipes."""
