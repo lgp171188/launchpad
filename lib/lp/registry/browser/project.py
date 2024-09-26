@@ -392,6 +392,7 @@ class ProjectEditView(LaunchpadEditFormView):
         "summary",
         "description",
         "bug_reporting_guidelines",
+        "content_templates",
         "bug_reported_acknowledgement",
         "homepageurl",
         "bugtracker",

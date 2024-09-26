@@ -57,7 +57,7 @@ file the bug.
 If the user for some reason would erase the summary, an error message
 will be displayed as well.
 
-    >>> user_browser.getControl("Further information").value = "not empty"
+    >>> user_browser.getControl("Bug Description").value = "not empty"
     >>> user_browser.getControl("Summary", index=0).value = ""
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> print(user_browser.url)
@@ -76,7 +76,7 @@ will be displayed as well.
 With both values set, the bug is created.
 
     >>> user_browser.getControl("Summary", index=0).value = "a brand new bug"
-    >>> user_browser.getControl("Further information").value = "test"
+    >>> user_browser.getControl("Bug Description").value = "test"
     >>> user_browser.getControl("Submit Bug Report").click()
 
     >>> print(user_browser.url)
@@ -167,7 +167,7 @@ shown.
 But, as before, entering a description and submitting the bug takes the
 user to the bug page.
 
-    >>> user_browser.getControl("Further information").value = (
+    >>> user_browser.getControl("Bug Description").value = (
     ...     "Frankenzombulon is only meant to check my mail."
     ... )
     >>> user_browser.getControl("Submit Bug Report").click()

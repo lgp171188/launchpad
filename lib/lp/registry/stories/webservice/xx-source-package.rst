@@ -36,6 +36,7 @@ distribution series.
     distribution_link: 'http://.../my-distro'
     distroseries_link: 'http://.../my-distro/my-series'
     latest_published_component_name: None
+    content_templates: None
     name: 'evolution'
     official_bug_tags: []
     productseries_link: None

@@ -11,6 +11,7 @@ __all__ = [
 
 from datetime import timezone
 
+from storm.databases.postgres import JSON
 from storm.expr import And, Desc, Func, In, Is, Join, Min
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from storm.store import Store
@@ -159,6 +160,7 @@ class ProjectGroup(
     bugtracker_id = Int(name="bugtracker", allow_none=True, default=None)
     bugtracker = Reference(bugtracker_id, "BugTracker.id")
     bug_reporting_guidelines = Unicode(default=None)
+    content_templates = JSON(default=None)
     bug_reported_acknowledgement = Unicode(default=None)
 
     def __init__(

@@ -1148,6 +1148,7 @@ class DistributionEditView(
         "summary",
         "description",
         "bug_reporting_guidelines",
+        "content_templates",
         "bug_reported_acknowledgement",
         "package_derivatives_email",
         "icon",

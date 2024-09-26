@@ -580,6 +580,7 @@
             set_attributes="
                 bug_reported_acknowledgement
                 bug_reporting_guidelines
+                content_templates
                 enable_bugfiling_duplicate_search
                 "/>
     </class>
@@ -1447,6 +1448,7 @@
                 enable_bugfiling_duplicate_search
                 bug_reported_acknowledgement
                 bug_reporting_guidelines
+                content_templates
                 bugtracker
                 enable_bug_expiration
                 official_bug_tags
@@ -1505,6 +1507,7 @@
             attributes="
                 bug_reported_acknowledgement
                 bug_reporting_guidelines
+                content_templates
                 bugtargetname
                 createBug
                 enable_bugfiling_duplicate_search"/>
@@ -1749,6 +1752,7 @@
              attributes="
                  bug_reported_acknowledgement
                  bug_reporting_guidelines
+                 content_templates
                  bugtargetname
                  createBug
                  enable_bugfiling_duplicate_search
@@ -1834,6 +1838,7 @@
             set_attributes="
                 bug_reported_acknowledgement
                 bug_reporting_guidelines
+                content_templates
                 code_admin
                 default_traversal_policy
                 description

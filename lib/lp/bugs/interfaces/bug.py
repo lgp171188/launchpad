@@ -1450,7 +1450,7 @@ class IBugAddForm(IBug):
     )
     owner = Int(title=_("Owner"), required=True)
     comment = Description(
-        title=_("Further information"),
+        title=_("Bug Description"),
         strip_text=True,
         trailing_only=True,
         min_length=1,

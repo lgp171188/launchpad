@@ -86,6 +86,7 @@ For distroseries we publish a subset of its attributes.
     include_long_descriptions: True
     index_compressors: ['gzip', 'bzip2']
     language_pack_full_export_requested: False
+    content_templates: None
     main_archive_link: 'http://.../ubuntu/+archive/primary'
     name: 'hoary'
     nominatedarchindep_link: 'http://.../ubuntu/hoary/i386'

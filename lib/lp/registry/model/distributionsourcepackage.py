@@ -15,6 +15,7 @@ from threading import local
 import six
 import transaction
 from breezy.lru_cache import LRUCache
+from storm.databases.postgres import JSON
 from storm.expr import And, Cast, Desc
 from storm.locals import SQL, Bool, Int, Not, Reference, Store, Unicode
 from zope.interface import implementer
@@ -101,6 +102,7 @@ class DistributionSourcePackage(
     bug_reporting_guidelines = DistributionSourcePackageProperty(
         "bug_reporting_guidelines"
     )
+    content_templates = DistributionSourcePackageProperty("content_templates")
     bug_reported_acknowledgement = DistributionSourcePackageProperty(
         "bug_reported_acknowledgement"
     )
@@ -605,6 +607,7 @@ class DistributionSourcePackageInDatabase(StormBase):
     sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
 
     bug_reporting_guidelines = Unicode()
+    content_templates = JSON()
     bug_reported_acknowledgement = Unicode()
 
     bug_count = Int()

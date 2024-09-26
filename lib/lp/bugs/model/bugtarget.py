@@ -10,6 +10,7 @@ __all__ = [
     "OfficialBugTagTargetMixin",
 ]
 
+
 from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer

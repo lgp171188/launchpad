@@ -1,10 +1,10 @@
-Bug Reporting Guidelines and acknowledgement messages
+Bug Reporting Guidelines, Acknowledgement Messages and Description Templates
 =====================================================
 
-Some helpful explanatory text - guidelines - can be set for
-distributions, product groups, products, and source packages, as well
-as an acknowledgement message that is displayed when a bug has been
-filed.
+Some helpful explanatory text - guidelines - and a pre-defined bug description
+template can be set for distributions, product groups, products, and source
+packages, as well as an acknowledgement message that is displayed when a bug
+has been filed.
 
     >>> contexts = [
     ...     ("Ubuntu", "ubuntu", "+edit"),
@@ -22,6 +22,9 @@ filed.
     ...         "The version of %s you're using.\n"
     ...         "See http://example.com for more details." % (context_name,)
     ...     )
+    ...     admin_browser.getControl(name="field.content_templates").value = (
+    ...         "The pre-defined bug template."
+    ...     )
     ...     admin_browser.getControl(
     ...         name="field.bug_reported_acknowledgement"
     ...     ).value = (
@@ -34,8 +37,9 @@ filed.
     ...         admin_browser.getControl("Change").click()
     ...
 
-The guidelines are not displayed on the initial basic bug-reporting
-page, because that page does not include a bug description field.
+The guidelines and bug templates are not displayed on the initial basic
+bug-reporting page, because that page does not include a bug description
+field.
 
     >>> def print_guidelines(name, browser):
     ...     print("*")
@@ -96,9 +100,7 @@ description.
     ...         "It doesn't work"
     ...     )
     ...     user_browser.getControl("Continue").click()
-    ...     user_browser.getControl("Further information").value = (
-    ...         "please help!"
-    ...     )
+    ...     user_browser.getControl("Bug Description").value = "please help!"
     ...     print_guidelines(context_name, user_browser)
     ...     user_browser.getControl("Submit Bug Report").click()
     ...     print_acknowledgement_message(user_browser)
@@ -230,11 +232,12 @@ as bug #297743, "When filing a bug always display the appropriate
 reporting guidelines".
 
 
-Editing the guidelines
+Editing the guidelines and description template.
 ----------------------
 
 Unprivileged Launchpad users do not see the link to the page where the
-bug reporting guidelines can be changed, but admins do.
+bug reporting guidelines and the bug description template can be changed,
+but admins do.
 
     >>> import re
     >>> import sys
@@ -270,8 +273,8 @@ bug reporting guidelines can be changed, but admins do.
       - User: LinkNotFoundError
       - Admin: True
 
-Unprivileged cannot access the page for changing bug reporting
-guidelines.
+Unprivileged cannot access the page for changing the bug reporting
+guidelines and the bug template.
 
     >>> for context_name, context_path, view in contexts:
     ...     edit_url = "http://launchpad.test/%s/%s" % (context_path, view)

@@ -686,6 +686,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
             "blueprints_usage",
             "branch",
             "bug_reported_acknowledgement",
+            "content_templates",
             "bug_reporting_guidelines",
             "bug_subscriptions",
             "bug_supervisor",

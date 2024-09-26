@@ -325,6 +325,7 @@ class IOCIProjectSet(Interface):
         date_created=None,
         description=None,
         bug_reporting_guidelines=None,
+        content_templates=None,
         bug_reported_acknowledgement=None,
         bugfiling_duplicate_search=False,
     ):

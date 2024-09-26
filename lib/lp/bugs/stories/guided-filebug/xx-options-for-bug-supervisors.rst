@@ -65,7 +65,7 @@ Using these extra options
     >>> user_browser.open("http://bugs.launchpad.test/firefox/+filebug")
     >>> user_browser.getControl("Summary", index=0).value = "Bug"
     >>> user_browser.getControl("Continue").click()
-    >>> user_browser.getControl("Further information").value = "Blah"
+    >>> user_browser.getControl("Bug Description").value = "Blah"
 
 A bug supervisor can set the status, importance, milestone, and/or
 assignee, and the bug will be filed with those choices.

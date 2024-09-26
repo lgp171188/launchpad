@@ -34,7 +34,16 @@ from lazr.restful.declarations import (
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Choice, Datetime, List, Object, Text
+from zope.schema import (
+    Bool,
+    Choice,
+    Datetime,
+    Dict,
+    List,
+    Object,
+    Text,
+    TextLine,
+)
 
 from lp import _
 from lp.app.enums import (
@@ -265,6 +274,26 @@ class IBugTarget(IHasBugs):
             required=False,
             max_length=50000,
         )
+    )
+
+    content_templates = Dict(
+        title=("Templates to use for reporting a bug"),
+        description=(
+            "This pre-defined template will be given to the "
+            "users to guide them when reporting a bug. "
+        ),
+        key_type=TextLine(),
+        value_type=Dict(
+            key_type=TextLine(),
+            value_type=Text(
+                required=False,
+                max_length=50000,
+            ),
+            required=False,
+            max_length=50000,
+        ),
+        required=False,
+        max_length=50000,
     )
 
     bug_reported_acknowledgement = exported(
