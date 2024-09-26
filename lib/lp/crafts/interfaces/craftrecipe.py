@@ -8,6 +8,8 @@ __all__ = [
     "BadCraftRecipeSearchContext",
     "CRAFT_RECIPE_ALLOW_CREATE",
     "CRAFT_RECIPE_PRIVATE_FEATURE_FLAG",
+    "CraftRecipeBuildAlreadyPending",
+    "CraftRecipeBuildDisallowedArchitecture",
     "CraftRecipeBuildRequestStatus",
     "CraftRecipeFeatureDisabled",
     "CraftRecipeNotOwner",
@@ -126,6 +128,27 @@ class CraftRecipePrivacyMismatch(Exception):
 
 class BadCraftRecipeSearchContext(Exception):
     """The context is not valid for a craft recipe search."""
+
+
+@error_status(http.client.BAD_REQUEST)
+class CraftRecipeBuildAlreadyPending(Exception):
+    """A build was requested when an identical build was already pending."""
+
+    def __init__(self):
+        super().__init__(
+            "An identical build of this craft recipe is already pending."
+        )
+
+
+@error_status(http.client.BAD_REQUEST)
+class CraftRecipeBuildDisallowedArchitecture(Exception):
+    """A build was requested for a disallowed architecture."""
+
+    def __init__(self, das):
+        super().__init__(
+            "This craft recipe is not allowed to build for %s/%s."
+            % (das.distroseries.name, das.architecturetag)
+        )
 
 
 class CraftRecipeBuildRequestStatus(EnumeratedType):
@@ -257,6 +280,20 @@ class ICraftRecipeView(Interface):
 
     def visibleByUser(user):
         """Can the specified user see this craft recipe?"""
+
+    def requestBuild(build_request, distro_arch_series, channels=None):
+        """Request a single build of this craft recipe.
+
+        This method is for internal use; external callers should use
+        `requestBuilds` instead.
+
+        :param build_request: The `ICraftRecipeBuildRequest` job being
+            processed.
+        :param distro_arch_series: The architecture to build for.
+        :param channels: A dictionary mapping snap names to channels to use
+            for this build.
+        :return: `ICraftRecipeBuild`.
+        """
 
     def requestBuilds(requester, channels=None, architectures=None):
         """Request that the craft recipe be built.

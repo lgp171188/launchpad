@@ -10,6 +10,8 @@ from lp.crafts.interfaces.craftrecipe import (
     ICraftRecipe,
     ICraftRecipeBuildRequest,
 )
+from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
+from lp.security import AdminByBuilddAdmin
 
 
 class ViewCraftRecipe(AuthorizationBase):
@@ -60,3 +62,32 @@ class ViewCraftRecipeBuildRequest(DelegatedAuthorization):
 
     def __init__(self, obj):
         super().__init__(obj, obj.recipe, "launchpad.View")
+
+
+class ViewCraftRecipeBuild(DelegatedAuthorization):
+    permission = "launchpad.View"
+    usedfor = ICraftRecipeBuild
+
+    def iter_objects(self):
+        yield self.obj.recipe
+
+
+class EditCraftRecipeBuild(AdminByBuilddAdmin):
+    permission = "launchpad.Edit"
+    usedfor = ICraftRecipeBuild
+
+    def checkAuthenticated(self, user):
+        """Check edit access for craft recipe builds.
+
+        Allow admins, buildd admins, and the owner of the craft recipe.
+        (Note that the requester of the build is required to be in the team
+        that owns the craft recipe.)
+        """
+        auth_recipe = EditCraftRecipe(self.obj.recipe)
+        if auth_recipe.checkAuthenticated(user):
+            return True
+        return super().checkAuthenticated(user)
+
+
+class AdminCraftRecipeBuild(AdminByBuilddAdmin):
+    usedfor = ICraftRecipeBuild
