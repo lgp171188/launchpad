@@ -382,6 +382,10 @@ class CraftRecipeSet:
         # privacy infrastructure.
         return IStore(CraftRecipe).find(CraftRecipe, *clauses)
 
+    def findByOwner(self, owner):
+        """See `ICraftRecipeSet`."""
+        return IStore(CraftRecipe).find(CraftRecipe, owner=owner)
+
     def detachFromGitRepository(self, repository):
         """See `ICraftRecipeSet`."""
         self.findByGitRepository(repository).set(

@@ -506,6 +506,9 @@ class ICraftRecipeSet(Interface):
             these Git reference paths.
         """
 
+    def findByOwner(owner):
+        """Return all craft recipes for the given owner."""
+
     def detachFromGitRepository(repository):
         """Detach all craft recipes from the given Git repository.
 
