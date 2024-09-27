@@ -8,10 +8,22 @@ __all__ = [
 ]
 
 from datetime import timezone
+from operator import itemgetter
 
+from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
-from storm.locals import Bool, DateTime, Int, Reference, Unicode
+from storm.locals import (
+    Bool,
+    DateTime,
+    Int,
+    Join,
+    Or,
+    Reference,
+    Store,
+    Unicode,
+)
 from zope.component import getUtility
+from zope.event import notify
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -20,12 +32,15 @@ from lp.app.enums import (
     PUBLIC_INFORMATION_TYPES,
     InformationType,
 )
+from lp.buildmaster.enums import BuildStatus
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.code.model.reciperegistry import recipe_registry
 from lp.crafts.interfaces.craftrecipe import (
     CRAFT_RECIPE_ALLOW_CREATE,
     CRAFT_RECIPE_PRIVATE_FEATURE_FLAG,
+    CraftRecipeBuildAlreadyPending,
+    CraftRecipeBuildDisallowedArchitecture,
     CraftRecipeBuildRequestStatus,
     CraftRecipeFeatureDisabled,
     CraftRecipeNotOwner,
@@ -37,19 +52,27 @@ from lp.crafts.interfaces.craftrecipe import (
     ICraftRecipeSet,
     NoSourceForCraftRecipe,
 )
+from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuildSet
 from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeRequestBuildsJobSource,
 )
+from lp.crafts.model.craftrecipebuild import CraftRecipeBuild
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.person import IPersonSet, validate_public_person
+from lp.registry.model.distribution import Distribution
+from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.series import ACTIVE_STATUSES
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.soyuz.model.distroarchseries import DistroArchSeries, PocketChroot
 
 
 def craft_recipe_modified(recipe, event):
@@ -247,6 +270,52 @@ class CraftRecipe(StormBase):
         # more privacy infrastructure.
         return False
 
+    def _isBuildableArchitectureAllowed(self, das):
+        """Check whether we may build for a buildable `DistroArchSeries`.
+
+        The caller is assumed to have already checked that a suitable chroot
+        is available (either directly or via
+        `DistroSeries.buildable_architectures`).
+        """
+        return das.enabled and (
+            das.processor.supports_virtualized or not self.require_virtualized
+        )
+
+    def _isArchitectureAllowed(self, das):
+        """Check whether we may build for a `DistroArchSeries`."""
+        return (
+            das.getChroot() is not None
+            and self._isBuildableArchitectureAllowed(das)
+        )
+
+    def getAllowedArchitectures(self):
+        """See `ICraftRecipe`."""
+        store = Store.of(self)
+        origin = [
+            DistroArchSeries,
+            Join(
+                DistroSeries, DistroArchSeries.distroseries == DistroSeries.id
+            ),
+            Join(Distribution, DistroSeries.distribution == Distribution.id),
+            Join(
+                PocketChroot,
+                PocketChroot.distroarchseries == DistroArchSeries.id,
+            ),
+            Join(LibraryFileAlias, PocketChroot.chroot == LibraryFileAlias.id),
+        ]
+        # Preload DistroSeries and Distribution, since we'll need those in
+        # determine_architectures_to_build.
+        results = store.using(*origin).find(
+            (DistroArchSeries, DistroSeries, Distribution),
+            DistroSeries.status.is_in(ACTIVE_STATUSES),
+        )
+        all_buildable_dases = DecoratedResultSet(results, itemgetter(0))
+        return [
+            das
+            for das in all_buildable_dases
+            if self._isBuildableArchitectureAllowed(das)
+        ]
+
     def destroySelf(self):
         """See `ICraftRecipe`."""
         IStore(CraftRecipe).remove(self)
@@ -258,6 +327,47 @@ class CraftRecipe(StormBase):
                 "%s cannot create craft recipe builds owned by %s."
                 % (requester.display_name, self.owner.display_name)
             )
+
+    def requestBuild(self, build_request, distro_arch_series, channels=None):
+        """Request a single build of this craft recipe.
+
+        This method is for internal use; external callers should use
+        `requestBuilds` instead.
+
+        :param build_request: The `ICraftRecipeBuildRequest` job being
+            processed.
+        :param distro_arch_series: The architecture to build for.
+        :param channels: A dictionary mapping snap names to channels to use
+            for this build.
+        :return: `ICraftRecipeBuild`.
+        """
+        self._checkRequestBuild(build_request.requester)
+        if not self._isArchitectureAllowed(distro_arch_series):
+            raise CraftRecipeBuildDisallowedArchitecture(distro_arch_series)
+
+        if not channels:
+            channels_clause = Or(
+                CraftRecipeBuild.channels == None,
+                CraftRecipeBuild.channels == {},
+            )
+        else:
+            channels_clause = CraftRecipeBuild.channels == channels
+        pending = IStore(self).find(
+            CraftRecipeBuild,
+            CraftRecipeBuild.recipe == self,
+            CraftRecipeBuild.processor == distro_arch_series.processor,
+            channels_clause,
+            CraftRecipeBuild.status == BuildStatus.NEEDSBUILD,
+        )
+        if pending.any() is not None:
+            raise CraftRecipeBuildAlreadyPending
+
+        build = getUtility(ICraftRecipeBuildSet).new(
+            build_request, self, distro_arch_series, channels=channels
+        )
+        build.queueBuild()
+        notify(ObjectCreatedEvent(build, user=build_request.requester))
+        return build
 
     def requestBuilds(self, requester, channels=None, architectures=None):
         """See `ICraftRecipe`."""
@@ -381,6 +491,10 @@ class CraftRecipeSet:
         # XXX ruinedyourlife 2024-09-24: Check permissions once we have some
         # privacy infrastructure.
         return IStore(CraftRecipe).find(CraftRecipe, *clauses)
+
+    def findByOwner(self, owner):
+        """See `ICraftRecipeSet`."""
+        return IStore(CraftRecipe).find(CraftRecipe, owner=owner)
 
     def detachFromGitRepository(self, repository):
         """See `ICraftRecipeSet`."""

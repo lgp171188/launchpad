@@ -23,6 +23,10 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeSet,
 )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.crafts.interfaces.craftrecipe import (
+    CRAFT_RECIPE_ALLOW_CREATE,
+    ICraftRecipeSet,
+)
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE, IOCIRecipeSet
 from lp.registry.enums import BugSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
@@ -951,6 +955,60 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         duplicate, mergee = self._do_merge(duplicate, mergee)
         recipes = sorted(
             getUtility(IRockRecipeSet).findByOwner(mergee),
+            key=attrgetter("name"),
+        )
+        self.assertEqual(2, len(recipes))
+        self.assertThat(
+            recipes,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        git_repository=ref2.repository,
+                        git_path=ref2.path,
+                        name="foo",
+                    ),
+                    MatchesStructure.byEquality(
+                        git_repository=ref.repository,
+                        git_path=ref.path,
+                        name="foo-1",
+                    ),
+                ]
+            ),
+        )
+
+    def test_merge_moves_craft_recipes(self):
+        # When person/teams are merged, craft recipes owned by the from
+        # person are moved.
+        self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        self.factory.makeCraftRecipe(registrant=duplicate, owner=duplicate)
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        self.assertEqual(
+            1, getUtility(ICraftRecipeSet).findByOwner(mergee).count()
+        )
+
+    def test_merge_with_duplicated_craft_recipes(self):
+        # If both the from and to people have craft recipes with the same
+        # name, merging renames the duplicate from the from person's side.
+        self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        [ref] = self.factory.makeGitRefs()
+        [ref2] = self.factory.makeGitRefs()
+        self.factory.makeCraftRecipe(
+            registrant=duplicate, owner=duplicate, name="foo", git_ref=ref
+        )
+        self.factory.makeCraftRecipe(
+            registrant=mergee, owner=mergee, name="foo", git_ref=ref2
+        )
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        recipes = sorted(
+            getUtility(ICraftRecipeSet).findByOwner(mergee),
             key=attrgetter("name"),
         )
         self.assertEqual(2, len(recipes))
