@@ -1,0 +1,27 @@
+<!-- Copyright 2024 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
+    i18n_domain="launchpad">
+    <lp:facet facet="overview">
+        <lp:url
+            for="lp.crafts.interfaces.craftrecipe.ICraftRecipe"
+            urldata="lp.crafts.browser.craftrecipe.CraftRecipeURL" />
+        <lp:navigation
+            module="lp.crafts.browser.craftrecipe"
+            classes="CraftRecipeNavigation" />
+        <lp:url
+            for="lp.crafts.interfaces.craftrecipe.ICraftRecipeBuildRequest"
+            path_expression="string:+build-request/${id}"
+            attribute_to_parent="recipe" />
+        <lp:url
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            path_expression="string:+build/${id}"
+            attribute_to_parent="recipe" />
+    </lp:facet>
+</configure>
