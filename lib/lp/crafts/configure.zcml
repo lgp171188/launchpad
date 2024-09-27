@@ -7,11 +7,14 @@
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
     xmlns:lp="http://namespaces.canonical.com/lp"
+    xmlns:webservice="http://namespaces.canonical.com/webservice"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
     <lp:authorizations module=".security" />
     <include package=".browser" />
+
+    <lp:help-folder folder="help" name="+help-crafts" />
 
     <!-- CraftRecipe -->
     <class class="lp.crafts.model.craftrecipe.CraftRecipe">
@@ -47,7 +50,45 @@
             interface="lp.crafts.interfaces.craftrecipe.ICraftRecipeBuildRequest" />
     </class>
 
-    <!-- crafts-related jobs -->
+    <!-- CraftRecipeBuild -->
+    <class class="lp.crafts.model.craftrecipebuild.CraftRecipeBuild">
+        <require
+            permission="launchpad.View"
+            interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildView" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildEdit" />
+        <require
+            permission="launchpad.Admin"
+            interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildAdmin" />
+    </class>
+
+    <!-- CraftRecipeBuildSet -->
+    <lp:securedutility
+        class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildSet"
+        provides="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildSet">
+        <allow interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildSet" />
+    </lp:securedutility>
+    <lp:securedutility
+        class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildSet"
+        provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
+        name="CRAFTRECIPEBUILD">
+        <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
+    </lp:securedutility>
+
+    <!-- CraftFile -->
+    <class class="lp.crafts.model.craftrecipebuild.CraftFile">
+        <allow interface="lp.crafts.interfaces.craftrecipebuild.ICraftFile" />
+    </class>
+
+    <!-- CraftRecipeBuildBehaviour -->
+    <adapter
+        for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+        provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
+        factory="lp.crafts.model.craftrecipebuildbehaviour.CraftRecipeBuildBehaviour"
+        permission="zope.Public" />
+
+    <!-- craft-related jobs -->
     <class class="lp.crafts.model.craftrecipejob.CraftRecipeJob">
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
     </class>
@@ -60,5 +101,4 @@
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJob" />
     </class>
-
 </configure>
