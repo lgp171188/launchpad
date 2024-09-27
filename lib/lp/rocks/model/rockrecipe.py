@@ -533,27 +533,18 @@ class RockRecipe(StormBase):
             rockcraft_data = removeSecurityProxy(
                 getUtility(IRockRecipeSet).getRockcraftYaml(self)
             )
-
-            # Sort by (Distribution.id, DistroSeries.id, Processor.id) for
-            # determinism.  This is chosen to be a similar order as in
-            # BinaryPackageBuildSet.createForSource, to minimize confusion.
-            supported_arches = [
-                das
-                for das in sorted(
-                    self.getAllowedArchitectures(),
-                    key=attrgetter(
-                        "distroseries.distribution.id",
-                        "distroseries.id",
-                        "processor.id",
-                    ),
-                )
-                if (
-                    architectures is None
-                    or das.architecturetag in architectures
-                )
-            ]
+            supported_arches = sorted(
+                self.getAllowedArchitectures(),
+                key=attrgetter(
+                    "distroseries.distribution.id",
+                    "distroseries.id",
+                    "processor.id",
+                ),
+            )
             instances_to_build = determine_instances_to_build(
-                rockcraft_data, supported_arches
+                rockcraft_data,
+                supported_arches=supported_arches,
+                requested_architectures=architectures,
             )
         except Exception as e:
             if not allow_failures:

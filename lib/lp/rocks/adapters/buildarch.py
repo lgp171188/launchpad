@@ -131,7 +131,9 @@ class UnifiedRockBaseConfiguration:
         self.run_on = list(build_on) if run_on is None else run_on
 
     @classmethod
-    def from_dict(cls, rockcraft_data, supported_arches):
+    def from_dict(
+        cls, rockcraft_data, supported_arches, requested_architectures
+    ):
         base = rockcraft_data["base"]
         if isinstance(base, str):
             if base == "bare" and "build-base" not in rockcraft_data:
@@ -155,9 +157,6 @@ class UnifiedRockBaseConfiguration:
             # interpreted as a float. So we convert it to a string.
             base_channel = str(base["channel"])
 
-        # XXX jugmac00 2024-09-18: Find out if we need 'build-base' or not.
-        # There is no existing code that is using that.
-
         platforms = rockcraft_data.get("platforms")
         if not platforms:
             raise MissingPropertyError(
@@ -165,6 +164,13 @@ class UnifiedRockBaseConfiguration:
             )
         configs = []
         for platform, configuration in platforms.items():
+            # when we request specific architectures, we need to check
+            # whether they are defined in the rockcraft.yaml configuration
+            # when we do not request specific arches, we build for all
+            # platforms defined in the configuration files
+            if requested_architectures:
+                if platform not in requested_architectures:
+                    continue
             # The 'platforms' property and its values look like
             # platforms:
             #   ubuntu-amd64:
@@ -209,17 +215,22 @@ class UnifiedRockBaseConfiguration:
         return configs
 
 
-def determine_instances_to_build(rockcraft_data, supported_arches):
+def determine_instances_to_build(
+    rockcraft_data, supported_arches, requested_architectures=None
+):
     """Return a list of instances to build based on rockcraft.yaml.
 
     :param rockcraft_data: A parsed rockcraft.yaml.
     :param supported_arches: An ordered list of all `DistroArchSeries` that
         we can create builds for.  Note that these may span multiple
         `DistroSeries`.
+    :param requested_architectures: A list of requested architectures, or None;
+        for the latter case we build all architectures specified in the
+        rockcraft.yaml configuration file.
     :return: A list of `DistroArchSeries`.
     """
     configs = UnifiedRockBaseConfiguration.from_dict(
-        rockcraft_data, supported_arches
+        rockcraft_data, supported_arches, requested_architectures
     )
     # Ensure that multiple `run-on` items don't overlap; this is ambiguous
     # and forbidden by rockcraft.
