@@ -32,6 +32,7 @@ from lp.crafts.interfaces.craftrecipebuild import (
     ICraftRecipeBuild,
     ICraftRecipeBuildSet,
 )
+from lp.crafts.mail.craftrecipebuild import CraftRecipeBuildMailer
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.person import Person
@@ -347,7 +348,8 @@ class CraftRecipeBuild(PackageBuildMixin, StormBase):
             return
         if self.status == BuildStatus.FULLYBUILT:
             return
-        # XXX ruinedyourlife 2024-09-25: Send email notifications.
+        mailer = CraftRecipeBuildMailer.forStatus(self)
+        mailer.sendAll()
 
 
 @implementer(ICraftRecipeBuildSet)
