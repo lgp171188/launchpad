@@ -54,6 +54,7 @@ from zope.component import getUtility
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.charmrecipeupload import CharmRecipeUpload
 from lp.archiveuploader.ciupload import CIUpload
+from lp.archiveuploader.craftrecipeupload import CraftRecipeUpload
 from lp.archiveuploader.livefsupload import LiveFSUpload
 from lp.archiveuploader.nascentupload import (
     EarlyReturnUploadError,
@@ -74,6 +75,7 @@ from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
 )
+from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
@@ -776,6 +778,32 @@ class BuildUploadHandler(UploadHandler):
             self.processor.ztm.abort()
             raise
 
+    def processCraftRecipe(self, logger=None):
+        """Process a craft recipe upload."""
+        assert ICraftRecipeBuild.providedBy(self.build)
+        if logger is None:
+            logger = self.processor.log
+        try:
+            logger.info("Processing craft upload %s" % self.upload_path)
+            CraftRecipeUpload(self.upload_path, logger).process(self.build)
+
+            if self.processor.dry_run:
+                logger.info("Dry run, aborting transaction.")
+                self.processor.ztm.abort()
+            else:
+                logger.info(
+                    "Committing the transaction and any mails associated "
+                    "with this upload."
+                )
+                self.processor.ztm.commit()
+            return UploadStatusEnum.ACCEPTED
+        except UploadError as e:
+            logger.error(str(e))
+            return UploadStatusEnum.REJECTED
+        except BaseException:
+            self.processor.ztm.abort()
+            raise
+
     def processRockRecipe(self, logger=None):
         """Process a rock recipe upload."""
         assert IRockRecipeBuild.providedBy(self.build)
@@ -859,6 +887,8 @@ class BuildUploadHandler(UploadHandler):
                 result = self.processCharmRecipe(logger)
             elif IRockRecipeBuild.providedBy(self.build):
                 result = self.processRockRecipe(logger)
+            elif ICraftRecipeBuild.providedBy(self.build):
+                result = self.processCraftRecipe(logger)
             elif ICIBuild.providedBy(self.build):
                 result = self.processCIResult(logger)
             else:
