@@ -69,6 +69,7 @@ from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
+from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.person import IPerson
@@ -377,7 +378,12 @@ class IRockRecipeView(Interface):
             ),
             key_type=TextLine(),
             required=False,
-        )
+        ),
+        architectures=List(
+            title=_("The list of architectures to build for this recipe."),
+            value_type=Reference(schema=IProcessor),
+            required=False,
+        ),
     )
     @export_factory_operation(IRockRecipeBuildRequest, [])
     @operation_for_version("devel")

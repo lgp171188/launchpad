@@ -1860,6 +1860,120 @@ class TestRockRecipeWebservice(TestCaseWithFactory):
                 ),
             )
 
+    def test_requestBuilds_with_architectures(self):
+        # when a subset of architectures are requested, we only build them
+        # not all listed in the rockcraft.yaml file
+        distroseries = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            registrant=self.person,
+        )
+        amd640 = self.factory.makeProcessor(
+            name="amd640", supports_virtualized=True
+        )
+        risc500 = self.factory.makeProcessor(
+            name="risc500", supports_virtualized=True
+        )
+        s400x = self.factory.makeProcessor(
+            name="s400x", supports_virtualized=True
+        )
+        processors = [amd640, risc500, s400x]
+        for processor in processors:
+            self.makeBuildableDistroArchSeries(
+                distroseries=distroseries,
+                architecturetag=processor.name,
+                processor=processor,
+                owner=self.person,
+            )
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.makeRockRecipe(git_ref=git_ref)
+        now = get_transaction_timestamp(IStore(distroseries))
+        # api_base = "http://api.launchpad.test/devel"
+        # amd640_api_url = api_base + api_url(amd640)
+        response = self.webservice.named_post(
+            recipe["self_link"],
+            "requestBuilds",
+            channels={"rockcraft": "edge"},
+            architectures=[api_url(amd640), api_url(risc500)],
+        )
+        self.assertEqual(201, response.status)
+        build_request_url = response.getHeader("Location")
+        build_request = self.webservice.get(build_request_url).jsonBody()
+        self.assertThat(
+            build_request,
+            ContainsDict(
+                {
+                    "date_requested": AfterPreprocessing(
+                        iso8601.parse_date, GreaterThan(now)
+                    ),
+                    "date_finished": Is(None),
+                    "recipe_link": Equals(recipe["self_link"]),
+                    "status": Equals("Pending"),
+                    "error_message": Is(None),
+                    "builds_collection_link": Equals(
+                        build_request_url + "/builds"
+                    ),
+                }
+            ),
+        )
+        self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
+        with person_logged_in(self.person):
+            rockcraft_yaml = (
+                "base: ubuntu@%s\nplatforms:\n" % distroseries.version
+            )
+            for processor in processors:
+                rockcraft_yaml += "    %s:\n" % processor.name
+            self.useFixture(GitHostingFixture(blob=rockcraft_yaml))
+            [job] = getUtility(IRockRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.IRockRecipeRequestBuildsJobSource.dbuser):
+                JobRunner([job]).runAll()
+        date_requested = iso8601.parse_date(build_request["date_requested"])
+        now = get_transaction_timestamp(IStore(distroseries))
+        build_request = self.webservice.get(
+            build_request["self_link"]
+        ).jsonBody()
+        self.assertThat(
+            build_request,
+            ContainsDict(
+                {
+                    "date_requested": AfterPreprocessing(
+                        iso8601.parse_date, Equals(date_requested)
+                    ),
+                    "date_finished": AfterPreprocessing(
+                        iso8601.parse_date,
+                        MatchesAll(GreaterThan(date_requested), LessThan(now)),
+                    ),
+                    "recipe_link": Equals(recipe["self_link"]),
+                    "status": Equals("Completed"),
+                    "error_message": Is(None),
+                    "builds_collection_link": Equals(
+                        build_request_url + "/builds"
+                    ),
+                }
+            ),
+        )
+        builds = self.webservice.get(
+            build_request["builds_collection_link"]
+        ).jsonBody()["entries"]
+        with person_logged_in(self.person):
+            self.assertThat(
+                builds,
+                MatchesSetwise(
+                    *(
+                        ContainsDict(
+                            {
+                                "recipe_link": Equals(recipe["self_link"]),
+                                "archive_link": Equals(
+                                    self.getURL(distroseries.main_archive)
+                                ),
+                                "arch_tag": Equals(processor.name),
+                                "channels": Equals({"rockcraft": "edge"}),
+                            }
+                        )
+                        for processor in (amd640, risc500)  # requested arches
+                    )
+                ),
+            )
+
     def test_requestBuilds_failure(self):
         # If the asynchronous build request job fails, this is reflected in
         # the build request entry.

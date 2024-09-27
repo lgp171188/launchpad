@@ -174,6 +174,14 @@ class RockRecipeRequestBuildsJob(RockRecipeJobDerived):
     @classmethod
     def create(cls, recipe, requester, channels=None, architectures=None):
         """See `IRockRecipeRequestBuildsJobSource`."""
+        # architectures can be a iterable of strings or Processors
+        # in the latter case, we need to convert them to strings
+        if architectures and all(
+            not (isinstance(arch, str)) for arch in architectures
+        ):
+            architectures = [
+                architecture.name for architecture in architectures
+            ]
         metadata = {
             "requester": requester.id,
             "channels": channels,
