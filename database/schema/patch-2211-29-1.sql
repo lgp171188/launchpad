@@ -7,4 +7,4 @@ ALTER TABLE CraftRecipe ADD COLUMN use_fetch_service boolean DEFAULT false NOT N
 
 COMMENT ON COLUMN CraftRecipe.use_fetch_service IS 'Whether to use the fetch-service in place of the builder-proxy when building this craft.';
 
-INSERT INTO LaunchpadDatabaseRevision VALUES (2211, 28, 2);
+INSERT INTO LaunchpadDatabaseRevision VALUES (2211, 29, 1);
