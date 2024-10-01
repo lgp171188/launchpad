@@ -241,6 +241,52 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
             },
         ),
         (
+            "build-for as list",
+            {
+                "sourcecraft_data": {
+                    "base": "ubuntu@22.04",
+                    "platforms": {
+                        "amd64": {"build-for": ["amd64"]},
+                    },
+                },
+                "expected": [("22.04", "amd64")],
+            },
+        ),
+        (
+            "invalid build-for list",
+            {
+                "sourcecraft_data": {
+                    "base": "ubuntu@22.04",
+                    "platforms": {
+                        "amd64": {"build-for": ["amd64", "arm64"]},
+                    },
+                },
+                "expected_exception": MatchesException(
+                    BadPropertyError,
+                    "build-for must be a single string or a list with exactly "
+                    "one element for platform amd64",
+                ),
+            },
+        ),
+        (
+            "unsupported architecture",
+            {
+                "sourcecraft_data": {
+                    "base": "ubuntu@22.04",
+                    "platforms": {
+                        "mips-arch": {
+                            "build-on": ["mips"],
+                            "build-for": "mips",
+                        },
+                    },
+                },
+                "expected_exception": MatchesException(
+                    BadPropertyError,
+                    "Unsupported architecture mips in platform mips-arch",
+                ),
+            },
+        ),
+        (
             "bare base",
             {
                 "sourcecraft_data": {

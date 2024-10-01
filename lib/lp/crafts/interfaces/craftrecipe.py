@@ -6,6 +6,8 @@
 __all__ = [
     "BadCraftRecipeSource",
     "BadCraftRecipeSearchContext",
+    "CannotFetchSourcecraftYaml",
+    "CannotParseSourcecraftYaml",
     "CRAFT_RECIPE_ALLOW_CREATE",
     "CRAFT_RECIPE_PRIVATE_FEATURE_FLAG",
     "CraftRecipeBuildAlreadyPending",
@@ -19,6 +21,7 @@ __all__ = [
     "ICraftRecipe",
     "ICraftRecipeBuildRequest",
     "ICraftRecipeSet",
+    "MissingSourcecraftYaml",
     "NoSourceForCraftRecipe",
     "NoSuchCraftRecipe",
 ]
@@ -128,6 +131,23 @@ class CraftRecipePrivacyMismatch(Exception):
 
 class BadCraftRecipeSearchContext(Exception):
     """The context is not valid for a craft recipe search."""
+
+
+class MissingSourcecraftYaml(Exception):
+    """The repository for this craft recipe does not have a
+    sourcecraft.yaml.
+    """
+
+    def __init__(self, branch_name):
+        super().__init__("Cannot find sourcecraft.yaml in %s" % branch_name)
+
+
+class CannotFetchSourcecraftYaml(Exception):
+    """Launchpad cannot fetch this craft recipe's sourcecraft.yaml."""
+
+
+class CannotParseSourcecraftYaml(Exception):
+    """Launchpad cannot parse this craft recipe's sourcecraft.yaml."""
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -309,6 +329,31 @@ class ICraftRecipeView(Interface):
             with these architecture tags (in addition to any other
             applicable constraints).
         :return: An `ICraftRecipeBuildRequest`.
+        """
+
+    def requestBuildsFromJob(
+        build_request,
+        channels=None,
+        architectures=None,
+        allow_failures=False,
+        logger=None,
+    ):
+        """Synchronous part of `CraftRecipe.requestBuilds`.
+
+        Request that the craft recipe be built for relevant architectures.
+
+        :param build_request: The `ICraftRecipeBuildRequest` job being
+            processed.
+        :param channels: A dictionary mapping snap names to channels to use
+            for these builds.
+        :param architectures: If not None, limit builds to architectures
+            with these architecture tags (in addition to any other
+            applicable constraints).
+        :param allow_failures: If True, log exceptions other than "already
+            pending" from individual build requests; if False, raise them to
+            the caller.
+        :param logger: An optional logger.
+        :return: A sequence of `ICraftRecipeBuild` instances.
         """
 
     def getBuildRequest(job_id):
@@ -555,3 +600,20 @@ class ICraftRecipeSet(Interface):
 
     def preloadDataForRecipes(recipes, user):
         """Load the data related to a list of craft recipes."""
+
+    def getSourcecraftYaml(context, logger=None):
+        """Fetch a recipe's sourcecraft.yaml from code hosting, if possible.
+
+        :param context: Either an `ICraftRecipe` or the source branch for a
+            craft recipe.
+        :param logger: An optional logger.
+
+        :return: The recipe's parsed sourcecraft.yaml.
+        :raises MissingSourcecraftYaml: if this recipe has no
+            sourcecraft.yaml.
+        :raises CannotFetchSourcecraftYaml: if it was not possible to fetch
+            sourcecraft.yaml from the code hosting backend for some other
+            reason.
+        :raises CannotParseSourcecraftYaml: if the fetched sourcecraft.yaml
+            cannot be parsed.
+        """

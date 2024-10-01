@@ -8,8 +8,9 @@ __all__ = [
 ]
 
 from datetime import timezone
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 
+import yaml
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import (
@@ -33,12 +34,16 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.buildmaster.enums import BuildStatus
+from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.code.model.reciperegistry import recipe_registry
+from lp.crafts.adapters.buildarch import determine_instances_to_build
 from lp.crafts.interfaces.craftrecipe import (
     CRAFT_RECIPE_ALLOW_CREATE,
     CRAFT_RECIPE_PRIVATE_FEATURE_FLAG,
+    CannotFetchSourcecraftYaml,
+    CannotParseSourcecraftYaml,
     CraftRecipeBuildAlreadyPending,
     CraftRecipeBuildDisallowedArchitecture,
     CraftRecipeBuildRequestStatus,
@@ -50,6 +55,7 @@ from lp.crafts.interfaces.craftrecipe import (
     ICraftRecipe,
     ICraftRecipeBuildRequest,
     ICraftRecipeSet,
+    MissingSourcecraftYaml,
     NoSourceForCraftRecipe,
 )
 from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuildSet
@@ -377,6 +383,88 @@ class CraftRecipe(StormBase):
         )
         return self.getBuildRequest(job.job_id)
 
+    def requestBuildsFromJob(
+        self,
+        build_request,
+        channels=None,
+        architectures=None,
+        allow_failures=False,
+        logger=None,
+    ):
+        """See `ICraftRecipe`."""
+        try:
+            sourcecraft_data = removeSecurityProxy(
+                getUtility(ICraftRecipeSet).getSourcecraftYaml(self)
+            )
+
+            # Sort by (Distribution.id, DistroSeries.id, Processor.id) for
+            # determinism.  This is chosen to be a similar order as in
+            # BinaryPackageBuildSet.createForSource, to minimize confusion.
+            supported_arches = [
+                das
+                for das in sorted(
+                    self.getAllowedArchitectures(),
+                    key=attrgetter(
+                        "distroseries.distribution.id",
+                        "distroseries.id",
+                        "processor.id",
+                    ),
+                )
+                if (
+                    architectures is None
+                    or das.architecturetag in architectures
+                )
+            ]
+            instances_to_build = determine_instances_to_build(
+                sourcecraft_data, supported_arches
+            )
+        except Exception as e:
+            if not allow_failures:
+                raise
+            elif logger is not None:
+                logger.exception(
+                    " - %s/%s/%s: %s",
+                    self.owner.name,
+                    self.project.name,
+                    self.name,
+                    e,
+                )
+
+        builds = []
+        for das in instances_to_build:
+            try:
+                build = self.requestBuild(
+                    build_request, das, channels=channels
+                )
+                if logger is not None:
+                    logger.debug(
+                        " - %s/%s/%s %s/%s/%s: Build requested.",
+                        self.owner.name,
+                        self.project.name,
+                        self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name,
+                        das.architecturetag,
+                    )
+                builds.append(build)
+            except CraftRecipeBuildAlreadyPending:
+                pass
+            except Exception as e:
+                if not allow_failures:
+                    raise
+                elif logger is not None:
+                    logger.exception(
+                        " - %s/%s/%s %s/%s/%s: %s",
+                        self.owner.name,
+                        self.project.name,
+                        self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name,
+                        das.architecturetag,
+                        e,
+                    )
+        return builds
+
     def getBuildRequest(self, job_id):
         """See `ICraftRecipe`."""
         return CraftRecipeBuildRequest(self, job_id)
@@ -526,6 +614,54 @@ class CraftRecipeSet:
                 person_ids, need_validity=True
             )
         )
+
+    def getSourcecraftYaml(self, context, logger=None):
+        """See `ICraftRecipeSet`."""
+        if ICraftRecipe.providedBy(context):
+            recipe = context
+            source = context.git_ref
+        else:
+            recipe = None
+            source = context
+        if source is None:
+            raise CannotFetchSourcecraftYaml("Craft source is not defined")
+        try:
+            path = "sourcecraft.yaml"
+            if recipe is not None and recipe.build_path is not None:
+                path = "/".join((recipe.build_path, path))
+            try:
+                blob = source.getBlob(path)
+            except GitRepositoryBlobNotFound:
+                if logger is not None:
+                    logger.exception(
+                        "Cannot find sourcecraft.yaml in %s",
+                        source.unique_name,
+                    )
+                raise MissingSourcecraftYaml(source.unique_name)
+        except GitRepositoryScanFault as e:
+            msg = "Failed to get sourcecraft.yaml from %s"
+            if logger is not None:
+                logger.exception(msg, source.unique_name)
+            raise CannotFetchSourcecraftYaml(
+                "%s: %s" % (msg % source.unique_name, e)
+            )
+
+        try:
+            sourcecraft_data = yaml.safe_load(blob)
+        except Exception as e:
+            # Don't bother logging parsing errors from user-supplied YAML.
+            raise CannotParseSourcecraftYaml(
+                "Cannot parse sourcecraft.yaml from %s: %s"
+                % (source.unique_name, e)
+            )
+
+        if not isinstance(sourcecraft_data, dict):
+            raise CannotParseSourcecraftYaml(
+                "The top level of sourcecraft.yaml from %s is not a mapping"
+                % source.unique_name
+            )
+
+        return sourcecraft_data
 
 
 @implementer(ICraftRecipeBuildRequest)
