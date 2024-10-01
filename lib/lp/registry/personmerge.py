@@ -12,6 +12,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.interfaces.branchcollection import IAllBranches, IBranchCollection
 from lp.code.interfaces.gitcollection import IGitCollection
+from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.mailinglist import (
     PURGE_STATES,
@@ -956,6 +957,25 @@ def _mergeRockRecipe(cur, from_person, to_person):
         IStore(recipes[0]).flush()
 
 
+def _mergeCraftRecipe(cur, from_person, to_person):
+    # This shouldn't use removeSecurityProxy.
+    recipes = getUtility(ICraftRecipeSet).findByOwner(from_person)
+    existing_names = [
+        r.name for r in getUtility(ICraftRecipeSet).findByOwner(to_person)
+    ]
+    for recipe in recipes:
+        naked_recipe = removeSecurityProxy(recipe)
+        new_name = naked_recipe.name
+        count = 1
+        while new_name in existing_names:
+            new_name = "%s-%s" % (recipe.name, count)
+            count += 1
+        naked_recipe.owner = to_person
+        naked_recipe.name = new_name
+    if not recipes.is_empty():
+        IStore(recipes[0]).flush()
+
+
 def _purgeUnmergableTeamArtifacts(from_team, to_team, reviewer):
     """Purge team artifacts that cannot be merged, but can be removed."""
     # A team cannot have more than one mailing list.
@@ -1061,18 +1081,6 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         ("latestpersonsourcepackagereleasecache", "maintainer"),
         # Obsolete table.
         ("branchmergequeue", "owner"),
-        # XXX jugmac00 2024-08-26: This needs handling before we deploy the
-        # rock recipe code, but can be ignored for the purpose of deploying
-        # the database tables.
-        # see commit a98e2a935646ff7496c76c607d355815027c35a4 for similar
-        # required changes in the past for the charm build type.
-        ("rockrecipe", "owner"),
-        # XXX ruinedyourlife 2024-09-18: This needs handling before we deploy
-        # the craft recipe code, but can be ignored for the purpose of
-        # deploying the database tables.
-        # see commit a98e2a935646ff7496c76c607d355815027c35a4 for similar
-        # required changes in the past for the charm build type.
-        ("craftrecipe", "owner"),
     ]
 
     references = list(postgresql.listReferences(cur, "person", "id"))
@@ -1220,6 +1228,9 @@ def merge_people(from_person, to_person, reviewer, delete=False):
 
     _mergeRockRecipe(cur, from_id, to_id)
     skip.append(("rockrecipe", "owner"))
+
+    _mergeCraftRecipe(cur, from_id, to_id)
+    skip.append(("craftrecipe", "owner"))
 
     _mergeVulnerabilitySubscription(cur, from_id, to_id)
     skip.append(("vulnerabilitysubscription", "person"))

@@ -127,6 +127,7 @@ from lp.code.model.gitrepository import (
 )
 from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GitAPI
+from lp.crafts.interfaces.craftrecipe import CRAFT_RECIPE_ALLOW_CREATE
 from lp.registry.enums import (
     BranchSharingPolicy,
     PersonVisibility,
@@ -1733,6 +1734,39 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         )
         recipe1 = self.factory.makeRockRecipe(git_ref=ref1)
         recipe2 = self.factory.makeRockRecipe(git_ref=ref2)
+        repository.destroySelf(break_references=True)
+        transaction.commit()
+        self.assertIsNone(recipe1.git_repository)
+        self.assertIsNone(recipe1.git_path)
+        self.assertIsNone(recipe2.git_repository)
+        self.assertIsNone(recipe2.git_path)
+
+    def test_craft_recipe_requirements(self):
+        # If a repository is used by a craft recipe, the deletion
+        # requirements indicate this.
+        self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
+        [ref] = self.factory.makeGitRefs()
+        self.factory.makeCraftRecipe(git_ref=ref)
+        self.assertEqual(
+            {
+                None: (
+                    "alter",
+                    _("Some craft recipes build from this repository."),
+                )
+            },
+            ref.repository.getDeletionRequirements(),
+        )
+
+    def test_craft_recipe_deletion(self):
+        # break_references allows deleting a repository used by a craft
+        # recipe.
+        self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
+        repository = self.factory.makeGitRepository()
+        [ref1, ref2] = self.factory.makeGitRefs(
+            repository=repository, paths=["refs/heads/1", "refs/heads/2"]
+        )
+        recipe1 = self.factory.makeCraftRecipe(git_ref=ref1)
+        recipe2 = self.factory.makeCraftRecipe(git_ref=ref2)
         repository.destroySelf(break_references=True)
         transaction.commit()
         self.assertIsNone(recipe1.git_repository)

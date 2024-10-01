@@ -6,6 +6,7 @@ __all__ = [
 ]
 
 import json
+import re
 from collections import Counter, OrderedDict
 
 from lp.services.helpers import english_list
@@ -18,10 +19,10 @@ class RockBasesParserError(Exception):
 class MissingPropertyError(RockBasesParserError):
     """Error for when an expected property is not present in the YAML."""
 
-    def __init__(self, prop):
-        super().__init__(
-            f"Base specification is missing the {prop!r} property"
-        )
+    def __init__(self, prop, msg=None):
+        if msg is None:
+            msg = f"Base specification is missing the {prop!r} property"
+        super().__init__(msg)
         self.property = prop
 
 
@@ -122,17 +123,115 @@ class RockBaseConfiguration:
         return cls(build_on, run_on=run_on)
 
 
-def determine_instances_to_build(rockcraft_data, supported_arches):
+class UnifiedRockBaseConfiguration:
+    """A unified base configuration in rockcraft.yaml"""
+
+    def __init__(self, build_on, run_on=None):
+        self.build_on = build_on
+        self.run_on = list(build_on) if run_on is None else run_on
+
+    @classmethod
+    def from_dict(
+        cls, rockcraft_data, supported_arches, requested_architectures
+    ):
+        base = rockcraft_data["base"]
+        if isinstance(base, str):
+            if base == "bare" and "build-base" not in rockcraft_data:
+                raise BadPropertyError(
+                    "If base is 'bare', then build-base must be specified."
+                )
+            if base == "bare":
+                base = rockcraft_data["build-base"]
+            # Expected short-form value looks like 'ubuntu@24.04'
+            match = re.match(r"(.+)@(.+)", base)
+            if not match:
+                raise BadPropertyError(
+                    f"Invalid value for base '{base}'. Expected value should "
+                    "be like 'ubuntu@24.04'"
+                )
+            base_name, base_channel = match.groups()
+        else:
+            # Expected value looks like {"name": "ubuntu", "channel": "24.04"}
+            base_name = base["name"]
+            # If a value like 24.04 is unquoted in yaml, it will be
+            # interpreted as a float. So we convert it to a string.
+            base_channel = str(base["channel"])
+
+        platforms = rockcraft_data.get("platforms")
+        if not platforms:
+            raise MissingPropertyError(
+                "platforms", "The 'platforms' property is required"
+            )
+        configs = []
+        for platform, configuration in platforms.items():
+            # when we request specific architectures, we need to check
+            # whether they are defined in the rockcraft.yaml configuration
+            # when we do not request specific arches, we build for all
+            # platforms defined in the configuration files
+            if requested_architectures:
+                if platform not in requested_architectures:
+                    continue
+            # The 'platforms' property and its values look like
+            # platforms:
+            #   ubuntu-amd64:
+            #     build-on: [amd64]
+            #     build-for: [amd64]
+            # 'ubuntu-amd64' will be the value of 'platform' and its value dict
+            # containing the keys 'build-on', 'build-for' will be the value of
+            # 'configuration'.
+            name = base_name
+            channel = base_channel
+            if configuration:
+                build_on = configuration["build-on"]
+                if isinstance(build_on, str):
+                    build_on = [build_on]
+
+                build_on = [
+                    RockBase(name, channel, architecture)
+                    for architecture in build_on
+                ]
+
+                build_for = configuration["build-for"]
+                if isinstance(build_for, str):
+                    build_for = [build_for]
+
+                build_for = [
+                    RockBase(name, channel, architecture)
+                    for architecture in build_for
+                ]
+            else:
+                supported_arch_names = (
+                    das.architecturetag for das in supported_arches
+                )
+                if platform in supported_arch_names:
+                    build_on = [RockBase(name, channel, platform)]
+                    build_for = [RockBase(name, channel, platform)]
+                else:
+                    raise BadPropertyError(
+                        f"'{platform}' is not a supported architecture "
+                        f"for '{base_name}@{base_channel}'."
+                    )
+            configs.append(cls(build_on, build_for))
+        return configs
+
+
+def determine_instances_to_build(
+    rockcraft_data, supported_arches, requested_architectures=None
+):
     """Return a list of instances to build based on rockcraft.yaml.
 
     :param rockcraft_data: A parsed rockcraft.yaml.
     :param supported_arches: An ordered list of all `DistroArchSeries` that
         we can create builds for.  Note that these may span multiple
         `DistroSeries`.
+    :param requested_architectures: A list of requested architectures, or None;
+        for the latter case we build all architectures specified in the
+        rockcraft.yaml configuration file.
     :return: A list of `DistroArchSeries`.
     """
-    bases_list = rockcraft_data.get("bases")
-    configs = [RockBaseConfiguration.from_dict(item) for item in bases_list]
+    configs = UnifiedRockBaseConfiguration.from_dict(
+        rockcraft_data, supported_arches, requested_architectures
+    )
     # Ensure that multiple `run-on` items don't overlap; this is ambiguous
     # and forbidden by rockcraft.
     run_ons = Counter()

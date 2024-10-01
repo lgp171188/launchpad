@@ -7,6 +7,7 @@
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
     xmlns:lp="http://namespaces.canonical.com/lp"
+    xmlns:webservice="http://namespaces.canonical.com/webservice"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
@@ -87,6 +88,26 @@
         factory="lp.rocks.model.rockrecipebuildbehaviour.RockRecipeBuildBehaviour"
         permission="zope.Public" />
 
+    <!-- Bases for rocks -->
+    <class class="lp.rocks.model.rockbase.RockBase">
+        <allow
+            interface="lp.rocks.interfaces.rockbase.IRockBaseView
+                       lp.rocks.interfaces.rockbase.IRockBaseEditableAttributes" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.rocks.interfaces.rockbase.IRockBaseEdit"
+            set_schema="lp.rocks.interfaces.rockbase.IRockBaseEditableAttributes" />
+    </class>
+    <lp:securedutility
+        class="lp.rocks.model.rockbase.RockBaseSet"
+        provides="lp.rocks.interfaces.rockbase.IRockBaseSet">
+        <allow
+            interface="lp.rocks.interfaces.rockbase.IRockBaseSet" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.rocks.interfaces.rockbase.IRockBaseSetEdit" />
+    </lp:securedutility>
+
     <!-- rock-related jobs -->
     <class class="lp.rocks.model.rockrecipejob.RockRecipeJob">
         <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
@@ -100,5 +121,5 @@
         <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
         <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeRequestBuildsJob" />
     </class>
-
+    <webservice:register module="lp.rocks.interfaces.webservice" />
 </configure>

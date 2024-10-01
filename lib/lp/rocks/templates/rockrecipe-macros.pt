@@ -1,0 +1,22 @@
+<tal:root
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  omit-tag="">
+
+<div
+  metal:define-macro="related-rock-recipes"
+  tal:define="context_menu context/menu:context"
+  id="related-rock-recipes">
+
+  <h3>Related rock recipes</h3>
+
+  <div id="rock-recipe-links" class="actions">
+    <div id="rock-recipe-summary">
+      <tal:rock_recipes replace="structure view/rock_recipes_link" />
+    </div>
+  </div>
+
+</div>
+
+</tal:root>

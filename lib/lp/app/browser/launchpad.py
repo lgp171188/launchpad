@@ -99,6 +99,8 @@ from lp.registry.interfaces.product import (
 from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.rocks.interfaces.rockbase import IRockBaseSet
+from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
 from lp.services.features.interfaces import IFeatureRules
@@ -897,6 +899,8 @@ class LaunchpadRootNavigation(Navigation):
         "+processors": IProcessorSet,
         "projects": IProductSet,
         "projectgroups": IProjectGroupSet,
+        "+rock-bases": IRockBaseSet,
+        "+rock-recipes": IRockRecipeSet,
         "+snaps": ISnapSet,
         "+snap-bases": ISnapBaseSet,
         "+snappy-series": ISnappySeriesSet,

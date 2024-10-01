@@ -164,6 +164,7 @@ from lp.registry.interfaces.productrelease import (
 from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.rocks.browser.hasrockrecipes import HasRockRecipesMenuMixin
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.features import getFeatureFlag
@@ -564,6 +565,7 @@ class ProductOverviewMenu(
     HasRecipesMenuMixin,
     HasSnapsMenuMixin,
     HasCharmRecipesMenuMixin,
+    HasRockRecipesMenuMixin,
 ):
     usedfor = IProduct
     facet = "overview"
@@ -590,6 +592,7 @@ class ProductOverviewMenu(
         "branding",
         "view_charm_recipes",
         "view_recipes",
+        "view_rock_recipes",
         "view_snaps",
         "create_charm_recipe",
         "create_snap",

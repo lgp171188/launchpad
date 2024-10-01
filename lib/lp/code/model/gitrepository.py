@@ -101,8 +101,8 @@ from lp.code.model.gitactivity import GitActivity
 from lp.code.model.gitref import GitRef, GitRefDefault, GitRefFrozen
 from lp.code.model.gitrule import GitRule, GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
+from lp.code.model.reciperegistry import recipe_registry
 from lp.code.model.revisionstatus import RevisionStatusReport
-from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.enums import PersonVisibility
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
@@ -922,7 +922,13 @@ class GitRepository(
         # Clear cached references to the removed refs.
         # XXX cjwatson 2021-06-08: We should probably do something similar
         # for OCIRecipe, and for Snap if we start caching git_ref there.
+        # XXX jugmac00 2024-09-16: once we also include OCI and snaps, we
+        # should refactor this to a for loop in a for loop
         for recipe in getUtility(ICharmRecipeSet).findByGitRepository(
+            self, paths=paths
+        ):
+            get_property_cache(recipe)._git_ref = None
+        for recipe in getUtility(IRockRecipeSet).findByGitRepository(
             self, paths=paths
         ):
             get_property_cache(recipe)._git_ref = None
@@ -1974,53 +1980,17 @@ class GitRepository(
             )
             for recipe in recipes
         )
-        # XXX 2024-09-12 jugmac00: there is potential to refactor the following
-        # parts with a for loop
-        # Additionally, instead of manually creating a mapping of
-        # `ISomethingSet`s and the names for the message, we could and probably
-        # should have a registering decorator, so whenever a new `IRecipeSet`
-        # gets created this mapping will be updated automatically
 
-        if not getUtility(ISnapSet).findByGitRepository(self).is_empty():
-            alteration_operations.append(
-                DeletionCallable(
-                    None,
-                    msg("Some snap packages build from this repository."),
-                    getUtility(ISnapSet).detachFromGitRepository,
-                    self,
+        for utility, message, _ in recipe_registry.get_recipe_types():
+            if not getUtility(utility).findByGitRepository(self).is_empty():
+                alteration_operations.append(
+                    DeletionCallable(
+                        None,
+                        msg(message),
+                        getUtility(utility).detachFromGitRepository,
+                        self,
+                    )
                 )
-            )
-        if not getUtility(IOCIRecipeSet).findByGitRepository(self).is_empty():
-            alteration_operations.append(
-                DeletionCallable(
-                    None,
-                    msg("Some OCI recipes build from this repository."),
-                    getUtility(IOCIRecipeSet).detachFromGitRepository,
-                    self,
-                )
-            )
-        if (
-            not getUtility(ICharmRecipeSet)
-            .findByGitRepository(self)
-            .is_empty()
-        ):
-            alteration_operations.append(
-                DeletionCallable(
-                    None,
-                    msg("Some charm recipes build from this repository."),
-                    getUtility(ICharmRecipeSet).detachFromGitRepository,
-                    self,
-                )
-            )
-        if not getUtility(IRockRecipeSet).findByGitRepository(self).is_empty():
-            alteration_operations.append(
-                DeletionCallable(
-                    None,
-                    msg("Some rock recipes build from this repository."),
-                    getUtility(IRockRecipeSet).detachFromGitRepository,
-                    self,
-                )
-            )
 
         return (alteration_operations, deletion_operations)
 

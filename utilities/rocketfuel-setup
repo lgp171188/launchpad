@@ -258,7 +258,7 @@ if ! git status; then
        Please delete $LP_TRUNK_PATH and run rocketfuel-setup again."
        exit 1
 fi
-if [ "$(git remote get-url origin)" != "//git.launchpad.net/launchpad" ]; then
+if [[ "$(git remote get-url origin)" != *"//git.launchpad.net/launchpad" ]]; then
   echo "ERROR: Your clone in $LP_TRUNK_PATH has an incorrect pull location, correcting now..."
   if ! git remote set-url origin git+ssh://git.launchpad.net/launchpad; then
     echo "ERROR: Unable to set trunk pull location to lp:launchpad"

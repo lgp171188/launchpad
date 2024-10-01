@@ -5,7 +5,9 @@
 
 __all__ = [
     "RockRecipe",
+    "get_rock_recipe_privacy_filter",
 ]
+
 from datetime import timezone
 from operator import attrgetter, itemgetter
 
@@ -42,17 +44,33 @@ from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
+from lp.code.interfaces.gitcollection import (
+    IAllGitRepositories,
+    IGitCollection,
+)
+from lp.code.interfaces.gitref import IGitRef
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.gitcollection import GenericGitCollection
+from lp.code.model.gitref import GitRef
 from lp.code.model.gitrepository import GitRepository
+from lp.code.model.reciperegistry import recipe_registry
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.person import IPersonSet, validate_public_person
+from lp.registry.interfaces.person import (
+    IPerson,
+    IPersonSet,
+    validate_public_person,
+)
+from lp.registry.interfaces.product import IProduct
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.product import Product
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.rocks.adapters.buildarch import determine_instances_to_build
+from lp.rocks.interfaces.rockbase import IRockBaseSet, NoSuchRockBase
 from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_ALLOW_CREATE,
     ROCK_RECIPE_PRIVATE_FEATURE_FLAG,
+    BadRockRecipeSearchContext,
     CannotFetchRockcraftYaml,
     CannotParseRockcraftYaml,
     DuplicateRockRecipeName,
@@ -72,6 +90,7 @@ from lp.rocks.interfaces.rockrecipe import (
 )
 from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuildSet
 from lp.rocks.interfaces.rockrecipejob import IRockRecipeRequestBuildsJobSource
+from lp.rocks.model.rockbase import RockBase
 from lp.rocks.model.rockrecipebuild import RockRecipeBuild
 from lp.rocks.model.rockrecipejob import RockRecipeJob
 from lp.services.database.bulk import load_related
@@ -258,6 +277,8 @@ class RockRecipe(StormBase):
 
     _store_channels = JSON("store_channels", allow_none=True)
 
+    use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
+
     def __init__(
         self,
         registrant,
@@ -276,6 +297,7 @@ class RockRecipe(StormBase):
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """Construct a `RockRecipe`."""
         if not getFeatureFlag(ROCK_RECIPE_ALLOW_CREATE):
@@ -301,6 +323,7 @@ class RockRecipe(StormBase):
         self.store_name = store_name
         self.store_secrets = store_secrets
         self.store_channels = store_channels
+        self.use_fetch_service = use_fetch_service
 
     def __repr__(self):
         return "<RockRecipe ~%s/%s/+rock/%s>" % (
@@ -314,13 +337,17 @@ class RockRecipe(StormBase):
         """See `IRockRecipe`."""
         return self.information_type not in PUBLIC_INFORMATION_TYPES
 
-    @property
-    def git_ref(self):
-        """See `IRockRecipe`."""
+    @cachedproperty
+    def _git_ref(self):
         if self.git_repository is not None:
             return self.git_repository.getRefByPath(self.git_path)
         else:
             return None
+
+    @property
+    def git_ref(self):
+        """See `IRockRecipe`."""
+        return self._git_ref
 
     @git_ref.setter
     def git_ref(self, value):
@@ -331,6 +358,7 @@ class RockRecipe(StormBase):
         else:
             self.git_repository = None
             self.git_path = None
+        get_property_cache(self)._git_ref = value
 
     @property
     def source(self):
@@ -357,26 +385,39 @@ class RockRecipe(StormBase):
         """See `IRockRecipe`."""
         if self.information_type in PUBLIC_INFORMATION_TYPES:
             return True
-        # XXX jugmac00 2024-08-29: Finish implementing this once we have
-        # more privacy infrastructure.
-        return False
+        if user is None:
+            return False
+        return (
+            not IStore(RockRecipe)
+            .find(
+                RockRecipe,
+                RockRecipe.id == self.id,
+                get_rock_recipe_privacy_filter(user),
+            )
+            .is_empty()
+        )
 
-    def _isBuildableArchitectureAllowed(self, das):
+    def _isBuildableArchitectureAllowed(self, das, rock_base=None):
         """Check whether we may build for a buildable `DistroArchSeries`.
 
         The caller is assumed to have already checked that a suitable chroot
         is available (either directly or via
         `DistroSeries.buildable_architectures`).
         """
-        return das.enabled and (
-            das.processor.supports_virtualized or not self.require_virtualized
+        return (
+            das.enabled
+            and (
+                das.processor.supports_virtualized
+                or not self.require_virtualized
+            )
+            and (rock_base is None or das.processor in rock_base.processors)
         )
 
-    def _isArchitectureAllowed(self, das):
+    def _isArchitectureAllowed(self, das, rock_base=None):
         """Check whether we may build for a `DistroArchSeries`."""
         return (
             das.getChroot() is not None
-            and self._isBuildableArchitectureAllowed(das)
+            and self._isBuildableArchitectureAllowed(das, rock_base=rock_base)
         )
 
     def getAllowedArchitectures(self):
@@ -401,10 +442,21 @@ class RockRecipe(StormBase):
             DistroSeries.status.is_in(ACTIVE_STATUSES),
         )
         all_buildable_dases = DecoratedResultSet(results, itemgetter(0))
+        rock_bases = {
+            rock_base.distro_series_id: rock_base
+            for rock_base in store.find(
+                RockBase,
+                RockBase.distro_series_id.is_in(
+                    {das.distroseries_id for das in all_buildable_dases}
+                ),
+            )
+        }
         return [
             das
             for das in all_buildable_dases
-            if self._isBuildableArchitectureAllowed(das)
+            if self._isBuildableArchitectureAllowed(
+                das, rock_base=rock_bases.get(das.id)
+            )
         ]
 
     def _checkRequestBuild(self, requester):
@@ -415,7 +467,9 @@ class RockRecipe(StormBase):
                 % (requester.display_name, self.owner.display_name)
             )
 
-    def requestBuild(self, build_request, distro_arch_series, channels=None):
+    def requestBuild(
+        self, build_request, distro_arch_series, rock_base=None, channels=None
+    ):
         """Request a single build of this rock recipe.
 
         This method is for internal use; external callers should use
@@ -429,7 +483,9 @@ class RockRecipe(StormBase):
         :return: `IRockRecipeBuild`.
         """
         self._checkRequestBuild(build_request.requester)
-        if not self._isArchitectureAllowed(distro_arch_series):
+        if not self._isArchitectureAllowed(
+            distro_arch_series, rock_base=rock_base
+        ):
             raise RockRecipeBuildDisallowedArchitecture(distro_arch_series)
 
         if not channels:
@@ -477,27 +533,18 @@ class RockRecipe(StormBase):
             rockcraft_data = removeSecurityProxy(
                 getUtility(IRockRecipeSet).getRockcraftYaml(self)
             )
-
-            # Sort by (Distribution.id, DistroSeries.id, Processor.id) for
-            # determinism.  This is chosen to be a similar order as in
-            # BinaryPackageBuildSet.createForSource, to minimize confusion.
-            supported_arches = [
-                das
-                for das in sorted(
-                    self.getAllowedArchitectures(),
-                    key=attrgetter(
-                        "distroseries.distribution.id",
-                        "distroseries.id",
-                        "processor.id",
-                    ),
-                )
-                if (
-                    architectures is None
-                    or das.architecturetag in architectures
-                )
-            ]
+            supported_arches = sorted(
+                self.getAllowedArchitectures(),
+                key=attrgetter(
+                    "distroseries.distribution.id",
+                    "distroseries.id",
+                    "processor.id",
+                ),
+            )
             instances_to_build = determine_instances_to_build(
-                rockcraft_data, supported_arches
+                rockcraft_data,
+                supported_arches=supported_arches,
+                requested_architectures=architectures,
             )
         except Exception as e:
             if not allow_failures:
@@ -514,8 +561,23 @@ class RockRecipe(StormBase):
         builds = []
         for das in instances_to_build:
             try:
+                rock_base = getUtility(IRockBaseSet).getByDistroSeries(
+                    das.distroseries
+                )
+            except NoSuchRockBase:
+                rock_base = None
+            if rock_base is not None:
+                arch_channels = dict(rock_base.build_channels)
+                channels_by_arch = arch_channels.pop("_byarch", {})
+                if das.architecturetag in channels_by_arch:
+                    arch_channels.update(channels_by_arch[das.architecturetag])
+                if channels is not None:
+                    arch_channels.update(channels)
+            else:
+                arch_channels = channels
+            try:
                 build = self.requestBuild(
-                    build_request, das, channels=channels
+                    build_request, das, channels=arch_channels
                 )
                 if logger is not None:
                     logger.debug(
@@ -642,6 +704,12 @@ class RockRecipe(StormBase):
         order_by = Desc(RockRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def can_upload_to_store(self):
+        # no store upload planned for the initial implementation, as artifacts
+        # get pulled from Launchpad for now only.
+        return False
+
     def destroySelf(self):
         """See `IRockRecipe`."""
         store = IStore(self)
@@ -685,6 +753,9 @@ class RockRecipe(StormBase):
         ).remove()
 
 
+@recipe_registry.register_recipe_type(
+    IRockRecipeSet, "Some rock recipes build from this repository."
+)
 @implementer(IRockRecipeSet)
 class RockRecipeSet:
     """See `IRockRecipeSet`."""
@@ -707,6 +778,7 @@ class RockRecipeSet:
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """See `IRockRecipeSet`."""
         if not registrant.inTeam(owner):
@@ -751,6 +823,7 @@ class RockRecipeSet:
             store_secrets=store_secrets,
             store_channels=store_channels,
             date_created=date_created,
+            use_fetch_service=use_fetch_service,
         )
         store.add(recipe)
 
@@ -773,6 +846,99 @@ class RockRecipeSet:
         if recipe is None:
             raise NoSuchRockRecipe(name)
         return recipe
+
+    def _getRecipesFromCollection(
+        self, collection, owner=None, visible_by_user=None
+    ):
+        id_column = RockRecipe.git_repository_id
+        ids = collection.getRepositoryIds()
+        expressions = [id_column.is_in(ids._get_select())]
+        if owner is not None:
+            expressions.append(RockRecipe.owner == owner)
+        expressions.append(get_rock_recipe_privacy_filter(visible_by_user))
+        return IStore(RockRecipe).find(RockRecipe, *expressions)
+
+    def findByPerson(self, person, visible_by_user=None):
+        """See `IRockRecipeSet`."""
+
+        def _getRecipes(collection):
+            collection = collection.visibleByUser(visible_by_user)
+            owned = self._getRecipesFromCollection(
+                collection.ownedBy(person), visible_by_user=visible_by_user
+            )
+            packaged = self._getRecipesFromCollection(
+                collection, owner=person, visible_by_user=visible_by_user
+            )
+            return owned.union(packaged)
+
+        git_collection = removeSecurityProxy(getUtility(IAllGitRepositories))
+        git_recipes = _getRecipes(git_collection)
+        return git_recipes
+
+    def findByProject(self, project, visible_by_user=None):
+        """See `IRockRecipeSet`."""
+
+        def _getRecipes(collection):
+            return self._getRecipesFromCollection(
+                collection.visibleByUser(visible_by_user),
+                visible_by_user=visible_by_user,
+            )
+
+        recipes_for_project = IStore(RockRecipe).find(
+            RockRecipe,
+            RockRecipe.project == project,
+            get_rock_recipe_privacy_filter(visible_by_user),
+        )
+        git_collection = removeSecurityProxy(IGitCollection(project))
+        return recipes_for_project.union(_getRecipes(git_collection))
+
+    def findByGitRepository(
+        self,
+        repository,
+        paths=None,
+        visible_by_user=None,
+        check_permissions=True,
+    ):
+        """See `IRockRecipeSet`."""
+        clauses = [RockRecipe.git_repository == repository]
+        if paths is not None:
+            clauses.append(RockRecipe.git_path.is_in(paths))
+        if check_permissions:
+            clauses.append(get_rock_recipe_privacy_filter(visible_by_user))
+        return IStore(RockRecipe).find(RockRecipe, *clauses)
+
+    def findByGitRef(self, ref, visible_by_user=None):
+        """See `IRockRecipeSet`."""
+        return IStore(RockRecipe).find(
+            RockRecipe,
+            RockRecipe.git_repository == ref.repository,
+            RockRecipe.git_path == ref.path,
+            get_rock_recipe_privacy_filter(visible_by_user),
+        )
+
+    def findByContext(self, context, visible_by_user=None, order_by_date=True):
+        """See `IRockRecipeSet`."""
+        if IPerson.providedBy(context):
+            recipes = self.findByPerson(
+                context, visible_by_user=visible_by_user
+            )
+        elif IProduct.providedBy(context):
+            recipes = self.findByProject(
+                context, visible_by_user=visible_by_user
+            )
+        elif IGitRepository.providedBy(context):
+            recipes = self.findByGitRepository(
+                context, visible_by_user=visible_by_user
+            )
+        elif IGitRef.providedBy(context):
+            recipes = self.findByGitRef(
+                context, visible_by_user=visible_by_user
+            )
+        else:
+            raise BadRockRecipeSearchContext(context)
+        if order_by_date:
+            recipes = recipes.order_by(Desc(RockRecipe.date_last_modified))
+        return recipes
 
     def isValidInformationType(self, information_type, owner, git_ref=None):
         """See `IRockRecipeSet`."""
@@ -797,6 +963,8 @@ class RockRecipeSet:
         """See `IRockRecipeSet`."""
         recipes = [removeSecurityProxy(recipe) for recipe in recipes]
 
+        load_related(Product, recipes, ["project_id"])
+
         person_ids = set()
         for recipe in recipes:
             person_ids.add(recipe.registrant_id)
@@ -807,6 +975,14 @@ class RockRecipeSet:
         )
         if repositories:
             GenericGitCollection.preloadDataForRepositories(repositories)
+
+        git_refs = GitRef.findByReposAndPaths(
+            [(recipe.git_repository, recipe.git_path) for recipe in recipes]
+        )
+        for recipe in recipes:
+            git_ref = git_refs.get((recipe.git_repository, recipe.git_path))
+            if git_ref is not None:
+                get_property_cache(recipe)._git_ref = git_ref
 
         # Add repository owners to the list of pre-loaded persons. We need
         # the target repository owner as well, since repository unique names
@@ -866,21 +1042,28 @@ class RockRecipeSet:
 
         return rockcraft_data
 
-    def findByGitRepository(self, repository, paths=None):
-        """See `IRockRecipeSet`."""
-        clauses = [RockRecipe.git_repository == repository]
-        if paths is not None:
-            clauses.append(RockRecipe.git_path.is_in(paths))
-        # XXX jugmac00 2024-08-29: Check permissions once we have some
-        # privacy infrastructure.
-        return IStore(RockRecipe).find(RockRecipe, *clauses)
-
     def findByOwner(self, owner):
         """See `ICharmRecipeSet`."""
         return IStore(RockRecipe).find(RockRecipe, owner=owner)
 
     def detachFromGitRepository(self, repository):
-        """See `IRockRecipeSet`."""
-        self.findByGitRepository(repository).set(
+        """See `ICharmRecipeSet`."""
+        recipes = self.findByGitRepository(repository)
+        for recipe in recipes:
+            get_property_cache(recipe)._git_ref = None
+        recipes.set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
         )
+
+    def empty_list(self):
+        """See `IRockRecipeSet`."""
+        return []
+
+
+def get_rock_recipe_privacy_filter(user):
+    """Return a Storm query filter to find rock recipes visible to `user`."""
+    public_filter = RockRecipe.information_type.is_in(PUBLIC_INFORMATION_TYPES)
+
+    # XXX jugmac00 2024-09-016: Flesh this out once we have more privacy
+    # infrastructure.
+    return [public_filter]

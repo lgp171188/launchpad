@@ -92,6 +92,7 @@ from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitref import GitRef
 from lp.code.model.gitrepository import GitRepository
+from lp.code.model.reciperegistry import recipe_registry
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import (
@@ -914,6 +915,9 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         ).remove()
 
 
+@recipe_registry.register_recipe_type(
+    ICharmRecipeSet, "Some charm recipes build from this repository."
+)
 @implementer(ICharmRecipeSet)
 class CharmRecipeSet:
     """See `ICharmRecipeSet`."""

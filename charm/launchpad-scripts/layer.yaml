@@ -48,6 +48,7 @@ options:
           - queued
           - reclaim-branch-space
           - revisionkarma
+          - rock-build-job
           - rosettaadmin
           - run_missing_ready
           - send-branch-mail

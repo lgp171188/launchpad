@@ -36,6 +36,7 @@
     <include package="lp.testopenid" />
     <include package="lp.registry" />
     <include package="lp.rocks" />
+    <include package="lp.crafts" />
     <include package="lp.xmlrpc" />
 
     <include file="permissions.zcml" />

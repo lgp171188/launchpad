@@ -1,0 +1,104 @@
+<!-- Copyright 2024 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
+    xmlns:webservice="http://namespaces.canonical.com/webservice"
+    xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
+    i18n_domain="launchpad">
+
+    <lp:authorizations module=".security" />
+    <include package=".browser" />
+
+    <lp:help-folder folder="help" name="+help-crafts" />
+
+    <!-- CraftRecipe -->
+    <class class="lp.crafts.model.craftrecipe.CraftRecipe">
+        <require
+            permission="launchpad.View"
+            interface="lp.crafts.interfaces.craftrecipe.ICraftRecipeView
+                       lp.crafts.interfaces.craftrecipe.ICraftRecipeEditableAttributes
+                       lp.crafts.interfaces.craftrecipe.ICraftRecipeAdminAttributes" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.crafts.interfaces.craftrecipe.ICraftRecipeEdit"
+            set_schema="lp.crafts.interfaces.craftrecipe.ICraftRecipeEditableAttributes" />
+        <require
+            permission="launchpad.Admin"
+            set_schema="lp.crafts.interfaces.craftrecipe.ICraftRecipeAdminAttributes" />
+    </class>
+    <subscriber
+        for="lp.crafts.interfaces.craftrecipe.ICraftRecipe
+             zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+        handler="lp.crafts.model.craftrecipe.craft_recipe_modified" />
+
+    <!-- CraftRecipeSet -->
+    <lp:securedutility
+        class="lp.crafts.model.craftrecipe.CraftRecipeSet"
+        provides="lp.crafts.interfaces.craftrecipe.ICraftRecipeSet">
+        <allow interface="lp.crafts.interfaces.craftrecipe.ICraftRecipeSet" />
+    </lp:securedutility>
+
+    <!-- CraftRecipeBuildRequest -->
+    <class class="lp.crafts.model.craftrecipe.CraftRecipeBuildRequest">
+        <require
+            permission="launchpad.View"
+            interface="lp.crafts.interfaces.craftrecipe.ICraftRecipeBuildRequest" />
+    </class>
+
+    <!-- CraftRecipeBuild -->
+    <class class="lp.crafts.model.craftrecipebuild.CraftRecipeBuild">
+        <require
+            permission="launchpad.View"
+            interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildView" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildEdit" />
+        <require
+            permission="launchpad.Admin"
+            interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildAdmin" />
+    </class>
+
+    <!-- CraftRecipeBuildSet -->
+    <lp:securedutility
+        class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildSet"
+        provides="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildSet">
+        <allow interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildSet" />
+    </lp:securedutility>
+    <lp:securedutility
+        class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildSet"
+        provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
+        name="CRAFTRECIPEBUILD">
+        <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
+    </lp:securedutility>
+
+    <!-- CraftFile -->
+    <class class="lp.crafts.model.craftrecipebuild.CraftFile">
+        <allow interface="lp.crafts.interfaces.craftrecipebuild.ICraftFile" />
+    </class>
+
+    <!-- CraftRecipeBuildBehaviour -->
+    <adapter
+        for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+        provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
+        factory="lp.crafts.model.craftrecipebuildbehaviour.CraftRecipeBuildBehaviour"
+        permission="zope.Public" />
+
+    <!-- craft-related jobs -->
+    <class class="lp.crafts.model.craftrecipejob.CraftRecipeJob">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
+    </class>
+    <lp:securedutility
+        component="lp.crafts.model.craftrecipejob.CraftRecipeRequestBuildsJob"
+        provides="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJobSource">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJobSource" />
+    </lp:securedutility>
+    <class class="lp.crafts.model.craftrecipejob.CraftRecipeRequestBuildsJob">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJob" />
+    </class>
+</configure>

@@ -6,7 +6,6 @@ from functools import partial
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import (
     Equals,
-    MatchesException,
     MatchesListwise,
     MatchesStructure,
     Raises,
@@ -19,7 +18,6 @@ from lp.buildmaster.interfaces.processor import (
     ProcessorNotFound,
 )
 from lp.rocks.adapters.buildarch import (
-    DuplicateRunOnError,
     RockBase,
     RockBaseConfiguration,
     determine_instances_to_build,
@@ -125,222 +123,22 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
         (
             "single entry, single arch",
             {
-                "bases": [
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "18.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "18.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                    }
-                ],
+                "base": "ubuntu@18.04",
+                "platforms": {
+                    "amd64": None,
+                },
                 "expected": [("18.04", "amd64")],
-            },
-        ),
-        (
-            "multiple entries, single arch",
-            {
-                "bases": [
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "18.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "18.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                    },
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                    },
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["riscv64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["riscv64"],
-                            }
-                        ],
-                    },
-                ],
-                "expected": [
-                    ("18.04", "amd64"),
-                    ("20.04", "amd64"),
-                    ("20.04", "riscv64"),
-                ],
             },
         ),
         (
             "single entry, multiple arches",
             {
-                "bases": [
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64", "riscv64"],
-                            }
-                        ],
-                    }
-                ],
-                "expected": [("20.04", "amd64")],
-            },
-        ),
-        (
-            "multiple entries, with cross-arch",
-            {
-                "bases": [
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["riscv64"],
-                            }
-                        ],
-                    },
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                    },
-                ],
-                "expected": [("20.04", "amd64")],
-            },
-        ),
-        (
-            "multiple run-on entries",
-            {
-                "bases": [
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "18.04",
-                                "architectures": ["amd64"],
-                            },
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64", "riscv64"],
-                            },
-                        ],
-                    }
-                ],
-                "expected": [("20.04", "amd64")],
-            },
-        ),
-        (
-            "redundant outputs",
-            {
-                "bases": [
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "18.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                    },
-                    {
-                        "build-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                        "run-on": [
-                            {
-                                "name": "ubuntu",
-                                "channel": "20.04",
-                                "architectures": ["amd64"],
-                            }
-                        ],
-                    },
-                ],
-                "expected_exception": MatchesException(
-                    DuplicateRunOnError,
-                    r"ubuntu 20\.04 \[\"amd64\"\] is present in the 'run-on' "
-                    r"of multiple items",
-                ),
+                "base": "ubuntu@18.04",
+                "platforms": {
+                    "amd64": None,
+                    "riscv64": None,
+                },
+                "expected": [("18.04", "amd64"), ("18.04", "riscv64")],
             },
         ),
     ]
@@ -369,9 +167,7 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
                         processor=processor,
                     )
                 )
-        rockcraft_data = {}
-        if self.bases is not None:
-            rockcraft_data["bases"] = self.bases
+        rockcraft_data = {"base": self.base, "platforms": self.platforms}
         build_instances_factory = partial(
             determine_instances_to_build,
             rockcraft_data,

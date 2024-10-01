@@ -9,6 +9,7 @@ __all__ = [
     "IRockRecipeBuildSet",
 ]
 
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
 from zope.schema import Bool, Datetime, Dict, Int, TextLine
@@ -39,45 +40,59 @@ class IRockRecipeBuildView(IPackageBuildView):
         readonly=True,
     )
 
-    requester = Reference(
-        IPerson,
-        title=_("The person who requested this build."),
-        required=True,
-        readonly=True,
+    requester = exported(
+        Reference(
+            IPerson,
+            title=_("The person who requested this build."),
+            required=True,
+            readonly=True,
+        )
     )
 
-    recipe = Reference(
-        IRockRecipe,
-        title=_("The rock recipe to build."),
-        required=True,
-        readonly=True,
+    recipe = exported(
+        Reference(
+            IRockRecipe,
+            title=_("The rock recipe to build."),
+            required=True,
+            readonly=True,
+        )
     )
 
-    distro_arch_series = Reference(
-        IDistroArchSeries,
-        title=_("The series and architecture for which to build."),
-        required=True,
-        readonly=True,
+    distro_arch_series = exported(
+        Reference(
+            IDistroArchSeries,
+            title=_("The series and architecture for which to build."),
+            required=True,
+            readonly=True,
+        )
     )
 
-    channels = Dict(
-        title=_("Source snap channels to use for this build."),
-        description=_(
-            "A dictionary mapping snap names to channels to use for this "
-            "build.  Currently only 'core', 'core18', 'core20', "
-            "and 'rockcraft' keys are supported."
-        ),
-        key_type=TextLine(),
+    arch_tag = exported(
+        TextLine(title=_("Architecture tag"), required=True, readonly=True)
+    )
+
+    channels = exported(
+        Dict(
+            title=_("Source snap channels to use for this build."),
+            description=_(
+                "A dictionary mapping snap names to channels to use for this "
+                "build.  Currently only 'core', 'core18', 'core20', "
+                "and 'rockcraft' keys are supported."
+            ),
+            key_type=TextLine(),
+        )
     )
 
     virtualized = Bool(
         title=_("If True, this build is virtualized."), readonly=True
     )
 
-    score = Int(
-        title=_("Score of the related build farm job (if any)."),
-        required=False,
-        readonly=True,
+    score = exported(
+        Int(
+            title=_("Score of the related build farm job (if any)."),
+            required=False,
+            readonly=True,
+        )
     )
 
     eta = Datetime(
@@ -96,14 +111,16 @@ class IRockRecipeBuildView(IPackageBuildView):
         readonly=True,
     )
 
-    revision_id = TextLine(
-        title=_("Revision ID"),
-        required=False,
-        readonly=True,
-        description=_(
-            "The revision ID of the branch used for this build, if "
-            "available."
-        ),
+    revision_id = exported(
+        TextLine(
+            title=_("Revision ID"),
+            required=False,
+            readonly=True,
+            description=_(
+                "The revision ID of the branch used for this build, if "
+                "available."
+            ),
+        )
     )
 
     store_upload_metadata = Attribute(
@@ -152,6 +169,10 @@ class IRockRecipeBuildAdmin(Interface):
         """Change the build's score."""
 
 
+# XXX jugmac00 2024-09-16 see "beta" is a lie to get WADL generation working,
+# see https://bugs.launchpad.net/lazr.restful/+bug/760849
+# Individual attributes must set their version to "devel".
+@exported_as_webservice_entry(as_of="beta")
 class IRockRecipeBuild(
     IRockRecipeBuildView,
     IRockRecipeBuildEdit,

@@ -122,6 +122,7 @@ from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
 )
+from lp.rocks.browser.hasrockrecipes import HasRockRecipesMenuMixin
 from lp.security import ModerateByRegistryExpertsOrAdmins
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
@@ -1782,6 +1783,7 @@ class TeamOverviewMenu(
     HasSnapsMenuMixin,
     HasOCIRecipesMenuMixin,
     HasCharmRecipesMenuMixin,
+    HasRockRecipesMenuMixin,
 ):
     usedfor = ITeam
     facet = "overview"
@@ -1811,6 +1813,7 @@ class TeamOverviewMenu(
         "related_software_summary",
         "view_charm_recipes",
         "view_recipes",
+        "view_rock_recipes",
         "view_snaps",
         "view_oci_recipes",
         "subscriptions",
