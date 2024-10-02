@@ -81,6 +81,7 @@ from lp.code.interfaces.codehosting import IBazaarApplication
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
 from lp.layers import WebServiceLayer
 from lp.registry.enums import VCSType
 from lp.registry.interfaces.announcement import IAnnouncementSet
@@ -885,6 +886,7 @@ class LaunchpadRootNavigation(Navigation):
         "+code-imports": ICodeImportSet,
         "codeofconduct": ICodeOfConductSet,
         "+countries": ICountrySet,
+        "+craft-recipes": ICraftRecipeSet,
         "distros": IDistributionSet,
         "+git": IGitRepositorySet,
         "karmaaction": IKarmaActionSet,

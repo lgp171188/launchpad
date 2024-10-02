@@ -16,6 +16,10 @@
             module="lp.crafts.browser.craftrecipe"
             classes="CraftRecipeNavigation" />
         <lp:url
+            for="lp.crafts.interfaces.craftrecipe.ICraftRecipeSet"
+            path_expression="string:+craft-recipes"
+            parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
+        <lp:url
             for="lp.crafts.interfaces.craftrecipe.ICraftRecipeBuildRequest"
             path_expression="string:+build-request/${id}"
             attribute_to_parent="recipe" />
@@ -23,5 +27,43 @@
             for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="recipe" />
+        <lp:menus
+            module="lp.crafts.browser.craftrecipebuild"
+            classes="CraftRecipeBuildContextMenu" />
+        <lp:navigation
+            module="lp.crafts.browser.craftrecipebuild"
+            classes="CraftRecipeBuildNavigation" />
+        <browser:defaultView
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            name="+index" />
+        <browser:page
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            class="lp.crafts.browser.craftrecipebuild.CraftRecipeBuildView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/craftrecipebuild-index.pt" />
+        <browser:page
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            class="lp.crafts.browser.craftrecipebuild.CraftRecipeBuildRetryView"
+            permission="launchpad.Edit"
+            name="+retry"
+            template="../templates/craftrecipebuild-retry.pt" />
+        <browser:page
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            class="lp.crafts.browser.craftrecipebuild.CraftRecipeBuildCancelView"
+            permission="launchpad.Edit"
+            name="+cancel"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            class="lp.crafts.browser.craftrecipebuild.CraftRecipeBuildRescoreView"
+            permission="launchpad.Admin"
+            name="+rescore"
+            template="../../app/templates/generic-edit.pt" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild"
+            factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
+            permission="zope.Public" />        
     </lp:facet>
 </configure>

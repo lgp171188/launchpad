@@ -367,6 +367,12 @@ class CraftRecipe(StormBase):
             if self._isBuildableArchitectureAllowed(das)
         ]
 
+    @property
+    def can_upload_to_store(self):
+        # no store upload planned for the initial implementation, as artifacts
+        # get pulled from Launchpad for now only.
+        return False
+
     def destroySelf(self):
         """See `ICraftRecipe`."""
         store = IStore(self)
@@ -898,6 +904,10 @@ class CraftRecipeSet:
         recipes.set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
         )
+
+    def empty_list(self):
+        """See `ICraftRecipeSet`."""
+        return []
 
     def getSourcecraftYaml(self, context, logger=None):
         """See `ICraftRecipeSet`."""

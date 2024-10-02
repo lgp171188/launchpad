@@ -914,6 +914,12 @@
       factory="lp.app.browser.tales.SpecificationFormatterAPI"
       name="fmt"
       />
+   <adapter
+      for="lp.crafts.interfaces.craftrecipe.ICraftRecipe"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.CraftRecipeFormatterAPI"
+      name="fmt"
+      />      
   <adapter
       for="lp.blueprints.interfaces.specificationbranch.ISpecificationBranch"
       provides="zope.traversing.interfaces.IPathAdapter"

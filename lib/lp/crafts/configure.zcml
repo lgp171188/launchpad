@@ -101,4 +101,5 @@
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJob" />
     </class>
+    <webservice:register module="lp.crafts.interfaces.webservice" />
 </configure>
