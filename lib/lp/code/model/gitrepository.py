@@ -103,6 +103,7 @@ from lp.code.model.gitrule import GitRule, GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
 from lp.code.model.reciperegistry import recipe_registry
 from lp.code.model.revisionstatus import RevisionStatusReport
+from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
 from lp.registry.enums import PersonVisibility
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
@@ -929,6 +930,10 @@ class GitRepository(
         ):
             get_property_cache(recipe)._git_ref = None
         for recipe in getUtility(IRockRecipeSet).findByGitRepository(
+            self, paths=paths
+        ):
+            get_property_cache(recipe)._git_ref = None
+        for recipe in getUtility(ICraftRecipeSet).findByGitRepository(
             self, paths=paths
         ):
             get_property_cache(recipe)._git_ref = None

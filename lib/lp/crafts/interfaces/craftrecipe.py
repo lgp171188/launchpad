@@ -31,7 +31,7 @@ import http.client
 from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import error_status, exported
 from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
-from zope.interface import Interface
+from zope.interface import Attribute, Interface
 from zope.schema import (
     Bool,
     Choice,
@@ -285,6 +285,8 @@ class ICraftRecipeView(Interface):
         description=_("The person who registered this craft recipe."),
     )
 
+    source = Attribute("The source branch for this craft recipe.")
+
     private = Bool(
         title=_("Private"),
         required=False,
@@ -363,6 +365,53 @@ class ICraftRecipeView(Interface):
         :return: `ICraftRecipeBuildRequest`.
         """
 
+    pending_build_requests = CollectionField(
+        title=_("Pending build requests for this craft recipe."),
+        value_type=Reference(ICraftRecipeBuildRequest),
+        required=True,
+        readonly=True,
+    )
+
+    failed_build_requests = CollectionField(
+        title=_("Failed build requests for this craft recipe."),
+        value_type=Reference(ICraftRecipeBuildRequest),
+        required=True,
+        readonly=True,
+    )
+
+    builds = CollectionField(
+        title=_("All builds of this craft recipe."),
+        description=_(
+            "All builds of this craft recipe, sorted in descending order "
+            "of finishing (or starting if not completed successfully)."
+        ),
+        # Really ICraftRecipeBuild.
+        value_type=Reference(schema=Interface),
+        readonly=True,
+    )
+
+    completed_builds = CollectionField(
+        title=_("Completed builds of this craft recipe."),
+        description=_(
+            "Completed builds of this craft recipe, sorted in descending "
+            "order of finishing."
+        ),
+        # Really ICraftRecipeBuild.
+        value_type=Reference(schema=Interface),
+        readonly=True,
+    )
+
+    pending_builds = CollectionField(
+        title=_("Pending builds of this craft recipe."),
+        description=_(
+            "Pending builds of this craft recipe, sorted in descending "
+            "order of creation."
+        ),
+        # Really ICraftRecipeBuild.
+        value_type=Reference(schema=Interface),
+        readonly=True,
+    )
+
 
 class ICraftRecipeEdit(Interface):
     """`ICraftRecipe` methods that require launchpad.Edit permission."""
@@ -424,7 +473,7 @@ class ICraftRecipeEditableAttributes(Interface):
     git_path = TextLine(
         title=_("Git branch path"),
         required=False,
-        readonly=False,
+        readonly=True,
         description=_(
             "The path of the Git branch containing a craft.yaml recipe."
         ),
@@ -583,12 +632,13 @@ class ICraftRecipeSet(Interface):
     def isValidInformationType(information_type, owner, git_ref=None):
         """Whether the information type context is valid."""
 
-    def findByGitRepository(repository, paths=None):
+    def findByGitRepository(repository, paths=None, check_permissions=True):
         """Return all craft recipes for the given Git repository.
 
         :param repository: An `IGitRepository`.
         :param paths: If not None, only return craft recipes for one of
             these Git reference paths.
+        :param check_permissions: If True, check the user's permissions.
         """
 
     def findByOwner(owner):
@@ -619,4 +669,39 @@ class ICraftRecipeSet(Interface):
             reason.
         :raises CannotParseSourcecraftYaml: if the fetched sourcecraft.yaml
             cannot be parsed.
+        """
+
+    def findByPerson(person, visible_by_user=None):
+        """Return all craft recipes relevant to `person`.
+
+        This returns craft recipes for Git branches owned by `person`, or
+        where `person` is the owner of the craft recipe.
+
+        :param person: An `IPerson`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        """
+
+    def findByProject(project, visible_by_user=None):
+        """Return all craft recipes for the given project.
+
+        :param project: An `IProduct`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        """
+
+    def findByGitRef(ref):
+        """Return all craft recipes for the given Git reference."""
+
+    def findByContext(context, visible_by_user=None, order_by_date=True):
+        """Return all craft recipes for the given context.
+
+        :param context: An `IPerson`, `IProduct`, `IGitRepository`, or
+            `IGitRef`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        :param order_by_date: If True, order recipes by descending
+            modification date.
+        :raises BadCraftRecipeSearchContext: if the context is not
+            understood.
         """

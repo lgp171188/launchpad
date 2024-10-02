@@ -30,6 +30,7 @@ from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.tests.helpers import GitHostingFixture
 from lp.crafts.interfaces.craftrecipe import (
     CRAFT_RECIPE_ALLOW_CREATE,
+    BadCraftRecipeSearchContext,
     CraftRecipeBuildAlreadyPending,
     CraftRecipeBuildDisallowedArchitecture,
     CraftRecipeBuildRequestStatus,
@@ -691,6 +692,111 @@ class TestCraftRecipeSet(TestCaseWithFactory):
             self.assertSqlAttributeEqualsDate(
                 recipe, "date_last_modified", UTC_NOW
             )
+
+    def test_findByPerson(self):
+        # ICraftRecipeSet.findByPerson returns all craft recipes with the
+        # given owner or based on repositories with the given owner.
+        owners = [self.factory.makePerson() for i in range(2)]
+        recipes = []
+        for owner in owners:
+            recipes.append(
+                self.factory.makeCraftRecipe(registrant=owner, owner=owner)
+            )
+            [ref] = self.factory.makeGitRefs(owner=owner)
+            recipes.append(self.factory.makeCraftRecipe(git_ref=ref))
+        recipe_set = getUtility(ICraftRecipeSet)
+        self.assertContentEqual(
+            recipes[:2], recipe_set.findByPerson(owners[0])
+        )
+        self.assertContentEqual(
+            recipes[2:], recipe_set.findByPerson(owners[1])
+        )
+
+    def test_findByProject(self):
+        # ICraftRecipeSet.findByProject returns all craft recipes based on
+        # repositories for the given project, and craft recipes associated
+        # directly with the project.
+        projects = [self.factory.makeProduct() for i in range(2)]
+        recipes = []
+        for project in projects:
+            [ref] = self.factory.makeGitRefs(target=project)
+            recipes.append(self.factory.makeCraftRecipe(git_ref=ref))
+            recipes.append(self.factory.makeCraftRecipe(project=project))
+        [ref] = self.factory.makeGitRefs(target=None)
+        recipes.append(self.factory.makeCraftRecipe(git_ref=ref))
+        recipe_set = getUtility(ICraftRecipeSet)
+        self.assertContentEqual(
+            recipes[:2], recipe_set.findByProject(projects[0])
+        )
+        self.assertContentEqual(
+            recipes[2:4], recipe_set.findByProject(projects[1])
+        )
+
+    def test_findByGitRef(self):
+        # ICraftRecipeSet.findByGitRef returns all craft recipes with the
+        # given Git reference.
+        repositories = [self.factory.makeGitRepository() for i in range(2)]
+        refs = []
+        recipes = []
+        for _ in repositories:
+            refs.extend(
+                self.factory.makeGitRefs(
+                    paths=["refs/heads/master", "refs/heads/other"]
+                )
+            )
+            recipes.append(self.factory.makeCraftRecipe(git_ref=refs[-2]))
+            recipes.append(self.factory.makeCraftRecipe(git_ref=refs[-1]))
+        recipe_set = getUtility(ICraftRecipeSet)
+        for ref, recipe in zip(refs, recipes):
+            self.assertContentEqual([recipe], recipe_set.findByGitRef(ref))
+
+    def test_findByContext(self):
+        # ICraftRecipeSet.findByContext returns all craft recipes with the
+        # given context.
+        person = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        repository = self.factory.makeGitRepository(
+            owner=person, target=project
+        )
+        refs = self.factory.makeGitRefs(
+            repository=repository,
+            paths=["refs/heads/master", "refs/heads/other"],
+        )
+        other_repository = self.factory.makeGitRepository()
+        other_refs = self.factory.makeGitRefs(
+            repository=other_repository,
+            paths=["refs/heads/master", "refs/heads/other"],
+        )
+        recipes = []
+        recipes.append(self.factory.makeCraftRecipe(git_ref=refs[0]))
+        recipes.append(self.factory.makeCraftRecipe(git_ref=refs[1]))
+        recipes.append(
+            self.factory.makeCraftRecipe(
+                registrant=person, owner=person, git_ref=other_refs[0]
+            )
+        )
+        recipes.append(
+            self.factory.makeCraftRecipe(
+                project=project, git_ref=other_refs[1]
+            )
+        )
+        recipe_set = getUtility(ICraftRecipeSet)
+        self.assertContentEqual(recipes[:3], recipe_set.findByContext(person))
+        self.assertContentEqual(
+            [recipes[0], recipes[1], recipes[3]],
+            recipe_set.findByContext(project),
+        )
+        self.assertContentEqual(
+            recipes[:2], recipe_set.findByContext(repository)
+        )
+        self.assertContentEqual(
+            [recipes[0]], recipe_set.findByContext(refs[0])
+        )
+        self.assertRaises(
+            BadCraftRecipeSearchContext,
+            recipe_set.findByContext,
+            self.factory.makeDistribution(),
+        )
 
 
 class TestCraftRecipeDeleteWithBuilds(TestCaseWithFactory):
