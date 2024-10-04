@@ -192,7 +192,10 @@ def determine_architectures_to_build(
     if architectures_list:
         architectures = parse_architectures_list(architectures_list)
     elif "platforms" in snapcraft_data:
-        architectures = parse_platforms(snapcraft_data, supported_arches)
+        snap_base_name = snap_base.name if snap_base else "unknown"
+        architectures = parse_platforms(
+            snapcraft_data, supported_arches, snap_base_name
+        )
     else:
         # If no architectures are specified, build one for each supported
         # architecture.
@@ -231,7 +234,9 @@ def parse_architectures_list(
 
 
 def parse_platforms(
-    snapcraft_data: Dict[str, Any], supported_arches: List[str]
+    snapcraft_data: Dict[str, Any],
+    supported_arches: List[str],
+    base_name: str,
 ) -> List[SnapArchitecture]:
     architectures = []
     supported_arch_names = supported_arches
@@ -259,9 +264,8 @@ def parse_platforms(
                 SnapArchitecture(build_on=[platform], build_for=[platform])
             )
         else:
-            base = snapcraft_data.get("base", "unknown")
             raise BadPropertyError(
-                f"'{platform}' is not a supported platform " f"for '{base}'."
+                f"'{platform}' is not a supported platform for '{base_name}'."
             )
 
     return architectures
