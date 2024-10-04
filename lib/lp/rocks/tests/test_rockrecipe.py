@@ -1148,6 +1148,17 @@ class TestRockRecipeSet(TestCaseWithFactory):
         self.assertEqual([], recipe.store_channels)
         self.assertFalse(recipe.use_fetch_service)
 
+    def test_creation_git_url(self):
+        # A rock recipe can be backed directly by a URL for an external Git
+        # repository, rather than a Git repository hosted in Launchpad.
+        ref = self.factory.makeGitRefRemote()
+        components = self.makeRockRecipeComponents(git_ref=ref)
+        rock_recipe = getUtility(IRockRecipeSet).new(**components)
+        self.assertIsNone(rock_recipe.git_repository)
+        self.assertEqual(ref.repository_url, rock_recipe.git_repository_url)
+        self.assertEqual(ref.path, rock_recipe.git_path)
+        self.assertEqual(ref, rock_recipe.git_ref)
+
     def test_creation_no_source(self):
         # Attempting to create a rock recipe without a Git repository
         # fails.
