@@ -9,8 +9,6 @@ __all__ = [
     "ProjectRockRecipeListingView",
 ]
 
-from functools import partial
-
 from zope.component import getUtility
 
 from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
@@ -43,10 +41,15 @@ class RockRecipeListingView(LaunchpadView, FeedsMixin):
         recipes = getUtility(IRockRecipeSet).findByContext(
             self.context, visible_by_user=self.user
         )
-        loader = partial(
-            getUtility(IRockRecipeSet).preloadDataForRecipes, user=self.user
-        )
-        self.recipes = DecoratedResultSet(recipes, pre_iter_hook=loader)
+        # XXX jugmac00 2024-10-06: we need to skip preloading until the
+        # function is able to handle rock recipes with external git
+        # repositories, see https://warthogs.atlassian.net/browse/LP-1972
+        #
+        # loader = partial(
+        #     getUtility(IRockRecipeSet).preloadDataForRecipes, user=self.user
+        # )
+        # self.recipes = DecoratedResultSet(recipes, pre_iter_hook=loader)
+        self.recipes = DecoratedResultSet(recipes)
 
     @cachedproperty
     def batchnav(self):
