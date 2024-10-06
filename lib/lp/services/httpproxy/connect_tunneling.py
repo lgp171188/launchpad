@@ -44,7 +44,7 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
         super().__init__(reactor, proxyHost, proxyPort, timeout, bindAddress)
         self._tunneledHost = host
         self._tunneledPort = port
-        self._contextFactory = contextFactory
+        self._contextFactory = contextFactory.creatorForNetloc(host, port)
         self._tunnelReadyDeferred = defer.Deferred()
         self._connectDeferred = None
         self._protocol = None
