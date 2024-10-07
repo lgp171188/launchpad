@@ -577,6 +577,9 @@ class ICraftRecipeSet(Interface):
     def getByName(owner, project, name):
         """Returns the appropriate `ICraftRecipe` for the given objects."""
 
+    def exists(owner, project, name):
+        """Check to see if a matching craft recipe exists."""
+
     def isValidInformationType(information_type, owner, git_ref=None):
         """Whether the information type context is valid."""
 

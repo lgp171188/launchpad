@@ -25,6 +25,7 @@ from lp.buildmaster.interfaces.processor import (
     IProcessorSet,
     ProcessorNotFound,
 )
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.tests.helpers import GitHostingFixture
 from lp.crafts.interfaces.craftrecipe import (
@@ -38,18 +39,33 @@ from lp.crafts.interfaces.craftrecipe import (
     ICraftRecipeSet,
     NoSourceForCraftRecipe,
 )
-from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
+from lp.crafts.interfaces.craftrecipebuild import (
+    ICraftRecipeBuild,
+    ICraftRecipeBuildSet,
+)
 from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeRequestBuildsJobSource,
 )
+from lp.crafts.model.craftrecipebuild import CraftFile
+from lp.crafts.model.craftrecipejob import CraftRecipeJob
+from lp.services.config import config
 from lp.services.database.constants import ONE_DAY_AGO, UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.database.sqlbase import (
+    flush_database_caches,
+    get_transaction_timestamp,
+)
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.runner import JobRunner
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import TestCaseWithFactory, admin_logged_in, person_logged_in
-from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
+from lp.testing.dbuser import dbuser
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    LaunchpadZopelessLayer,
+)
 
 
 class TestCraftRecipeFeatureFlags(TestCaseWithFactory):
@@ -118,13 +134,13 @@ class TestCraftRecipe(TestCaseWithFactory):
         recipe = self.factory.makeCraftRecipe(
             registrant=owner, owner=owner, project=project, name="condemned"
         )
-        self.assertIsNotNone(
-            getUtility(ICraftRecipeSet).getByName(owner, project, "condemned")
+        self.assertTrue(
+            getUtility(ICraftRecipeSet).exists(owner, project, "condemned")
         )
         with person_logged_in(recipe.owner):
             recipe.destroySelf()
-        self.assertIsNone(
-            getUtility(ICraftRecipeSet).getByName(owner, project, "condemned")
+        self.assertFalse(
+            getUtility(ICraftRecipeSet).exists(owner, project, "condemned")
         )
 
     def makeBuildableDistroArchSeries(
@@ -444,13 +460,15 @@ class TestCraftRecipe(TestCaseWithFactory):
                     """\
             base: ubuntu@20.04
             platforms:
-                sparc:
-                avr:
+                amd64:
+                armhf:
             """
                 )
             )
         )
-        job = self.makeRequestBuildsJob("20.04", ["sparc", "avr", "mips64el"])
+        job = self.makeRequestBuildsJob(
+            "20.04", ["amd64", "armhf", "mips64el"]
+        )
         self.assertEqual(
             get_transaction_timestamp(IStore(job.recipe)), job.date_created
         )
@@ -460,7 +478,7 @@ class TestCraftRecipe(TestCaseWithFactory):
                 job.build_request, channels=removeSecurityProxy(job.channels)
             )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["sparc", "avr"], job.channels
+            builds, job, "20.04", ["amd64", "armhf"], job.channels
         )
 
     def test_requestBuildsFromJob_architectures_parameter(self):
@@ -473,16 +491,14 @@ class TestCraftRecipe(TestCaseWithFactory):
                     """\
             base: ubuntu@20.04
             platforms:
-                sparc:
-                i386:
-                avr:
+                armhf:
                 riscv64:
             """
                 )
             )
         )
         job = self.makeRequestBuildsJob(
-            "20.04", ["avr", "mips64el", "riscv64"]
+            "20.04", ["armhf", "mips64el", "riscv64"]
         )
         self.assertEqual(
             get_transaction_timestamp(IStore(job.recipe)), job.date_created
@@ -492,10 +508,10 @@ class TestCraftRecipe(TestCaseWithFactory):
             builds = job.recipe.requestBuildsFromJob(
                 job.build_request,
                 channels=removeSecurityProxy(job.channels),
-                architectures={"avr", "riscv64"},
+                architectures={"armhf", "riscv64"},
             )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["avr", "riscv64"], job.channels
+            builds, job, "20.04", ["armhf", "riscv64"], job.channels
         )
 
 
@@ -675,3 +691,106 @@ class TestCraftRecipeSet(TestCaseWithFactory):
             self.assertSqlAttributeEqualsDate(
                 recipe, "date_last_modified", UTC_NOW
             )
+
+
+class TestCraftRecipeDeleteWithBuilds(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
+
+    def test_delete_with_builds(self):
+        # A craft recipe with build requests and builds can be deleted.
+        # Doing so deletes all its build requests, their builds, and their
+        # files.
+        owner = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        distroseries = self.factory.makeDistroSeries()
+        processor = self.factory.makeProcessor(supports_virtualized=True)
+        das = self.factory.makeDistroArchSeries(
+            distroseries=distroseries,
+            architecturetag=processor.name,
+            processor=processor,
+        )
+        das.addOrUpdateChroot(
+            self.factory.makeLibraryFileAlias(
+                filename="fake_chroot.tar.gz", db_only=True
+            )
+        )
+        sourcecraft_yaml = (
+            dedent(
+                """\
+            base: %s@%s
+            platforms:
+                %s:
+            """
+            )
+            % (
+                distroseries.distribution.name,
+                distroseries.version,
+                processor.name,
+            )
+        )
+        self.useFixture(GitHostingFixture(blob=sourcecraft_yaml))
+        [git_ref] = self.factory.makeGitRefs()
+        condemned_recipe = self.factory.makeCraftRecipe(
+            registrant=owner,
+            owner=owner,
+            project=project,
+            name="condemned",
+            git_ref=git_ref,
+        )
+        other_recipe = self.factory.makeCraftRecipe(
+            registrant=owner, owner=owner, project=project, git_ref=git_ref
+        )
+        self.assertTrue(
+            getUtility(ICraftRecipeSet).exists(owner, project, "condemned")
+        )
+        with person_logged_in(owner):
+            requests = []
+            jobs = []
+            for recipe in (condemned_recipe, other_recipe):
+                requests.append(recipe.requestBuilds(owner))
+                jobs.append(removeSecurityProxy(requests[-1])._job)
+            with dbuser(config.ICraftRecipeRequestBuildsJobSource.dbuser):
+                JobRunner(jobs).runAll()
+            for job in jobs:
+                self.assertEqual(JobStatus.COMPLETED, job.job.status)
+            [build] = requests[0].builds
+            [other_build] = requests[1].builds
+            craft_file = self.factory.makeCraftFile(build=build)
+            other_craft_file = self.factory.makeCraftFile(build=other_build)
+        store = Store.of(condemned_recipe)
+        store.flush()
+        job_ids = [job.job_id for job in jobs]
+        build_id = build.id
+        build_queue_id = build.buildqueue_record.id
+        build_farm_job_id = removeSecurityProxy(build).build_farm_job_id
+        craft_file_id = removeSecurityProxy(craft_file).id
+        with person_logged_in(condemned_recipe.owner):
+            condemned_recipe.destroySelf()
+        flush_database_caches()
+        # The deleted recipe, its build requests, and its are gone.
+        self.assertFalse(
+            getUtility(ICraftRecipeSet).exists(owner, project, "condemned")
+        )
+        self.assertIsNone(store.get(CraftRecipeJob, job_ids[0]))
+        self.assertIsNone(getUtility(ICraftRecipeBuildSet).getByID(build_id))
+        self.assertIsNone(store.get(BuildQueue, build_queue_id))
+        self.assertIsNone(store.get(BuildFarmJob, build_farm_job_id))
+        self.assertIsNone(store.get(CraftFile, craft_file_id))
+        # Unrelated build requests, build jobs and builds are still present.
+        self.assertEqual(
+            removeSecurityProxy(jobs[1]).context,
+            store.get(CraftRecipeJob, job_ids[1]),
+        )
+        self.assertEqual(
+            other_build,
+            getUtility(ICraftRecipeBuildSet).getByID(other_build.id),
+        )
+        self.assertIsNotNone(other_build.buildqueue_record)
+        self.assertIsNotNone(
+            store.get(CraftFile, removeSecurityProxy(other_craft_file).id)
+        )

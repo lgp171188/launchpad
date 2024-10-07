@@ -14,12 +14,14 @@ import yaml
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import (
+    And,
     Bool,
     DateTime,
     Int,
     Join,
     Or,
     Reference,
+    Select,
     Store,
     Unicode,
 )
@@ -34,6 +36,8 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
@@ -57,12 +61,14 @@ from lp.crafts.interfaces.craftrecipe import (
     ICraftRecipeSet,
     MissingSourcecraftYaml,
     NoSourceForCraftRecipe,
+    NoSuchCraftRecipe,
 )
 from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuildSet
 from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeRequestBuildsJobSource,
 )
 from lp.crafts.model.craftrecipebuild import CraftRecipeBuild
+from lp.crafts.model.craftrecipejob import CraftRecipeJob
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.person import IPersonSet, validate_public_person
 from lp.registry.model.distribution import Distribution
@@ -76,6 +82,7 @@ from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.model.distroarchseries import DistroArchSeries, PocketChroot
@@ -324,7 +331,46 @@ class CraftRecipe(StormBase):
 
     def destroySelf(self):
         """See `ICraftRecipe`."""
-        IStore(CraftRecipe).remove(self)
+        store = IStore(self)
+        # Remove build jobs. There won't be many queued builds, so we can
+        # afford to do this the safe but slow way via BuildQueue.destroySelf
+        # rather than in bulk.
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id
+            == CraftRecipeBuild.build_farm_job_id,
+            CraftRecipeBuild.recipe == self,
+        )
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(
+            store.find(
+                CraftRecipeBuild.build_farm_job_id,
+                CraftRecipeBuild.recipe == self,
+            )
+        )
+        store.execute(
+            """
+            DELETE FROM CraftFile
+            USING CraftRecipeBuild
+            WHERE
+                CraftFile.build = CraftRecipeBuild.id AND
+                CraftRecipeBuild.recipe = ?
+            """,
+            (self.id,),
+        )
+        store.find(CraftRecipeBuild, CraftRecipeBuild.recipe == self).remove()
+        affected_jobs = Select(
+            [CraftRecipeJob.job_id],
+            And(CraftRecipeJob.job == Job.id, CraftRecipeJob.recipe == self),
+        )
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        # XXX ruinedyourlife 2024-10-02: we need to remove webhooks once
+        # implemented getUtility(IWebhookSet).delete(self.webhooks)
+        store.remove(self)
+        store.find(
+            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)
+        ).remove()
 
     def _checkRequestBuild(self, requester):
         """May `requester` request builds of this craft recipe?"""
@@ -511,7 +557,7 @@ class CraftRecipeSet:
 
         if git_ref is None:
             raise NoSourceForCraftRecipe
-        if self.getByName(owner, project, name) is not None:
+        if self.exists(owner, project, name):
             raise DuplicateCraftRecipeName
 
         # The relevant validators will do their own checks as well, but we
@@ -544,13 +590,23 @@ class CraftRecipeSet:
 
         return recipe
 
-    def getByName(self, owner, project, name):
-        """See `ICraftRecipeSet`."""
+    def _getByName(self, owner, project, name):
         return (
             IStore(CraftRecipe)
             .find(CraftRecipe, owner=owner, project=project, name=name)
             .one()
         )
+
+    def exists(self, owner, project, name):
+        """See `ICraftRecipeSet."""
+        return self._getByName(owner, project, name) is not None
+
+    def getByName(self, owner, project, name):
+        """See `ICraftRecipeSet`."""
+        recipe = self._getByName(owner, project, name)
+        if recipe is None:
+            raise NoSuchCraftRecipe(name)
+        return recipe
 
     def isValidInformationType(self, information_type, owner, git_ref=None):
         """See `ICraftRecipeSet`."""
