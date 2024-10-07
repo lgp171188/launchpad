@@ -58,7 +58,7 @@ class ICraftRecipeRequestBuildsJob(IRunnableJob):
         description=_(
             "A dictionary mapping snap names to channels to use for these "
             "builds.  Currently only 'core', 'core18', 'core20', and "
-            "'craftcraft' keys are supported."
+            "'sourcecraft' keys are supported."
         ),
         key_type=TextLine(),
         required=False,

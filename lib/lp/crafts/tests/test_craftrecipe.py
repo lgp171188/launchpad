@@ -3,6 +3,9 @@
 
 """Test craft recipes."""
 
+from textwrap import dedent
+
+import transaction
 from storm.locals import Store
 from testtools.matchers import (
     Equals,
@@ -15,6 +18,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.processor import (
@@ -22,6 +26,7 @@ from lp.buildmaster.interfaces.processor import (
     ProcessorNotFound,
 )
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.code.tests.helpers import GitHostingFixture
 from lp.crafts.interfaces.craftrecipe import (
     CRAFT_RECIPE_ALLOW_CREATE,
     CraftRecipeBuildAlreadyPending,
@@ -195,9 +200,9 @@ class TestCraftRecipe(TestCaseWithFactory):
         das = self.makeBuildableDistroArchSeries()
         build_request = self.factory.makeCraftRecipeBuildRequest(recipe=recipe)
         build = recipe.requestBuild(
-            build_request, das, channels={"craftcraft": "edge"}
+            build_request, das, channels={"sourcecraft": "edge"}
         )
-        self.assertEqual({"craftcraft": "edge"}, build.channels)
+        self.assertEqual({"sourcecraft": "edge"}, build.channels)
 
     def test_requestBuild_rejects_repeats(self):
         # requestBuild refuses if there is already a pending build.
@@ -330,7 +335,7 @@ class TestCraftRecipe(TestCaseWithFactory):
         now = get_transaction_timestamp(IStore(recipe))
         with person_logged_in(recipe.owner.teamowner):
             request = recipe.requestBuilds(
-                recipe.owner.teamowner, channels={"craftcraft": "edge"}
+                recipe.owner.teamowner, channels={"sourcecraft": "edge"}
             )
         self.assertThat(
             request,
@@ -340,7 +345,7 @@ class TestCraftRecipe(TestCaseWithFactory):
                 recipe=Equals(recipe),
                 status=Equals(CraftRecipeBuildRequestStatus.PENDING),
                 error_message=Is(None),
-                channels=MatchesDict({"craftcraft": Equals("edge")}),
+                channels=MatchesDict({"sourcecraft": Equals("edge")}),
                 architectures=Is(None),
             ),
         )
@@ -352,7 +357,7 @@ class TestCraftRecipe(TestCaseWithFactory):
                 job=MatchesStructure.byEquality(status=JobStatus.WAITING),
                 recipe=Equals(recipe),
                 requester=Equals(recipe.owner.teamowner),
-                channels=Equals({"craftcraft": "edge"}),
+                channels=Equals({"sourcecraft": "edge"}),
                 architectures=Is(None),
             ),
         )
@@ -389,6 +394,108 @@ class TestCraftRecipe(TestCaseWithFactory):
                 channels=Is(None),
                 architectures=MatchesSetwise(Equals("amd64"), Equals("i386")),
             ),
+        )
+
+    def makeRequestBuildsJob(
+        self, distro_series_version, arch_tags, git_ref=None
+    ):
+        recipe = self.factory.makeCraftRecipe(git_ref=git_ref)
+        distro_series = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            version=distro_series_version,
+        )
+        for arch_tag in arch_tags:
+            self.makeBuildableDistroArchSeries(
+                distroseries=distro_series, architecturetag=arch_tag
+            )
+        return getUtility(ICraftRecipeRequestBuildsJobSource).create(
+            recipe, recipe.owner.teamowner, {"sourcecraft": "edge"}
+        )
+
+    def assertRequestedBuildsMatch(
+        self, builds, job, distro_series_version, arch_tags, channels
+    ):
+        self.assertThat(
+            builds,
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        requester=Equals(job.requester),
+                        recipe=Equals(job.recipe),
+                        distro_arch_series=MatchesStructure(
+                            distroseries=MatchesStructure.byEquality(
+                                version=distro_series_version
+                            ),
+                            architecturetag=Equals(arch_tag),
+                        ),
+                        channels=Equals(channels),
+                    )
+                    for arch_tag in arch_tags
+                )
+            ),
+        )
+
+    def test_requestBuildsFromJob_restricts_explicit_list(self):
+        # requestBuildsFromJob limits builds targeted at an explicit list of
+        # architectures to those allowed for the recipe.
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+            base: ubuntu@20.04
+            platforms:
+                sparc:
+                avr:
+            """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("20.04", ["sparc", "avr", "mips64el"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["sparc", "avr"], job.channels
+        )
+
+    def test_requestBuildsFromJob_architectures_parameter(self):
+        # If an explicit set of architectures was given as a parameter,
+        # requestBuildsFromJob intersects those with any other constraints
+        # when requesting builds.
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+            base: ubuntu@20.04
+            platforms:
+                sparc:
+                i386:
+                avr:
+                riscv64:
+            """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob(
+            "20.04", ["avr", "mips64el", "riscv64"]
+        )
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request,
+                channels=removeSecurityProxy(job.channels),
+                architectures={"avr", "riscv64"},
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["avr", "riscv64"], job.channels
         )
 
 

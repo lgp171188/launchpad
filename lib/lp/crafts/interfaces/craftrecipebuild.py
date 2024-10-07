@@ -68,7 +68,7 @@ class ICraftRecipeBuildView(IPackageBuildView):
         description=_(
             "A dictionary mapping snap names to channels to use for this "
             "build.  Currently only 'core', 'core18', 'core20', "
-            "and 'craftcraft' keys are supported."
+            "and 'sourcecraft' keys are supported."
         ),
         key_type=TextLine(),
     )

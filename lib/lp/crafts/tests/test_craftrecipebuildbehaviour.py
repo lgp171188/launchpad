@@ -413,11 +413,11 @@ class TestAsyncCraftRecipeBuildBehaviour(
     @defer.inlineCallbacks
     def test_extraBuildArgs_channels(self):
         # If the build needs particular channels, extraBuildArgs sends them.
-        job = self.makeJob(channels={"craftcraft": "edge"}, with_builder=True)
+        job = self.makeJob(channels={"sourcecraft": "edge"}, with_builder=True)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertFalse(isProxy(args["channels"]))
-        self.assertEqual({"craftcraft": "edge"}, args["channels"])
+        self.assertEqual({"sourcecraft": "edge"}, args["channels"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_archives_primary(self):

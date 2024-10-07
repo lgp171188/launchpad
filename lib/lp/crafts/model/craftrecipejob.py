@@ -19,6 +19,11 @@ from zope.component import getUtility
 from zope.interface import implementer, provider
 
 from lp.app.errors import NotFoundError
+from lp.crafts.interfaces.craftrecipe import (
+    CannotFetchSourcecraftYaml,
+    CannotParseSourcecraftYaml,
+    MissingSourcecraftYaml,
+)
 from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeJob,
     ICraftRecipeRequestBuildsJob,
@@ -155,6 +160,12 @@ class CraftRecipeRequestBuildsJob(CraftRecipeJobDerived):
     """A Job that processes a request for builds of a craft recipe."""
 
     class_job_type = CraftRecipeJobType.REQUEST_BUILDS
+
+    user_error_types = (
+        CannotParseSourcecraftYaml,
+        MissingSourcecraftYaml,
+    )
+    retry_error_types = (CannotFetchSourcecraftYaml,)
 
     max_retries = 5
 
@@ -304,9 +315,13 @@ class CraftRecipeRequestBuildsJob(CraftRecipeJobDerived):
             )
             return
         try:
-            # XXX ruinedyourlife 2024-09-25: Implement this once we have a
-            # CraftRecipeBuild model.
-            raise NotImplementedError
+            self.builds = self.recipe.requestBuildsFromJob(
+                self.build_request,
+                channels=self.channels,
+                architectures=self.architectures,
+                logger=log,
+            )
+            self.error_message = None
         except Exception as e:
             self.error_message = str(e)
             # The normal job infrastructure will abort the transaction, but
