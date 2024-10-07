@@ -25,6 +25,7 @@ from testtools.twistedsupport import (
 from twisted.internet import defer, reactor, ssl
 from twisted.python.failure import Failure
 from twisted.web import server
+from twisted.web.client import URI as TwistedWebClientURI
 from twisted.web.client import BrowserLikePolicyForHTTPS
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -259,22 +260,6 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         return deferred.addCallback(got_result)
 
-    def test_https_prober_uses_proxy(self):
-        proxy_port = 6654
-        self.pushConfig(
-            "launchpad", http_proxy="http://localhost:%s" % proxy_port
-        )
-
-        url = "https://localhost:%s/valid-mirror/file" % self.port
-        prober = RedirectAwareProberFactory(url, timeout=0.5)
-        self.assertEqual(prober.url, url)
-
-        # We just want to check that it did the request using the correct
-        # Agent, pointing to the correct proxy config.
-        agent = prober.getHttpsClient()._agent
-        self.assertIsInstance(agent, TunnelingAgent)
-        self.assertEqual(("localhost", proxy_port, None), agent._proxyConf)
-
     def test_https_fails_on_invalid_certificates(self):
         """Changes set back the default browser-like policy for HTTPS
         request and make sure the request is failing due to invalid
@@ -314,6 +299,30 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         deferred = prober.probe()
 
         return assert_fails_with(deferred, InvalidHTTPSCertificateSkipped)
+
+
+class TestProberHTTPSProxy(TestCase):
+    def test_https_prober_uses_proxy_and_sends_sni(self):
+        proxy_port = 6654
+        self.pushConfig(
+            "launchpad", http_proxy=f"http://localhost:{proxy_port}"
+        )
+
+        url = "https://mirror.example.com/valid-mirror/file"
+        prober = RedirectAwareProberFactory(url, timeout=0.5)
+        self.assertEqual(prober.url, url)
+
+        # We just want to check that it did the request using the correct
+        # Agent, pointing to the correct proxy config, configured with the
+        # correct SNI hostname.
+        agent = prober.getHttpsClient()._agent
+        self.assertIsInstance(agent, TunnelingAgent)
+        self.assertEqual(("localhost", proxy_port, None), agent._proxyConf)
+        endpoint = agent._getEndpoint(
+            TwistedWebClientURI.fromBytes(url.encode())
+        )
+        sni_hostname = endpoint._contextFactory._hostname
+        self.assertEqual("mirror.example.com", sni_hostname)
 
 
 class TestProberProtocolAndFactory(TestCase):
