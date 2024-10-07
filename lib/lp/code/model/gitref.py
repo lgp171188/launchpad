@@ -1010,6 +1010,44 @@ def _fetch_blob_from_launchpad(repository_url, ref_path, filename):
     return response.content
 
 
+# XXX ines-almeida 2024-10-07: Needs refactoring to allow extending more easily
+# especially since this list will for sure grow as we allow non-staging stores.
+# Potentially look into using a feature rule.
+_store_hostnames = {
+    "git.staging.snapcraftcontent.com",
+    "git.staging.pkg.store",
+}
+
+
+def _fetch_blob_from_store(repository_url, ref_path, filename):
+    """Fetch blob from a *craft store repo.
+
+    The *craft stores use a turnip backend, similar to Launchpad.
+    """
+    url = urlsplit(repository_url)
+    repo_path = url.path.strip("/")
+    try:
+        response = urlfetch(
+            "https://%s/%s/plain/%s"
+            % (url.hostname, repo_path, quote(filename)),
+            params={"h": ref_path},
+        )
+    except requests.RequestException as e:
+        if (
+            e.response is not None
+            and e.response.status_code == requests.codes.NOT_FOUND
+        ):
+            raise GitRepositoryBlobNotFound(
+                repository_url, filename, rev=ref_path
+            )
+        else:
+            raise GitRepositoryScanFault(
+                "Failed to get file from Git repository at %s: %s"
+                % (repository_url, str(e))
+            )
+    return response.content
+
+
 @implementer(IGitRef, IGitRefRemote)
 @provider(IGitRefRemoteSet)
 class GitRefRemote(GitRefMixin):
@@ -1133,6 +1171,10 @@ class GitRefRemote(GitRefMixin):
             return _fetch_blob_from_gitlab(
                 self.repository_url, self.path, filename
             )
+        if url.hostname in _store_hostnames:
+            return _fetch_blob_from_store(
+                self.repository_url, self.path, filename
+            )
         if (
             url.hostname == "git.launchpad.net"
             and config.vhost.mainsite.hostname != "launchpad.net"
@@ -1146,6 +1188,7 @@ class GitRefRemote(GitRefMixin):
             return _fetch_blob_from_launchpad(
                 self.repository_url, self.path, filename
             )
+
         codehosting_host = urlsplit(config.codehosting.git_anon_root).hostname
         if url.hostname == codehosting_host:
             repository = getUtility(IGitLookup).getByUrl(self.repository_url)

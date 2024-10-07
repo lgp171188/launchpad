@@ -507,6 +507,62 @@ class TestGitRefGetBlob(TestCaseWithFactory):
         self.assertRaises(GitRepositoryScanFault, ref.getBlob, "dir/file")
 
     @responses.activate
+    def test_remote_store_branch(self):
+        url = "https://git.staging.snapcraftcontent.com/ubuntu/public/test"
+        ref = self.factory.makeGitRefRemote(
+            repository_url=url,
+            path="refs/heads/path",
+        )
+        responses.add(
+            "GET",
+            url + "/plain/dir/file?h=refs%2Fheads%2Fpath",
+            body=b"foo",
+        )
+        self.assertEqual(b"foo", ref.getBlob("dir/file"))
+
+    @responses.activate
+    def test_remote_store_HEAD(self):
+        url = "https://git.staging.snapcraftcontent.com/ubuntu/public/test"
+        ref = self.factory.makeGitRefRemote(
+            repository_url=url,
+            path="HEAD",
+        )
+        responses.add(
+            "GET",
+            url + "/plain/dir/file?h=HEAD",
+            body=b"foo",
+        )
+        self.assertEqual(b"foo", ref.getBlob("dir/file"))
+
+    @responses.activate
+    def test_remote_store_404(self):
+        url = "https://git.staging.snapcraftcontent.com/ubuntu/public/test"
+        ref = self.factory.makeGitRefRemote(
+            repository_url=url,
+            path="HEAD",
+        )
+        responses.add(
+            "GET",
+            url + "/plain/dir/file?h=HEAD",
+            status=404,
+        )
+        self.assertRaises(GitRepositoryBlobNotFound, ref.getBlob, "dir/file")
+
+    @responses.activate
+    def test_remote_store_error(self):
+        url = "https://git.staging.snapcraftcontent.com/ubuntu/public/test"
+        ref = self.factory.makeGitRefRemote(
+            repository_url=url,
+            path="HEAD",
+        )
+        responses.add(
+            "GET",
+            url + "/plain/dir/file?h=HEAD",
+            status=500,
+        )
+        self.assertRaises(GitRepositoryScanFault, ref.getBlob, "dir/file")
+
+    @responses.activate
     def test_remote_github_branch(self):
         ref = self.factory.makeGitRefRemote(
             repository_url="https://github.com/owner/name",
