@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
     -   id: check-added-large-files
     -   id: check-ast
@@ -26,7 +26,7 @@ repos:
     -   id: no-commit-to-branch
         args: [--branch, master, --branch, db-devel]
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
+    rev: v3.17.0
     hooks:
     -   id: pyupgrade
         args: [--keep-percent-format, --py38-plus]
@@ -36,7 +36,7 @@ repos:
             |utilities/community-contributions\.py
           )$
 -   repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.1.1
+    rev: 24.8.0
     hooks:
       - id: black
         exclude: |
@@ -45,13 +45,13 @@ repos:
             |utilities/community-contributions\.py
           )$
 -   repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
     -   id: isort
         name: isort
         args: [--profile, black]
 -   repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
+    rev: 7.1.1
     hooks:
     -   id: flake8
         exclude: ^lib/contrib/
@@ -59,7 +59,7 @@ repos:
           - flake8-absolute-import==1.0.0.1
           - flake8-bugbear==23.3.12
 -   repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.53.0
+    rev: v9.12.0
     hooks:
     -   id: eslint
         args: [--quiet]
@@ -79,11 +79,11 @@ repos:
         args: [--allow-option-flag, IGNORE_EXCEPTION_MODULE_IN_PYTHON2]
         exclude: ^doc/.*
 -   repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
+    rev: v0.10.0.1
     hooks:
     -   id: shellcheck
 -   repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
     -   id: codespell
         args: ["-I", ".codespell-ignore"]
