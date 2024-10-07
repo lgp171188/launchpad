@@ -335,7 +335,7 @@ Roll back everything related with ed_upload:
 Acceptance Work-flow
 --------------------
 
-The NascentUpload.do_accept method is the code which effectivelly adds
+The NascentUpload.do_accept method is the code which effectively adds
 information to the database. Respective PackageUploadQueue,
 SourcePackageRelease, Build and BinaryPackageRelease will only exist
 after calling this method.

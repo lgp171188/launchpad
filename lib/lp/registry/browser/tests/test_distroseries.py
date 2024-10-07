@@ -253,7 +253,7 @@ class DistroSeriesIndexFunctionalTestCase(TestCaseWithFactory):
         # 'parent_name').
         # If multiple parents are created, the DSDs will be created with
         # the first one.
-        if type(parent_names) == str:
+        if isinstance(parent_names, str):
             parent_names = [parent_names]
         dsps = []
         for parent_name in parent_names:

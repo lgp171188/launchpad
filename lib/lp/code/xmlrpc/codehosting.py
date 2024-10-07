@@ -390,7 +390,9 @@ class CodehostingAPI(LaunchpadXMLRPCView):
             if not path.startswith("/"):
                 return faults.InvalidPath(path)
             stripped_path = unescape(path.strip("/"))
-            lookup = lambda l: self.performLookup(requester_id, path, l)
+            lookup = lambda lookup: self.performLookup(
+                requester_id, path, lookup
+            )
             result = get_first_path_result(stripped_path, lookup, None)
             if result is None:
                 raise faults.PathTranslationError(path)

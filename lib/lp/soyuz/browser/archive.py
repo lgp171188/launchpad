@@ -1274,7 +1274,6 @@ class ArchivePackageDeletionView(ArchiveSourceSelectionFormView):
     custom_widget_deletion_comment = CustomWidgetFactory(
         StrippedTextWidget, displayWidth=50
     )
-    label = "Delete packages"
 
     @property
     def label(self):
@@ -1560,7 +1559,6 @@ class ArchivePackageCopyingView(
     custom_widget_destination_archive = DestinationArchiveDropdownWidget
     custom_widget_destination_series = DestinationSeriesDropdownWidget
     custom_widget_include_binaries = LaunchpadRadioWidget
-    label = "Copy packages"
 
     @property
     def label(self):

@@ -138,7 +138,6 @@ class LaunchpadScript:
     txn = None
     usage: Optional[str] = None
     description: Optional[str] = None
-    lockfilepath = None
     loglevel = logging.INFO
 
     # State for the log_unhandled_exceptions decorator.
