@@ -626,6 +626,17 @@ class TestCraftRecipeSet(TestCaseWithFactory):
         self.assertEqual([], recipe.store_channels)
         self.assertFalse(recipe.use_fetch_service)
 
+    def test_creation_git_url(self):
+        # A craft recipe can be backed directly by a URL for an external Git
+        # repository, rather than a Git repository hosted in Launchpad.
+        ref = self.factory.makeGitRefRemote()
+        components = self.makeCraftRecipeComponents(git_ref=ref)
+        craft_recipe = getUtility(ICraftRecipeSet).new(**components)
+        self.assertIsNone(craft_recipe.git_repository)
+        self.assertEqual(ref.repository_url, craft_recipe.git_repository_url)
+        self.assertEqual(ref.path, craft_recipe.git_path)
+        self.assertEqual(ref, craft_recipe.git_ref)
+
     def test_creation_no_source(self):
         # Attempting to create a craft recipe without a Git repository
         # fails.
