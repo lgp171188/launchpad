@@ -51,6 +51,7 @@ class RequestFetchServiceSessionCommand(amp.Command):
     arguments = [
         (b"url", amp.Unicode()),
         (b"auth_header", amp.String()),
+        (b"policy", amp.Unicode()),
     ]
     response = [
         (b"id", amp.Unicode()),
@@ -165,20 +166,13 @@ class RequestProcess(AMPChild):
             return response.json()
 
     @RequestFetchServiceSessionCommand.responder
-    def requestFetchServiceSessionCommand(self, url, auth_header):
+    def requestFetchServiceSessionCommand(self, url, auth_header, policy):
         with Session() as session:
             session.trust_env = False
-            # XXX pelpsi: from ST108 and from what Claudio
-            # said `timeout` and `policy` are not mandatory now:
-            # `timeout` will never be mandatory and we don't pass
-            # it as parameter to the call.
-            # `policy` could be mandatory or optional in future
-            # (assuming `strict` as default), so for now it's better
-            # to pass it explicitly and set it as `permissive`.
             response = session.post(
                 url,
                 headers={"Authorization": auth_header},
-                json={"policy": "permissive"},
+                json={"policy": policy},
             )
             response.raise_for_status()
             return response.json()
