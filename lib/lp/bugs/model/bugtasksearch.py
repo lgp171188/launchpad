@@ -252,7 +252,7 @@ def search_bugs(pre_iter_hook, alternatives, just_bug_ids=False):
             # users are combined.
             decorators.append(decorator)
 
-        resultset = reduce(lambda l, r: l.union(r), results)
+        resultset = reduce(lambda left, right: left.union(right), results)
         origin = _build_origin(
             orderby_joins, [], Alias(resultset._get_select(), "BugTaskFlat")
         )

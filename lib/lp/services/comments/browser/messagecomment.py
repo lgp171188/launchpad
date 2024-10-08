@@ -12,8 +12,6 @@ from lp.services.propertycache import cachedproperty
 class MessageComment:
     """Mixin to partially implement IComment in terms of IMessage."""
 
-    extra_css_class = ""
-
     has_footer = False
 
     def __init__(self, comment_limit):

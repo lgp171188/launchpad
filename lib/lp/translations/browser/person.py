@@ -108,10 +108,6 @@ def compose_pofile_filter_url(pofile, person):
 class ActivityDescriptor:
     """Description of a past translation activity."""
 
-    date = None
-    title = None
-    url = None
-
     def __init__(self, person, pofiletranslator):
         """Describe a past translation activity by `person`.
 

@@ -213,7 +213,7 @@ class CodeImportEventSet:
         """See `ICodeImportEventSet`."""
         assert machine is not None, "machine must not be None"
         assert (
-            type(reason) == DBItem
+            isinstance(reason, DBItem)
             and reason.enum == CodeImportMachineOfflineReason
         ), (
             "reason must be a CodeImportMachineOfflineReason value, "

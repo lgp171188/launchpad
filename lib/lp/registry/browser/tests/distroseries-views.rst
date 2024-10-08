@@ -223,7 +223,7 @@ A distroseries is created using the distroseries view.
     >>> view.field_names
     ['name', 'version', 'display_name', 'summary']
 
-A distroseries is created whent the required field are submitted.
+A distroseries is created when the required field are submitted.
 
     >>> form = {
     ...     "field.name": "sane",

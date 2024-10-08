@@ -61,7 +61,7 @@ Inline addition is also possible.
     <LimitedList(3, [2, 3, 4])>
 
 We can multiply lists by integers. Again, if the length of the result
-exceeds the maximum number of allowed lements, the first elements
+exceeds the maximum number of allowed elements, the first elements
 are dropped.
 
     >>> LimitedList(5, [4, 5, 6]) * 2

@@ -850,7 +850,7 @@ the unsubscribe request, an error message will be sent.
     To: no-priv@canonical.com
     <BLANKLINE>
     ...
-    You do not have permission to unsubcribe Mark Shuttleworth.
+    You do not have permission to unsubscribe Mark Shuttleworth.
     ...
 
 Unsubscribing from a bug also unsubscribes you from its duplicates. To
@@ -3254,7 +3254,7 @@ importing machinery.
     ...
     ... Oh, hai!
     ...
-    ... I'm in ur comments, sendin u a msej.
+    ... I'm in your comments, sending you a message.
     ... """
     ...     % {
     ...         "bug_id": bug_with_watch.id,
