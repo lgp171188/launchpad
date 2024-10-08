@@ -26,7 +26,6 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
-from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
 from lp.crafts.interfaces.craftrecipebuild import (
     ICraftFile,
     ICraftRecipeBuild,
@@ -411,7 +410,7 @@ class CraftRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         # Circular import.
-        from lp.crafts.model.craftrecipe import CraftRecipe
+        # from lp.crafts.model.craftrecipe import CraftRecipe
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
@@ -423,8 +422,11 @@ class CraftRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             DistroSeries, distroarchserieses, ["distroseries_id"]
         )
         load_related(Distribution, distroserieses, ["distribution_id"])
-        recipes = load_related(CraftRecipe, builds, ["recipe_id"])
-        getUtility(ICraftRecipeSet).preloadDataForRecipes(recipes)
+        # XXX ruinedyourlife 2024-09-25: we need to skip preloading until
+        # function is able to handle rock recipes with external git
+        # repositories, see https://warthogs.atlassian.net/browse/LP-1972
+        # recipes = load_related(CraftRecipe, builds, ["recipe_id"])
+        # getUtility(ICraftRecipeSet).preloadDataForRecipes(recipes)
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""
