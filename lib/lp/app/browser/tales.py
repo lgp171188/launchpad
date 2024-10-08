@@ -2099,6 +2099,21 @@ class RockRecipeFormatterAPI(CustomizableFormatter):
         }
 
 
+class CraftRecipeFormatterAPI(CustomizableFormatter):
+    """Adapter providing fmt support for ICraftRecipe objects."""
+
+    _link_summary_template = _(
+        "Craft recipe %(name)s for %(owner)s in %(project)s"
+    )
+
+    def _link_summary_values(self):
+        return {
+            "name": self._context.name,
+            "owner": self._context.owner.displayname,
+            "project": self._context.project.displayname,
+        }
+
+
 class SpecificationFormatterAPI(CustomizableFormatter):
     """Adapter providing fmt support for Specification objects"""
 
