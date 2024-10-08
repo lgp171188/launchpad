@@ -6914,6 +6914,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """Make a new craft recipe."""
         if registrant is None:
@@ -6962,6 +6963,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             store_secrets=store_secrets,
             store_channels=store_channels,
             date_created=date_created,
+            use_fetch_service=use_fetch_service,
         )
         if is_stale is not None:
             removeSecurityProxy(recipe).is_stale = is_stale

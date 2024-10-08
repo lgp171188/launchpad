@@ -79,7 +79,9 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         """
         build = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
-        yield self.startProxySession(args)
+        yield self.startProxySession(
+            args, use_fetch_service=build.recipe.use_fetch_service
+        )
         args["name"] = build.recipe.store_name or build.recipe.name
         channels = build.channels or {}
         # We have to remove the security proxy that Zope applies to this
@@ -120,3 +122,7 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # that check does not make sense.  We do, however, refuse to build
         # for obsolete series.
         assert self.build.distro_series.status != SeriesStatus.OBSOLETE
+
+    @defer.inlineCallbacks
+    def _saveBuildSpecificFiles(self, upload_path):
+        yield self.endProxySession(upload_path)

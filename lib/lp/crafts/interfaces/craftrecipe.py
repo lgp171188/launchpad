@@ -711,6 +711,18 @@ class ICraftRecipeAdminAttributes(Interface):
         )
     )
 
+    use_fetch_service = exported(
+        Bool(
+            title=_("Use fetch service"),
+            required=True,
+            readonly=False,
+            description=_(
+                "If set, Craft builds will use the fetch-service instead "
+                "of the builder-proxy to access external resources."
+            ),
+        )
+    )
+
 
 # XXX ruinedyourlife 2024-10-02
 # https://bugs.launchpad.net/lazr.restful/+bug/760849:
@@ -775,6 +787,7 @@ class ICraftRecipeSet(Interface):
         store_secrets=None,
         store_channels=None,
         date_created=None,
+        use_fetch_service=False,
     ):
         """Create an `ICraftRecipe`."""
 
