@@ -934,8 +934,8 @@ class FakeCodehosting:
         elif lookup["type"] == "alias":
             result = get_first_path_result(
                 lookup["lp_path"],
-                lambda l: self.performLookup(
-                    requester_id, l, branch_name_only=True
+                lambda lookup: self.performLookup(
+                    requester_id, lookup, branch_name_only=True
                 ),
                 None,
             )
@@ -967,7 +967,7 @@ class FakeCodehosting:
             return faults.InvalidPath(path)
         result = get_first_path_result(
             unescape(path.strip("/")),
-            lambda l: self.performLookup(requester_id, l),
+            lambda lookup: self.performLookup(requester_id, lookup),
             None,
         )
         if result is not None:

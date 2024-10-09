@@ -26,7 +26,6 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
-from lp.crafts.interfaces.craftrecipe import ICraftRecipeSet
 from lp.crafts.interfaces.craftrecipebuild import (
     ICraftFile,
     ICraftRecipeBuild,
@@ -35,6 +34,8 @@ from lp.crafts.interfaces.craftrecipebuild import (
 from lp.crafts.mail.craftrecipebuild import CraftRecipeBuildMailer
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.distribution import Distribution
+from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -46,6 +47,7 @@ from lp.services.database.stormbase import StormBase
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
 @implementer(ICraftRecipeBuild)
@@ -175,6 +177,11 @@ class CraftRecipeBuild(PackageBuildMixin, StormBase):
     def distro_series(self):
         """See `IPackageBuild`."""
         return self.distro_arch_series.distroseries
+
+    @property
+    def arch_tag(self):
+        """See `ICraftRecipeBuild`."""
+        return self.distro_arch_series.architecturetag
 
     @property
     def archive(self):
@@ -403,13 +410,23 @@ class CraftRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         # Circular import.
-        from lp.crafts.model.craftrecipe import CraftRecipe
+        # from lp.crafts.model.craftrecipe import CraftRecipe
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
         load_related(LibraryFileContent, lfas, ["contentID"])
-        recipes = load_related(CraftRecipe, builds, ["recipe_id"])
-        getUtility(ICraftRecipeSet).preloadDataForRecipes(recipes)
+        distroarchserieses = load_related(
+            DistroArchSeries, builds, ["distro_arch_series_id"]
+        )
+        distroserieses = load_related(
+            DistroSeries, distroarchserieses, ["distroseries_id"]
+        )
+        load_related(Distribution, distroserieses, ["distribution_id"])
+        # XXX ruinedyourlife 2024-09-25: we need to skip preloading until
+        # function is able to handle rock recipes with external git
+        # repositories, see https://warthogs.atlassian.net/browse/LP-1972
+        # recipes = load_related(CraftRecipe, builds, ["recipe_id"])
+        # getUtility(ICraftRecipeSet).preloadDataForRecipes(recipes)
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""

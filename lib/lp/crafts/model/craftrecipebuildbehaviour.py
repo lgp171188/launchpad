@@ -79,7 +79,9 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         """
         build = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
-        yield self.startProxySession(args)
+        yield self.startProxySession(
+            args, use_fetch_service=build.recipe.use_fetch_service
+        )
         args["name"] = build.recipe.store_name or build.recipe.name
         channels = build.channels or {}
         # We have to remove the security proxy that Zope applies to this
@@ -94,7 +96,12 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         if build.recipe.build_path is not None:
             args["build_path"] = build.recipe.build_path
         if build.recipe.git_ref is not None:
-            args["git_repository"] = build.recipe.git_repository.git_https_url
+            if build.recipe.git_ref.repository_url is not None:
+                args["git_repository"] = build.recipe.git_ref.repository_url
+            else:
+                args["git_repository"] = (
+                    build.recipe.git_repository.git_https_url
+                )
             # "git clone -b" doesn't accept full ref names.  If this becomes
             # a problem then we could change launchpad-buildd to do "git
             # clone" followed by "git checkout" instead.
@@ -120,3 +127,7 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # that check does not make sense.  We do, however, refuse to build
         # for obsolete series.
         assert self.build.distro_series.status != SeriesStatus.OBSOLETE
+
+    @defer.inlineCallbacks
+    def _saveBuildSpecificFiles(self, upload_path):
+        yield self.endProxySession(upload_path)

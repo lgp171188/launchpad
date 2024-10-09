@@ -241,6 +241,24 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
             },
         ),
         (
+            "unsupported architecture",
+            {
+                "sourcecraft_data": {
+                    "base": "ubuntu@22.04",
+                    "platforms": {
+                        "mips-arch": {
+                            "build-on": ["mips"],
+                            "build-for": "mips",
+                        },
+                    },
+                },
+                "expected_exception": MatchesException(
+                    BadPropertyError,
+                    "Unsupported architecture mips in platform mips-arch",
+                ),
+            },
+        ),
+        (
             "bare base",
             {
                 "sourcecraft_data": {

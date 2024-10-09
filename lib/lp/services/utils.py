@@ -62,7 +62,7 @@ class AutoDecorateMetaClass(type):
         decorators = class_dict.pop(f"_{class_name}__decorators", None)
         if decorators is not None:
             for name, value in class_dict.items():
-                if type(value) == FunctionType:
+                if isinstance(value, FunctionType):
                     for decorator in decorators:
                         value = decorator(value)
                         assert callable(

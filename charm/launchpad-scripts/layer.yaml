@@ -18,6 +18,7 @@ options:
           - charm-build-job
           - checkwatches
           - copy_packages
+          - craft-build-job
           - cve
           - distributionmirror
           - distroseriesdifferencejob

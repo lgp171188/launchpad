@@ -228,4 +228,4 @@ def determine_instances_to_build(
                     instances[das] = config
                     break
 
-    return list(instances)
+    return instances

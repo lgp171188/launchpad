@@ -41,11 +41,11 @@ look at it we can see that the added tags are there.
 So if we add another tag by setting the 'tags' attribute to a new list.
 The tag will be added in the table.
 
-    >>> bug_one.tags = ["svg", "sco", "installl"]
+    >>> bug_one.tags = ["svg", "sco", "install"]
     >>> for tag in bug_one.tags:
     ...     print(tag)
     ...
-    installl
+    install
     sco
     svg
     >>> from lp.services.database.interfaces import IStore
@@ -62,18 +62,18 @@ The tag will be added in the table.
     >>> for bugtag in bugtags:
     ...     print(bugtag.tag)
     ...
-    installl
+    install
     sco
     svg
 
 We allow adding the same tag twice, but it won't be stored twice in the
 db:
 
-    >>> bug_one.tags = ["svg", "svg", "sco", "installl"]
+    >>> bug_one.tags = ["svg", "svg", "sco", "install"]
     >>> for tag in bug_one.tags:
     ...     print(tag)
     ...
-    installl
+    install
     sco
     svg
 

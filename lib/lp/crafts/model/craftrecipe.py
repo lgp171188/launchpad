@@ -5,20 +5,26 @@
 
 __all__ = [
     "CraftRecipe",
+    "get_craft_recipe_privacy_filter",
 ]
 
 from datetime import timezone
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 
+import yaml
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import (
+    And,
     Bool,
     DateTime,
+    Desc,
     Int,
     Join,
+    Not,
     Or,
     Reference,
+    Select,
     Store,
     Unicode,
 )
@@ -32,13 +38,30 @@ from lp.app.enums import (
     PUBLIC_INFORMATION_TYPES,
     InformationType,
 )
+from lp.app.errors import IncompatibleArguments
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.model.builder import Builder
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
+from lp.code.interfaces.gitcollection import (
+    IAllGitRepositories,
+    IGitCollection,
+)
+from lp.code.interfaces.gitref import IGitRef, IGitRefRemoteSet
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.gitcollection import GenericGitCollection
+from lp.code.model.gitref import GitRef
 from lp.code.model.gitrepository import GitRepository
 from lp.code.model.reciperegistry import recipe_registry
+from lp.crafts.adapters.buildarch import determine_instances_to_build
 from lp.crafts.interfaces.craftrecipe import (
     CRAFT_RECIPE_ALLOW_CREATE,
     CRAFT_RECIPE_PRIVATE_FEATURE_FLAG,
+    BadCraftRecipeSearchContext,
+    CannotFetchSourcecraftYaml,
+    CannotParseSourcecraftYaml,
     CraftRecipeBuildAlreadyPending,
     CraftRecipeBuildDisallowedArchitecture,
     CraftRecipeBuildRequestStatus,
@@ -50,17 +73,26 @@ from lp.crafts.interfaces.craftrecipe import (
     ICraftRecipe,
     ICraftRecipeBuildRequest,
     ICraftRecipeSet,
+    MissingSourcecraftYaml,
     NoSourceForCraftRecipe,
+    NoSuchCraftRecipe,
 )
 from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuildSet
 from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeRequestBuildsJobSource,
 )
 from lp.crafts.model.craftrecipebuild import CraftRecipeBuild
+from lp.crafts.model.craftrecipejob import CraftRecipeJob
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.person import IPersonSet, validate_public_person
+from lp.registry.interfaces.person import (
+    IPerson,
+    IPersonSet,
+    validate_public_person,
+)
+from lp.registry.interfaces.product import IProduct
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.product import Product
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
@@ -68,8 +100,10 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import Greatest, NullsLast
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.model.distroarchseries import DistroArchSeries, PocketChroot
@@ -139,6 +173,8 @@ class CraftRecipe(StormBase):
 
     git_path = Unicode(name="git_path", allow_none=True)
 
+    git_repository_url = Unicode(name="git_repository_url", allow_none=True)
+
     build_path = Unicode(name="build_path", allow_none=True)
 
     require_virtualized = Bool(name="require_virtualized")
@@ -172,6 +208,8 @@ class CraftRecipe(StormBase):
 
     _store_channels = JSON("store_channels", allow_none=True)
 
+    use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
+
     def __init__(
         self,
         registrant,
@@ -190,6 +228,7 @@ class CraftRecipe(StormBase):
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """Construct a `CraftRecipe`."""
         if not getFeatureFlag(CRAFT_RECIPE_ALLOW_CREATE):
@@ -215,6 +254,7 @@ class CraftRecipe(StormBase):
         self.store_name = store_name
         self.store_secrets = store_secrets
         self.store_channels = store_channels
+        self.use_fetch_service = use_fetch_service
 
     def __repr__(self):
         return "<CraftRecipe ~%s/%s/+craft/%s>" % (
@@ -228,23 +268,39 @@ class CraftRecipe(StormBase):
         """See `ICraftRecipe`."""
         return self.information_type not in PUBLIC_INFORMATION_TYPES
 
+    @cachedproperty
+    def _git_ref(self):
+        if self.git_repository is not None:
+            return self.git_repository.getRefByPath(self.git_path)
+        elif self.git_repository_url is not None:
+            return getUtility(IGitRefRemoteSet).new(
+                self.git_repository_url, self.git_path
+            )
+        else:
+            return None
+
     @property
     def git_ref(self):
         """See `ICraftRecipe`."""
-        if self.git_repository is not None:
-            return self.git_repository.getRefByPath(self.git_path)
-        else:
-            return None
+        return self._git_ref
 
     @git_ref.setter
     def git_ref(self, value):
         """See `ICraftRecipe`."""
         if value is not None:
             self.git_repository = value.repository
+            self.git_repository_url = value.repository_url
             self.git_path = value.path
         else:
             self.git_repository = None
+            self.git_repository_url = None
             self.git_path = None
+        get_property_cache(self)._git_ref = value
+
+    @property
+    def source(self):
+        """See `ICraftRecipe`."""
+        return self.git_ref
 
     @property
     def store_channels(self):
@@ -266,9 +322,17 @@ class CraftRecipe(StormBase):
         """See `ICraftRecipe`."""
         if self.information_type in PUBLIC_INFORMATION_TYPES:
             return True
-        # XXX ruinedyourlife 2024-09-24: Finish implementing this once we have
-        # more privacy infrastructure.
-        return False
+        if user is None:
+            return False
+        return (
+            not IStore(CraftRecipe)
+            .find(
+                CraftRecipe,
+                CraftRecipe.id == self.id,
+                get_craft_recipe_privacy_filter(user),
+            )
+            .is_empty()
+        )
 
     def _isBuildableArchitectureAllowed(self, das):
         """Check whether we may build for a buildable `DistroArchSeries`.
@@ -316,9 +380,54 @@ class CraftRecipe(StormBase):
             if self._isBuildableArchitectureAllowed(das)
         ]
 
+    @property
+    def can_upload_to_store(self):
+        # no store upload planned for the initial implementation, as artifacts
+        # get pulled from Launchpad for now only.
+        return False
+
     def destroySelf(self):
         """See `ICraftRecipe`."""
-        IStore(CraftRecipe).remove(self)
+        store = IStore(self)
+        # Remove build jobs. There won't be many queued builds, so we can
+        # afford to do this the safe but slow way via BuildQueue.destroySelf
+        # rather than in bulk.
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id
+            == CraftRecipeBuild.build_farm_job_id,
+            CraftRecipeBuild.recipe == self,
+        )
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(
+            store.find(
+                CraftRecipeBuild.build_farm_job_id,
+                CraftRecipeBuild.recipe == self,
+            )
+        )
+        store.execute(
+            """
+            DELETE FROM CraftFile
+            USING CraftRecipeBuild
+            WHERE
+                CraftFile.build = CraftRecipeBuild.id AND
+                CraftRecipeBuild.recipe = ?
+            """,
+            (self.id,),
+        )
+        store.find(CraftRecipeBuild, CraftRecipeBuild.recipe == self).remove()
+        affected_jobs = Select(
+            [CraftRecipeJob.job_id],
+            And(CraftRecipeJob.job == Job.id, CraftRecipeJob.recipe == self),
+        )
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        # XXX ruinedyourlife 2024-10-02: we need to remove webhooks once
+        # implemented getUtility(IWebhookSet).delete(self.webhooks)
+        store.remove(self)
+        store.find(
+            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)
+        ).remove()
 
     def _checkRequestBuild(self, requester):
         """May `requester` request builds of this craft recipe?"""
@@ -377,9 +486,176 @@ class CraftRecipe(StormBase):
         )
         return self.getBuildRequest(job.job_id)
 
+    def requestBuildsFromJob(
+        self,
+        build_request,
+        channels=None,
+        architectures=None,
+        allow_failures=False,
+        logger=None,
+    ):
+        """See `ICraftRecipe`."""
+        try:
+            sourcecraft_data = removeSecurityProxy(
+                getUtility(ICraftRecipeSet).getSourcecraftYaml(self)
+            )
+
+            # Sort by (Distribution.id, DistroSeries.id, Processor.id) for
+            # determinism.  This is chosen to be a similar order as in
+            # BinaryPackageBuildSet.createForSource, to minimize confusion.
+            supported_arches = sorted(
+                self.getAllowedArchitectures(),
+                key=attrgetter(
+                    "distroseries.distribution.id",
+                    "distroseries.id",
+                    "processor.id",
+                ),
+            )
+            instances_to_build = determine_instances_to_build(
+                sourcecraft_data, supported_arches, architectures
+            )
+        except Exception as e:
+            if not allow_failures:
+                raise
+            elif logger is not None:
+                logger.exception(
+                    " - %s/%s/%s: %s",
+                    self.owner.name,
+                    self.project.name,
+                    self.name,
+                    e,
+                )
+
+        builds = []
+        for das in instances_to_build:
+            try:
+                build = self.requestBuild(
+                    build_request, das, channels=channels
+                )
+                if logger is not None:
+                    logger.debug(
+                        " - %s/%s/%s %s/%s/%s: Build requested.",
+                        self.owner.name,
+                        self.project.name,
+                        self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name,
+                        das.architecturetag,
+                    )
+                builds.append(build)
+            except CraftRecipeBuildAlreadyPending:
+                pass
+            except Exception as e:
+                if not allow_failures:
+                    raise
+                elif logger is not None:
+                    logger.exception(
+                        " - %s/%s/%s %s/%s/%s: %s",
+                        self.owner.name,
+                        self.project.name,
+                        self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name,
+                        das.architecturetag,
+                        e,
+                    )
+        return builds
+
     def getBuildRequest(self, job_id):
         """See `ICraftRecipe`."""
         return CraftRecipeBuildRequest(self, job_id)
+
+    @property
+    def pending_build_requests(self):
+        """See `ICraftRecipe`."""
+        job_source = getUtility(ICraftRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(
+            self, statuses=(JobStatus.WAITING, JobStatus.RUNNING)
+        )
+        return DecoratedResultSet(
+            jobs, result_decorator=CraftRecipeBuildRequest.fromJob
+        )
+
+    @property
+    def failed_build_requests(self):
+        """See `ICraftRecipe`."""
+        job_source = getUtility(ICraftRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(self, statuses=(JobStatus.FAILED,))
+        return DecoratedResultSet(
+            jobs, result_decorator=CraftRecipeBuildRequest.fromJob
+        )
+
+    def _getBuilds(self, filter_term, order_by):
+        """The actual query to get the builds."""
+        query_args = [
+            CraftRecipeBuild.recipe == self,
+        ]
+        if filter_term is not None:
+            query_args.append(filter_term)
+        result = Store.of(self).find(CraftRecipeBuild, *query_args)
+        result.order_by(order_by)
+
+        def eager_load(rows):
+            getUtility(ICraftRecipeBuildSet).preloadBuildsData(rows)
+            getUtility(IBuildQueueSet).preloadForBuildFarmJobs(rows)
+            load_related(Builder, rows, ["builder_id"])
+
+        return DecoratedResultSet(result, pre_iter_hook=eager_load)
+
+    @property
+    def builds(self):
+        """See `ICraftRecipe`."""
+        order_by = (
+            NullsLast(
+                Desc(
+                    Greatest(
+                        CraftRecipeBuild.date_started,
+                        CraftRecipeBuild.date_finished,
+                    )
+                )
+            ),
+            Desc(CraftRecipeBuild.date_created),
+            Desc(CraftRecipeBuild.id),
+        )
+        return self._getBuilds(None, order_by)
+
+    @property
+    def _pending_states(self):
+        """All the build states we consider pending (non-final)."""
+        return [
+            BuildStatus.NEEDSBUILD,
+            BuildStatus.BUILDING,
+            BuildStatus.UPLOADING,
+            BuildStatus.CANCELLING,
+        ]
+
+    @property
+    def completed_builds(self):
+        """See `ICraftRecipe`."""
+        filter_term = Not(CraftRecipeBuild.status.is_in(self._pending_states))
+        order_by = (
+            NullsLast(
+                Desc(
+                    Greatest(
+                        CraftRecipeBuild.date_started,
+                        CraftRecipeBuild.date_finished,
+                    )
+                )
+            ),
+            Desc(CraftRecipeBuild.id),
+        )
+        return self._getBuilds(filter_term, order_by)
+
+    @property
+    def pending_builds(self):
+        """See `ICraftRecipe`."""
+        filter_term = CraftRecipeBuild.status.is_in(self._pending_states)
+        # We want to order by date_created but this is the same as ordering
+        # by id (since id increases monotonically) and is less expensive.
+        order_by = Desc(CraftRecipeBuild.id)
+        return self._getBuilds(filter_term, order_by)
 
 
 @recipe_registry.register_recipe_type(
@@ -396,6 +672,9 @@ class CraftRecipeSet:
         project,
         name,
         description=None,
+        git_repository=None,
+        git_repository_url=None,
+        git_path=None,
         git_ref=None,
         build_path=None,
         require_virtualized=True,
@@ -407,6 +686,7 @@ class CraftRecipeSet:
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """See `ICraftRecipeSet`."""
         if not registrant.inTeam(owner):
@@ -421,9 +701,37 @@ class CraftRecipeSet:
                     % (registrant.displayname, owner.displayname)
                 )
 
+        if (
+            sum(
+                [
+                    git_repository is not None,
+                    git_repository_url is not None,
+                    git_ref is not None,
+                ]
+            )
+            > 1
+        ):
+            raise IncompatibleArguments(
+                "You cannot specify more than one of 'git_repository', "
+                "'git_repository_url', and 'git_ref'."
+            )
+        if (git_repository is None and git_repository_url is None) != (
+            git_path is None
+        ):
+            raise IncompatibleArguments(
+                "You must specify both or neither of "
+                "'git_repository'/'git_repository_url' and 'git_path'."
+            )
+        if git_repository is not None:
+            git_ref = git_repository.getRefByPath(git_path)
+        elif git_repository_url is not None:
+            git_ref = getUtility(IGitRefRemoteSet).new(
+                git_repository_url, git_path
+            )
+
         if git_ref is None:
             raise NoSourceForCraftRecipe
-        if self.getByName(owner, project, name) is not None:
+        if self.exists(owner, project, name):
             raise DuplicateCraftRecipeName
 
         # The relevant validators will do their own checks as well, but we
@@ -451,18 +759,29 @@ class CraftRecipeSet:
             store_secrets=store_secrets,
             store_channels=store_channels,
             date_created=date_created,
+            use_fetch_service=use_fetch_service,
         )
         store.add(recipe)
 
         return recipe
 
-    def getByName(self, owner, project, name):
-        """See `ICraftRecipeSet`."""
+    def _getByName(self, owner, project, name):
         return (
             IStore(CraftRecipe)
             .find(CraftRecipe, owner=owner, project=project, name=name)
             .one()
         )
+
+    def exists(self, owner, project, name):
+        """See `ICraftRecipeSet."""
+        return self._getByName(owner, project, name) is not None
+
+    def getByName(self, owner, project, name):
+        """See `ICraftRecipeSet`."""
+        recipe = self._getByName(owner, project, name)
+        if recipe is None:
+            raise NoSuchCraftRecipe(name)
+        return recipe
 
     def isValidInformationType(self, information_type, owner, git_ref=None):
         """See `ICraftRecipeSet`."""
@@ -483,28 +802,114 @@ class CraftRecipeSet:
 
         return True
 
-    def findByGitRepository(self, repository, paths=None):
+    def _getRecipesFromCollection(
+        self, collection, owner=None, visible_by_user=None
+    ):
+        id_column = CraftRecipe.git_repository_id
+        ids = collection.getRepositoryIds()
+        expressions = [id_column.is_in(ids._get_select())]
+        if owner is not None:
+            expressions.append(CraftRecipe.owner == owner)
+        expressions.append(get_craft_recipe_privacy_filter(visible_by_user))
+        return IStore(CraftRecipe).find(CraftRecipe, *expressions)
+
+    def findByPerson(self, person, visible_by_user=None):
+        """See `ICraftRecipeSet`."""
+
+        def _getRecipes(collection):
+            collection = collection.visibleByUser(visible_by_user)
+            owned = self._getRecipesFromCollection(
+                collection.ownedBy(person), visible_by_user=visible_by_user
+            )
+            packaged = self._getRecipesFromCollection(
+                collection, owner=person, visible_by_user=visible_by_user
+            )
+            return owned.union(packaged)
+
+        git_collection = removeSecurityProxy(getUtility(IAllGitRepositories))
+        git_recipes = _getRecipes(git_collection)
+        git_url_recipes = IStore(CraftRecipe).find(
+            CraftRecipe,
+            CraftRecipe.owner == person,
+            CraftRecipe.git_repository_url != None,
+        )
+        return git_recipes.union(git_url_recipes)
+
+    def findByProject(self, project, visible_by_user=None):
+        """See `ICraftRecipeSet`."""
+
+        def _getRecipes(collection):
+            return self._getRecipesFromCollection(
+                collection.visibleByUser(visible_by_user),
+                visible_by_user=visible_by_user,
+            )
+
+        recipes_for_project = IStore(CraftRecipe).find(
+            CraftRecipe,
+            CraftRecipe.project == project,
+            get_craft_recipe_privacy_filter(visible_by_user),
+        )
+        git_collection = removeSecurityProxy(IGitCollection(project))
+        return recipes_for_project.union(_getRecipes(git_collection))
+
+    def findByGitRepository(
+        self,
+        repository,
+        paths=None,
+        visible_by_user=None,
+        check_permissions=True,
+    ):
         """See `ICraftRecipeSet`."""
         clauses = [CraftRecipe.git_repository == repository]
         if paths is not None:
             clauses.append(CraftRecipe.git_path.is_in(paths))
-        # XXX ruinedyourlife 2024-09-24: Check permissions once we have some
-        # privacy infrastructure.
+        if check_permissions:
+            clauses.append(get_craft_recipe_privacy_filter(visible_by_user))
         return IStore(CraftRecipe).find(CraftRecipe, *clauses)
+
+    def findByGitRef(self, ref, visible_by_user=None):
+        """See `ICraftRecipeSet`."""
+        return IStore(CraftRecipe).find(
+            CraftRecipe,
+            CraftRecipe.git_repository == ref.repository,
+            CraftRecipe.git_path == ref.path,
+            get_craft_recipe_privacy_filter(visible_by_user),
+        )
+
+    def findByContext(self, context, visible_by_user=None, order_by_date=True):
+        """See `ICraftRecipeSet`."""
+        if IPerson.providedBy(context):
+            recipes = self.findByPerson(
+                context, visible_by_user=visible_by_user
+            )
+        elif IProduct.providedBy(context):
+            recipes = self.findByProject(
+                context, visible_by_user=visible_by_user
+            )
+        elif IGitRepository.providedBy(context):
+            recipes = self.findByGitRepository(
+                context, visible_by_user=visible_by_user
+            )
+        elif IGitRef.providedBy(context):
+            recipes = self.findByGitRef(
+                context, visible_by_user=visible_by_user
+            )
+        else:
+            raise BadCraftRecipeSearchContext(context)
+        if order_by_date:
+            recipes = recipes.order_by(Desc(CraftRecipe.date_last_modified))
+        return recipes
 
     def findByOwner(self, owner):
         """See `ICraftRecipeSet`."""
         return IStore(CraftRecipe).find(CraftRecipe, owner=owner)
 
-    def detachFromGitRepository(self, repository):
-        """See `ICraftRecipeSet`."""
-        self.findByGitRepository(repository).set(
-            git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
-        )
-
     def preloadDataForRecipes(self, recipes, user=None):
         """See `ICraftRecipeSet`."""
         recipes = [removeSecurityProxy(recipe) for recipe in recipes]
+
+        load_related(Product, recipes, ["project_id"])
+
         person_ids = set()
         for recipe in recipes:
             person_ids.add(recipe.registrant_id)
@@ -516,6 +921,14 @@ class CraftRecipeSet:
         if repositories:
             GenericGitCollection.preloadDataForRepositories(repositories)
 
+        git_refs = GitRef.findByReposAndPaths(
+            [(recipe.git_repository, recipe.git_path) for recipe in recipes]
+        )
+        for recipe in recipes:
+            git_ref = git_refs.get((recipe.git_repository, recipe.git_path))
+            if git_ref is not None:
+                get_property_cache(recipe)._git_ref = git_ref
+
         # Add repository owners to the list of pre-loaded persons. We need
         # the target repository owner as well, since repository unique names
         # aren't trigger-maintained.
@@ -526,6 +939,67 @@ class CraftRecipeSet:
                 person_ids, need_validity=True
             )
         )
+
+    def detachFromGitRepository(self, repository):
+        """See `ICraftRecipeSet`."""
+        recipes = self.findByGitRepository(repository)
+        for recipe in recipes:
+            get_property_cache(recipe)._git_ref = None
+        recipes.set(
+            git_repository_id=None, git_path=None, date_last_modified=UTC_NOW
+        )
+
+    def empty_list(self):
+        """See `ICraftRecipeSet`."""
+        return []
+
+    def getSourcecraftYaml(self, context, logger=None):
+        """See `ICraftRecipeSet`."""
+        if ICraftRecipe.providedBy(context):
+            recipe = context
+            source = context.git_ref
+        else:
+            recipe = None
+            source = context
+        if source is None:
+            raise CannotFetchSourcecraftYaml("Craft source is not defined")
+        try:
+            path = "sourcecraft.yaml"
+            if recipe is not None and recipe.build_path is not None:
+                path = "/".join((recipe.build_path, path))
+            try:
+                blob = source.getBlob(path)
+            except GitRepositoryBlobNotFound:
+                if logger is not None:
+                    logger.exception(
+                        "Cannot find sourcecraft.yaml in %s",
+                        source.unique_name,
+                    )
+                raise MissingSourcecraftYaml(source.unique_name)
+        except GitRepositoryScanFault as e:
+            msg = "Failed to get sourcecraft.yaml from %s"
+            if logger is not None:
+                logger.exception(msg, source.unique_name)
+            raise CannotFetchSourcecraftYaml(
+                "%s: %s" % (msg % source.unique_name, e)
+            )
+
+        try:
+            sourcecraft_data = yaml.safe_load(blob)
+        except Exception as e:
+            # Don't bother logging parsing errors from user-supplied YAML.
+            raise CannotParseSourcecraftYaml(
+                "Cannot parse sourcecraft.yaml from %s: %s"
+                % (source.unique_name, e)
+            )
+
+        if not isinstance(sourcecraft_data, dict):
+            raise CannotParseSourcecraftYaml(
+                "The top level of sourcecraft.yaml from %s is not a mapping"
+                % source.unique_name
+            )
+
+        return sourcecraft_data
 
 
 @implementer(ICraftRecipeBuildRequest)
@@ -598,3 +1072,14 @@ class CraftRecipeBuildRequest:
     def architectures(self):
         """See `ICraftRecipeBuildRequest`."""
         return self._job.architectures
+
+
+def get_craft_recipe_privacy_filter(user):
+    """Return a Storm query filter to find craft recipes visible to `user`."""
+    public_filter = CraftRecipe.information_type.is_in(
+        PUBLIC_INFORMATION_TYPES
+    )
+
+    # XXX ruinedyourlife 2024-10-02: Flesh this out once we have more privacy
+    # infrastructure.
+    return [public_filter]
