@@ -69,6 +69,7 @@ from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
@@ -747,6 +748,20 @@ class ICraftRecipeAdminAttributes(Interface):
         )
     )
 
+    fetch_service_policy = exported(
+        Choice(
+            title=_("Fetch service policy"),
+            vocabulary=FetchServicePolicy,
+            required=False,
+            readonly=False,
+            default=FetchServicePolicy.STRICT,
+            description=_(
+                "Which policy to use when using the fetch service. Ignored if "
+                "`use_fetch_service` flag is False."
+            ),
+        )
+    )
+
 
 # XXX ruinedyourlife 2024-10-02
 # https://bugs.launchpad.net/lazr.restful/+bug/760849:
@@ -815,6 +830,7 @@ class ICraftRecipeSet(Interface):
         store_channels=None,
         date_created=None,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Create an `ICraftRecipe`."""
 

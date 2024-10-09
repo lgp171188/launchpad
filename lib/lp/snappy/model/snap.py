@@ -52,6 +52,7 @@ from lp.app.errors import (
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
@@ -397,6 +398,13 @@ class Snap(StormBase, WebhookTargetMixin):
 
     _use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
 
+    fetch_service_policy = DBEnum(
+        enum=FetchServicePolicy,
+        default=FetchServicePolicy.STRICT,
+        name="fetch_service_policy",
+        allow_none=True,
+    )
+
     def __init__(
         self,
         registrant,
@@ -423,6 +431,7 @@ class Snap(StormBase, WebhookTargetMixin):
         project=None,
         pro_enable=False,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Construct a `Snap`."""
         super().__init__()
@@ -459,6 +468,7 @@ class Snap(StormBase, WebhookTargetMixin):
         self.store_channels = store_channels
         self.pro_enable = pro_enable
         self.use_fetch_service = use_fetch_service
+        self.fetch_service_policy = fetch_service_policy
 
     def __repr__(self):
         return "<Snap ~%s/+snap/%s>" % (self.owner.name, self.name)
@@ -1542,6 +1552,7 @@ class SnapSet:
         project=None,
         pro_enable=False,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
@@ -1624,6 +1635,7 @@ class SnapSet:
             project=project,
             pro_enable=pro_enable,
             use_fetch_service=use_fetch_service,
+            fetch_service_policy=fetch_service_policy,
         )
         store.add(snap)
         snap._reconcileAccess()

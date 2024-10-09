@@ -41,6 +41,7 @@ from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
 from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
@@ -362,6 +363,61 @@ class TestAsyncSnapBuildBehaviourFetchService(
         snap = self.factory.makeSnap(use_fetch_service=True)
         request = self.factory.makeSnapBuildRequest(snap=snap)
         job = self.makeJob(snap=snap, build_request=request)
+        args = yield job.extraBuildArgs()
+        request_matcher = MatchesDict(
+            {
+                "method": Equals(b"POST"),
+                "uri": Equals(b"/session"),
+                "headers": ContainsDict(
+                    {
+                        b"Authorization": MatchesListwise(
+                            [
+                                Equals(
+                                    b"Basic "
+                                    + base64.b64encode(
+                                        b"admin-launchpad.test:admin-secret"
+                                    )
+                                )
+                            ]
+                        ),
+                        b"Content-Type": MatchesListwise(
+                            [
+                                Equals(b"application/json"),
+                            ]
+                        ),
+                    }
+                ),
+                "json": MatchesDict(
+                    {
+                        "policy": Equals("strict"),
+                    }
+                ),
+            }
+        )
+        self.assertThat(
+            self.fetch_service_api.sessions.requests,
+            MatchesListwise([request_matcher]),
+        )
+        self.assertIn("proxy_url", args)
+        self.assertIn("revocation_endpoint", args)
+        self.assertTrue(args["use_fetch_service"])
+        self.assertIn("secrets", args)
+        self.assertIn("fetch_service_mitm_certificate", args["secrets"])
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_permissive(self):
+        """Create a snap build request with a successful fetch service
+        configuration.
+
+        `proxy_url` and `revocation_endpoint` are correctly populated.
+        """
+        job = self.makeJob(
+            use_fetch_service=True,
+            fetch_service_policy=FetchServicePolicy.PERMISSIVE,
+        )
         args = yield job.extraBuildArgs()
         request_matcher = MatchesDict(
             {
