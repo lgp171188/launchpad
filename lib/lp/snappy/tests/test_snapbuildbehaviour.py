@@ -414,10 +414,15 @@ class TestAsyncSnapBuildBehaviourFetchService(
 
         `proxy_url` and `revocation_endpoint` are correctly populated.
         """
-        job = self.makeJob(
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        snap = self.factory.makeSnap(
             use_fetch_service=True,
             fetch_service_policy=FetchServicePolicy.PERMISSIVE,
         )
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
         args = yield job.extraBuildArgs()
         request_matcher = MatchesDict(
             {
