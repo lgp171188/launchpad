@@ -3,13 +3,19 @@
 
 SET client_min_messages=ERROR;
 
-ALTER TABLE Snap ADD COLUMN fetch_service_policy integer DEFAULT NULL;
+-- Note that adding `DEFAULT 1` to this new column won't backfill the whole
+-- table (which could be time-expensive for the Snaps table in particular
+-- since it will have a lot of entries). Instead, the default value will be
+-- returned the next time the row is accessed. See
+-- https://www.postgresql.org/docs/current/ddl-alter.html#DDL-ALTER-ADDING-A-COLUMN
+-- for more details.
+ALTER TABLE Snap ADD COLUMN fetch_service_policy integer DEFAULT 1 NOT NULL;
 COMMENT ON COLUMN Snap.fetch_service_policy IS 'Enum describing which fetch service policy to use when building this snap.';
 
-ALTER TABLE RockRecipe ADD COLUMN fetch_service_policy integer DEFAULT NULL;
+ALTER TABLE RockRecipe ADD COLUMN fetch_service_policy integer DEFAULT 1 NOT NULL;
 COMMENT ON COLUMN RockRecipe.fetch_service_policy IS 'Enum describing which fetch service policy to use when building this snap.';
 
-ALTER TABLE CraftRecipe ADD COLUMN fetch_service_policy integer DEFAULT NULL;
+ALTER TABLE CraftRecipe ADD COLUMN fetch_service_policy integer DEFAULT 1 NOT NULL;
 COMMENT ON COLUMN CraftRecipe.fetch_service_policy IS 'Enum describing which fetch service policy to use when building this snap.';
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2211, 31, 0);
