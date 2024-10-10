@@ -521,6 +521,28 @@ class TestGitRefGetBlob(TestCaseWithFactory):
         self.assertEqual(b"foo", ref.getBlob("dir/file"))
 
     @responses.activate
+    def test_remote_store_branch_feature_flag(self):
+        self.useFixture(
+            FeatureFixture(
+                {
+                    "git_repository_url.store_hostnames": "git.test."
+                    "rockcraftcontent.com git.rockcraftcontent.com"
+                }
+            )
+        )
+        url = "https://git.test.rockcraftcontent.com/ubuntu/public/test"
+        ref = self.factory.makeGitRefRemote(
+            repository_url=url,
+            path="refs/heads/path",
+        )
+        responses.add(
+            "GET",
+            url + "/plain/dir/file?h=refs%2Fheads%2Fpath",
+            body=b"foo",
+        )
+        self.assertEqual(b"foo", ref.getBlob("dir/file"))
+
+    @responses.activate
     def test_remote_store_HEAD(self):
         url = "https://git.staging.snapcraftcontent.com/ubuntu/public/test"
         ref = self.factory.makeGitRefRemote(

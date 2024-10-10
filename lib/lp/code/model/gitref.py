@@ -1010,13 +1010,17 @@ def _fetch_blob_from_launchpad(repository_url, ref_path, filename):
     return response.content
 
 
-# XXX ines-almeida 2024-10-07: Needs refactoring to allow extending more easily
-# especially since this list will for sure grow as we allow non-staging stores.
-# Potentially look into using a feature rule.
-_store_hostnames = {
-    "git.staging.snapcraftcontent.com",
-    "git.staging.pkg.store",
-}
+def _get_store_hostnames():
+    """Return the valid hostnames that we accept for the store git
+    repositories (which use a turnip backend).
+
+    Return value configured in the `git_repository_url.store_hostnames` feature
+    flag, or default values.
+    """
+    store_urls = getFeatureFlag("git_repository_url.store_hostnames")
+    if store_urls:
+        return store_urls.split(" ")
+    return ["git.staging.snapcraftcontent.com", "git.staging.pkg.store"]
 
 
 def _fetch_blob_from_store(repository_url, ref_path, filename):
@@ -1171,7 +1175,7 @@ class GitRefRemote(GitRefMixin):
             return _fetch_blob_from_gitlab(
                 self.repository_url, self.path, filename
             )
-        if url.hostname in _store_hostnames:
+        if url.hostname in _get_store_hostnames():
             return _fetch_blob_from_store(
                 self.repository_url, self.path, filename
             )
