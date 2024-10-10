@@ -7,7 +7,7 @@ SET client_min_messages=ERROR;
 -- table (which could be time-expensive for the Snaps table in particular
 -- since it will have a lot of entries). Instead, the default value will be
 -- returned the next time the row is accessed. See
--- https://www.postgresql.org/docs/current/ddl-alter.html#DDL-ALTER-ADDING-A-COLUMN
+-- https://www.postgresql.org/docs/12/ddl-alter.html#DDL-ALTER-ADDING-A-COLUMN
 -- for more details.
 
 -- The default value of 1 will point to 'strict' policy for the fetch service
