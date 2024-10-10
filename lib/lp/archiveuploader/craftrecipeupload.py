@@ -45,7 +45,7 @@ class CraftRecipeUpload:
                 # All relevant files will be in a subdirectory.
                 continue
             for craft_file in sorted(filenames):
-                if craft_file.endswith(".craft"):
+                if craft_file.endswith(".tar.xz"):
                     found_craft = True
                 craft_paths.append(os.path.join(dirpath, craft_file))
 
