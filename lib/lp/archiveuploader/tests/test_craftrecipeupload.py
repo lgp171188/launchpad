@@ -45,7 +45,9 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
         upload_dir = os.path.join(
             self.incoming_folder, "test", str(self.build.id), "ubuntu"
         )
-        write_file(os.path.join(upload_dir, "foo_0_all.craft"), b"craft")
+        write_file(
+            os.path.join(upload_dir, "foo_0_all.craft.tar.xz"), b"craft"
+        )
         write_file(os.path.join(upload_dir, "foo_0_all.manifest"), b"manifest")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build
