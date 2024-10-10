@@ -314,6 +314,14 @@ flag_info = sorted(
             "",
             "",
         ),
+        (
+            "git_repository_url.store_hostnames",
+            "space delimited",
+            "Valid store hostnames to use as remote repositories",
+            "git.staging.snapcraftcontent.com git.staging.pkg.store",
+            "",
+            "",
+        ),
     ]
 )
 
