@@ -9,6 +9,8 @@ SET client_min_messages=ERROR;
 -- returned the next time the row is accessed. See
 -- https://www.postgresql.org/docs/current/ddl-alter.html#DDL-ALTER-ADDING-A-COLUMN
 -- for more details.
+
+-- The default value of 1 will point to 'strict' policy for the fetch service
 ALTER TABLE Snap ADD COLUMN fetch_service_policy integer DEFAULT 1 NOT NULL;
 COMMENT ON COLUMN Snap.fetch_service_policy IS 'Enum describing which fetch service policy to use when building this snap.';
 
