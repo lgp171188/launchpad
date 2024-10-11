@@ -10,6 +10,7 @@ anything from the rest of Launchpad.
 __all__ = [
     "DownloadCommand",
     "EndFetchServiceSessionCommand",
+    "RemoveResourcesFetchServiceSessionCommand",
     "RequestFetchServiceSessionCommand",
     "RequestProcess",
     "RequestProxyTokenCommand",
@@ -82,6 +83,23 @@ class RetrieveFetchServiceSessionCommand(amp.Command):
 
 class EndFetchServiceSessionCommand(amp.Command):
     """Fetch service API Command subclass to end a session.
+
+    It defines arguments and error conditions. For reference:
+    https://docs.twisted.org/en/twisted-18.7.0/core/howto/amp.html
+    """
+
+    arguments = [
+        (b"url", amp.Unicode()),
+        (b"auth_header", amp.String()),
+    ]
+    response: List[Tuple[bytes, amp.Argument]] = []
+    errors = {
+        RequestException: b"REQUEST_ERROR",
+    }
+
+
+class RemoveResourcesFetchServiceSessionCommand(amp.Command):
+    """Fetch service API Command subclass to remove resources from a session.
 
     It defines arguments and error conditions. For reference:
     https://docs.twisted.org/en/twisted-18.7.0/core/howto/amp.html
@@ -199,6 +217,17 @@ class RequestProcess(AMPChild):
 
     @EndFetchServiceSessionCommand.responder
     def endFetchServiceSessionCommand(self, url, auth_header):
+        with Session() as session:
+            session.trust_env = False
+            response = session.delete(
+                url,
+                headers={"Authorization": auth_header},
+            )
+            response.raise_for_status()
+            return {}
+
+    @RemoveResourcesFetchServiceSessionCommand.responder
+    def removeResourcesFetchServiceSessionCommand(self, url, auth_header):
         with Session() as session:
             session.trust_env = False
             response = session.delete(
