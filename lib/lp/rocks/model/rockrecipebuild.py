@@ -44,6 +44,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
@@ -304,6 +305,13 @@ class RockRecipeBuild(PackageBuildMixin, StormBase):
             return file_object
 
         raise NotFoundError(filename)
+
+    def getFileUrls(self):
+        """See `IRockRecipeBuild`."""
+        return [
+            ProxiedLibraryFileAlias(lfa, self).http_url
+            for _, lfa, _ in self.getFiles()
+        ]
 
     def addFile(self, lfa):
         """See `IRockRecipeBuild`."""

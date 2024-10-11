@@ -9,7 +9,12 @@ __all__ = [
     "IRockRecipeBuildSet",
 ]
 
-from lazr.restful.declarations import exported, exported_as_webservice_entry
+from lazr.restful.declarations import (
+    export_read_operation,
+    exported,
+    exported_as_webservice_entry,
+    operation_for_version,
+)
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
 from zope.schema import Bool, Datetime, Dict, Int, TextLine
@@ -149,6 +154,13 @@ class IRockRecipeBuildView(IPackageBuildView):
         :raises NotFoundError: if no file exists with the given name.
         :return: The corresponding `ILibraryFileAlias`.
         """
+
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getFileUrls():
+        """URLs for all the files produced by this build.
+
+        :return: A collection of URLs for this build."""
 
 
 class IRockRecipeBuildEdit(IBuildFarmJobEdit):
