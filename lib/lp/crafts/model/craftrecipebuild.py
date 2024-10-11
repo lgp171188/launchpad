@@ -414,7 +414,7 @@ class CraftRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
-        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(LibraryFileContent, lfas, ["content_id"])
         distroarchserieses = load_related(
             DistroArchSeries, builds, ["distro_arch_series_id"]
         )
