@@ -25,6 +25,7 @@ from twisted.internet import defer
 
 from lp.buildmaster.downloader import (
     EndFetchServiceSessionCommand,
+    RemoveResourcesFetchServiceSessionCommand,
     RequestFetchServiceSessionCommand,
     RequestProxyTokenCommand,
     RetrieveFetchServiceSessionCommand,
@@ -250,6 +251,7 @@ class FetchService(IProxyService):
     TOKEN_REVOCATION = "{control_endpoint}/session/{session_id}/token"
     RETRIEVE_METADATA_ENDPOINT = "{control_endpoint}/session/{session_id}"
     END_SESSION_ENDPOINT = "{control_endpoint}/session/{session_id}"
+    REMOVE_RESOURCES_ENDPOINT = "{control_endpoint}/resources/{session_id}"
 
     def __init__(self, worker: BuilderWorker):
         self.control_endpoint = _get_value_from_config(
@@ -348,14 +350,27 @@ class FetchService(IProxyService):
     def endSession(self, session_id: str):
         """End the proxy session and do any cleanup needed.
 
+        After the end of the session, we remove the resources from the
+        successfull build given all data was already fetched by then.
+
         :raises: RequestException if request to Fetch Service fails
         """
-        url = self.END_SESSION_ENDPOINT.format(
+        end_session_url = self.END_SESSION_ENDPOINT.format(
             control_endpoint=self.control_endpoint,
             session_id=session_id,
         )
         yield self.worker.process_pool.doWork(
             EndFetchServiceSessionCommand,
-            url=url,
+            url=end_session_url,
+            auth_header=self.auth_header,
+        )
+
+        remove_resources_url = self.REMOVE_RESOURCES_ENDPOINT.format(
+            control_endpoint=self.control_endpoint,
+            session_id=session_id,
+        )
+        yield self.worker.process_pool.doWork(
+            RemoveResourcesFetchServiceSessionCommand,
+            url=remove_resources_url,
             auth_header=self.auth_header,
         )

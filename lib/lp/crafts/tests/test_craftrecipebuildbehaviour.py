@@ -765,7 +765,8 @@ class TestAsyncCraftRecipeBuildBehaviourFetchService(
     @defer.inlineCallbacks
     def test_endProxySession(self):
         """By ending a fetch service session, metadata is retrieved from the
-        fetch service and saved to a file; and call to end the session is made.
+        fetch service and saved to a file; and call to end the session and
+        removing resources are made.
         """
         tem_upload_path = self.useFixture(TempDir()).path
 
@@ -789,8 +790,8 @@ class TestAsyncCraftRecipeBuildBehaviourFetchService(
         # End the session
         yield job.endProxySession(upload_path=tem_upload_path)
 
-        # We expect 3 calls made to the fetch service API, in this order
-        self.assertEqual(3, len(self.fetch_service_api.sessions.requests))
+        # We expect 4 calls made to the fetch service API, in this order
+        self.assertEqual(4, len(self.fetch_service_api.sessions.requests))
 
         # Request start a session
         start_session_request = self.fetch_service_api.sessions.requests[0]
@@ -809,6 +810,14 @@ class TestAsyncCraftRecipeBuildBehaviourFetchService(
         self.assertEqual(b"DELETE", end_session_request["method"])
         self.assertEqual(
             f"/session/{session_id}".encode(), end_session_request["uri"]
+        )
+
+        # Request removal of resources
+        remove_resources_request = self.fetch_service_api.sessions.requests[3]
+        self.assertEqual(b"DELETE", remove_resources_request["method"])
+        self.assertEqual(
+            f"/resources/{session_id}".encode(),
+            remove_resources_request["uri"],
         )
 
         # The expected file is created in the `tem_upload_path`

@@ -460,7 +460,8 @@ class TestAsyncSnapBuildBehaviourFetchService(
     @defer.inlineCallbacks
     def test_endProxySession(self):
         """By ending a fetch service session, metadata is retrieved from the
-        fetch service and saved to a file; and call to end the session is made.
+        fetch service and saved to a file; and call to end the session and
+        removing resources are made.
         """
         self.useFixture(
             FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
@@ -489,8 +490,8 @@ class TestAsyncSnapBuildBehaviourFetchService(
         # End the session
         yield job.endProxySession(upload_path=tem_upload_path)
 
-        # We expect 3 calls made to the fetch service API, in this order
-        self.assertEqual(3, len(self.fetch_service_api.sessions.requests))
+        # We expect 4 calls made to the fetch service API, in this order
+        self.assertEqual(4, len(self.fetch_service_api.sessions.requests))
 
         # Request start a session
         start_session_request = self.fetch_service_api.sessions.requests[0]
@@ -509,6 +510,14 @@ class TestAsyncSnapBuildBehaviourFetchService(
         self.assertEqual(b"DELETE", end_session_request["method"])
         self.assertEqual(
             f"/session/{session_id}".encode(), end_session_request["uri"]
+        )
+
+        # Request removal of resources
+        remove_resources_request = self.fetch_service_api.sessions.requests[3]
+        self.assertEqual(b"DELETE", remove_resources_request["method"])
+        self.assertEqual(
+            f"/resources/{session_id}".encode(),
+            remove_resources_request["uri"],
         )
 
         # The expected file is created in the `tem_upload_path`
