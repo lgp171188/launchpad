@@ -13,6 +13,7 @@ token if and only if they are allowed general internet access.
 __all__ = [
     "BUILD_METADATA_FILENAME_FORMAT",
     "BuilderProxyMixin",
+    "FetchServicePolicy",
 ]
 
 import base64
@@ -21,6 +22,7 @@ import re
 import time
 from typing import Optional
 
+from lazr.enum import DBEnumeratedType, DBItem
 from twisted.internet import defer
 
 from lp.buildmaster.downloader import (
@@ -37,6 +39,34 @@ from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.services.config import config
 
 BUILD_METADATA_FILENAME_FORMAT = "{build_id}_metadata.json"
+
+
+class FetchServicePolicy(DBEnumeratedType):
+    """Fetch Service policy.
+
+    The types used to control which users and teams can see various
+    Launchpad artifacts, including bugs and branches.
+    """
+
+    STRICT = DBItem(
+        1,
+        """
+        strict
+
+        Fetch service will not allow fetching dependencies that weren't built
+        with strict fetch service policy.
+        """,
+    )
+
+    PERMISSIVE = DBItem(
+        2,
+        """
+        permissive
+
+        Fetch service will allow fetching any dependencies regardless of
+        how they were built.
+        """,
+    )
 
 
 class ProxyServiceException(Exception):
@@ -68,6 +98,7 @@ class BuilderProxyMixin:
         args: BuildArgs,
         allow_internet: bool = True,
         use_fetch_service: bool = False,
+        fetch_service_policy: FetchServicePolicy = FetchServicePolicy.STRICT,
     ):
 
         if not allow_internet:
@@ -78,7 +109,10 @@ class BuilderProxyMixin:
         if not use_fetch_service and _get_proxy_config("builder_proxy_host"):
             proxy_service = BuilderProxy(worker=self._worker)
         elif use_fetch_service and _get_proxy_config("fetch_service_host"):
-            proxy_service = FetchService(worker=self._worker)
+            proxy_service = FetchService(
+                worker=self._worker,
+                policy=fetch_service_policy,
+            )
 
             # Append the fetch-service certificate to BuildArgs secrets.
             if "secrets" not in args:
@@ -93,7 +127,7 @@ class BuilderProxyMixin:
             return
 
         session_data = yield proxy_service.startSession(
-            build_id=self.build.build_cookie
+            build_id=self.build.build_cookie,
         )
 
         args["proxy_url"] = session_data["proxy_url"]
@@ -130,7 +164,7 @@ class BuilderProxyMixin:
         # XXX ines-almeida 2024-04-30: Getting the session_id from the
         # revocation_endpoint feels a little like going back and forwards
         # given the revocation_endpoint is created on `startProxySession()`.
-        # Ideally, we would update `buildd` and `buildd-manager` to senf and
+        # Ideally, we would update `buildd` and `buildd-manager` to send and
         # retrieve the session ID directly (instead of having to parse it).
         revocation_endpoint = proxy_info.get("revocation_endpoint")
         session_id = proxy_service.extractSessionIDFromRevocationEndpoint(
@@ -253,7 +287,11 @@ class FetchService(IProxyService):
     END_SESSION_ENDPOINT = "{control_endpoint}/session/{session_id}"
     REMOVE_RESOURCES_ENDPOINT = "{control_endpoint}/resources/{session_id}"
 
-    def __init__(self, worker: BuilderWorker):
+    def __init__(
+        self,
+        worker: BuilderWorker,
+        policy: FetchServicePolicy = FetchServicePolicy.STRICT,
+    ):
         self.control_endpoint = _get_value_from_config(
             "fetch_service_control_endpoint"
         )
@@ -263,6 +301,7 @@ class FetchService(IProxyService):
         )
         self.auth_header = self._getAuthHeader()
         self.worker = worker
+        self.policy = policy.title
 
     @staticmethod
     def _getAuthHeader():
@@ -287,6 +326,7 @@ class FetchService(IProxyService):
                 control_endpoint=self.control_endpoint
             ),
             auth_header=self.auth_header,
+            policy=self.policy,
         )
 
         self.session_id = session_data["id"]

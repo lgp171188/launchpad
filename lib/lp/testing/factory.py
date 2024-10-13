@@ -79,6 +79,7 @@ from lp.bugs.interfaces.vulnerability import (
     VulnerabilityStatus,
 )
 from lp.bugs.model.bug import FileBugData
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuilderResetProtocol,
@@ -6224,6 +6225,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         project=_DEFAULT,
         pro_enable=False,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Make a new Snap."""
         assert information_type is None or private is None
@@ -6306,6 +6308,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             project=project,
             pro_enable=pro_enable,
             use_fetch_service=use_fetch_service,
+            fetch_service_policy=fetch_service_policy,
         )
         if is_stale is not None:
             removeSecurityProxy(snap).is_stale = is_stale
@@ -6915,6 +6918,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         store_channels=None,
         date_created=DEFAULT,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Make a new craft recipe."""
         if registrant is None:
@@ -6964,6 +6968,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             store_channels=store_channels,
             date_created=date_created,
             use_fetch_service=use_fetch_service,
+            fetch_service_policy=fetch_service_policy,
         )
         if is_stale is not None:
             removeSecurityProxy(recipe).is_stale = is_stale
@@ -7065,6 +7070,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         store_channels=None,
         date_created=DEFAULT,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Make a new rock recipe."""
         if registrant is None:
@@ -7114,6 +7120,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             store_channels=store_channels,
             date_created=date_created,
             use_fetch_service=use_fetch_service,
+            fetch_service_policy=fetch_service_policy,
         )
         if is_stale is not None:
             removeSecurityProxy(recipe).is_stale = is_stale

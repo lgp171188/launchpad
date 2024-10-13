@@ -117,7 +117,10 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         build: ISnapBuild = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
         yield self.startProxySession(
-            args, build.snap.allow_internet, build.snap.use_fetch_service
+            args,
+            build.snap.allow_internet,
+            use_fetch_service=build.snap.use_fetch_service,
+            fetch_service_policy=build.snap.fetch_service_policy,
         )
         args["name"] = build.snap.store_name or build.snap.name
         channels = build.channels or {}
@@ -198,7 +201,6 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         args["target_architectures"] = removeSecurityProxy(
             build.target_architectures
         )
-
         return args
 
     def verifySuccessfulBuild(self):

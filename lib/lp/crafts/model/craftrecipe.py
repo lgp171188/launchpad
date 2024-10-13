@@ -39,6 +39,7 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.app.errors import IncompatibleArguments
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
@@ -210,6 +211,13 @@ class CraftRecipe(StormBase):
 
     use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
 
+    fetch_service_policy = DBEnum(
+        enum=FetchServicePolicy,
+        default=FetchServicePolicy.STRICT,
+        name="fetch_service_policy",
+        allow_none=True,
+    )
+
     def __init__(
         self,
         registrant,
@@ -229,6 +237,7 @@ class CraftRecipe(StormBase):
         store_channels=None,
         date_created=DEFAULT,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Construct a `CraftRecipe`."""
         if not getFeatureFlag(CRAFT_RECIPE_ALLOW_CREATE):
@@ -255,6 +264,7 @@ class CraftRecipe(StormBase):
         self.store_secrets = store_secrets
         self.store_channels = store_channels
         self.use_fetch_service = use_fetch_service
+        self.fetch_service_policy = fetch_service_policy
 
     def __repr__(self):
         return "<CraftRecipe ~%s/%s/+craft/%s>" % (
@@ -687,6 +697,7 @@ class CraftRecipeSet:
         store_channels=None,
         date_created=DEFAULT,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """See `ICraftRecipeSet`."""
         if not registrant.inTeam(owner):
@@ -760,6 +771,7 @@ class CraftRecipeSet:
             store_channels=store_channels,
             date_created=date_created,
             use_fetch_service=use_fetch_service,
+            fetch_service_policy=fetch_service_policy,
         )
         store.add(recipe)
 

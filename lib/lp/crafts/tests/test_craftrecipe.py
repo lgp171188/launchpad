@@ -28,6 +28,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildQueueStatus,
@@ -569,6 +570,9 @@ class TestCraftRecipe(TestCaseWithFactory):
         build_request = self.factory.makeCraftRecipeBuildRequest(recipe=recipe)
         build = recipe.requestBuild(build_request, das)
         self.assertEqual(True, build.recipe.use_fetch_service)
+        self.assertEqual(
+            FetchServicePolicy.STRICT, build.recipe.fetch_service_policy
+        )
 
 
 class TestCraftRecipeSet(TestCaseWithFactory):
@@ -625,6 +629,9 @@ class TestCraftRecipeSet(TestCaseWithFactory):
         self.assertIsNone(recipe.store_secrets)
         self.assertEqual([], recipe.store_channels)
         self.assertFalse(recipe.use_fetch_service)
+        self.assertEqual(
+            FetchServicePolicy.STRICT, recipe.fetch_service_policy
+        )
 
     def test_creation_git_url(self):
         # A craft recipe can be backed directly by a URL for an external Git
@@ -872,15 +879,16 @@ class TestCraftRecipeSet(TestCaseWithFactory):
             git_ref=ref, use_fetch_service=True
         )
 
-        admin_fields = [
-            "require_virtualized",
-            "use_fetch_service",
-        ]
+        admin_fields = {
+            "require_virtualized": True,
+            "use_fetch_service": True,
+            "fetch_service_policy": FetchServicePolicy.PERMISSIVE,
+        }
 
-        for field_name in admin_fields:
+        for field_name, field_value in admin_fields.items():
             # exception isn't raised when an admin does the same
             with admin_logged_in():
-                setattr(craft, field_name, True)
+                setattr(craft, field_name, field_value)
 
     def test_non_admins_cannot_update_admin_only_fields(self):
         # The admin fields cannot be updated by a non admin
@@ -889,12 +897,13 @@ class TestCraftRecipeSet(TestCaseWithFactory):
             git_ref=ref, use_fetch_service=True
         )
         person = self.factory.makePerson()
-        admin_fields = [
-            "require_virtualized",
-            "use_fetch_service",
-        ]
+        admin_fields = {
+            "require_virtualized": True,
+            "use_fetch_service": True,
+            "fetch_service_policy": FetchServicePolicy.PERMISSIVE,
+        }
 
-        for field_name in admin_fields:
+        for field_name, field_value in admin_fields.items():
             # exception is raised when a non admin updates the fields
             with person_logged_in(person):
                 self.assertRaises(
@@ -902,7 +911,7 @@ class TestCraftRecipeSet(TestCaseWithFactory):
                     setattr,
                     craft,
                     field_name,
-                    True,
+                    field_value,
                 )
 
 
