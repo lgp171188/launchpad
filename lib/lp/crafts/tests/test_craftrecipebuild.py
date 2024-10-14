@@ -26,9 +26,12 @@ from lp.crafts.interfaces.craftrecipebuild import (
     ICraftRecipeBuild,
     ICraftRecipeBuildSet,
 )
+from lp.crafts.model.craftrecipebuild import CraftRecipeBuild
 from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import flush_database_caches
 from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.propertycache import clear_property_cache
@@ -461,6 +464,54 @@ class TestCraftRecipeBuildSet(TestCaseWithFactory):
             recipe=recipe, distro_arch_series=distro_arch_series
         )
         self.assertFalse(target.virtualized)
+
+    def test_preloadBuildsData(self):
+        # Create a sample build with associated data
+        build = self.factory.makeCraftRecipeBuild()
+        build.setLog(self.factory.makeLibraryFileAlias())
+
+        # Ensure the database is in a clean state
+        flush_database_caches()
+
+        build_set = getUtility(ICraftRecipeBuildSet)
+
+        # Use a list to force evaluation of the result
+        builds = list(
+            IStore(CraftRecipeBuild).find(
+                CraftRecipeBuild, CraftRecipeBuild.id == build.id
+            )
+        )
+
+        # Record the number of queries before preloading
+        with StormStatementRecorder() as recorder:
+            # Access various attributes to trigger lazy loading
+            build.requester
+            build.log
+            build.log.content
+            build.distro_arch_series
+            build.distro_arch_series.distroseries
+            build.distro_arch_series.distroseries.distribution
+
+        queries_before = len(recorder.queries)
+
+        # Preload the data
+        build_set.preloadBuildsData(builds)
+
+        # Record the number of queries after preloading
+        with StormStatementRecorder() as recorder:
+            # Access the same attributes again
+            build.requester
+            build.log
+            build.log.content
+            build.distro_arch_series
+            build.distro_arch_series.distroseries
+            build.distro_arch_series.distroseries.distribution
+
+        queries_after = len(recorder.queries)
+
+        # Assert that no additional queries were made after preloading
+        self.assertEqual(0, queries_after)
+        self.assertGreater(queries_before, queries_after)
 
 
 class TestCraftRecipeBuildWebservice(TestCaseWithFactory):
