@@ -1923,6 +1923,12 @@ class TestRockRecipeWebservice(TestCaseWithFactory):
                     "builds_collection_link": Equals(
                         build_request_url + "/builds"
                     ),
+                    "architectures": Equals(
+                        [
+                            "amd640",
+                            "risc500",
+                        ]
+                    ),
                 }
             ),
         )
