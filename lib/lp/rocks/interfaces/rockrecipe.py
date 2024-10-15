@@ -289,11 +289,15 @@ class IRockRecipeBuildRequest(Interface):
         readonly=True,
     )
 
-    architectures = Set(
-        title=_("If set, this request is limited to these architecture tags"),
-        value_type=TextLine(),
-        required=False,
-        readonly=True,
+    architectures = exported(
+        Set(
+            title=_(
+                "If set, this request is limited to these architecture tags"
+            ),
+            value_type=TextLine(),
+            required=False,
+            readonly=True,
+        )
     )
 
 
