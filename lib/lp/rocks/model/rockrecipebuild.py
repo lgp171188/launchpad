@@ -32,6 +32,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
+from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.rocks.interfaces.rockrecipebuild import (
     IRockFile,
     IRockRecipeBuild,
@@ -429,7 +430,7 @@ class RockRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         # Circular import.
-        # from lp.rocks.model.rockrecipe import RockRecipe
+        from lp.rocks.model.rockrecipe import RockRecipe
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
@@ -441,12 +442,8 @@ class RockRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             DistroSeries, distroarchserieses, ["distroseries_id"]
         )
         load_related(Distribution, distroserieses, ["distribution_id"])
-        # XXX jugmac00 2024-10-06: we need to skip preloading until the
-        # function is able to handle rock recipes with external git
-        # repositories, see https://warthogs.atlassian.net/browse/LP-1972
-        #
-        # recipes = load_related(RockRecipe, builds, ["recipe_id"])
-        # getUtility(IRockRecipeSet).preloadDataForRecipes(recipes)
+        recipes = load_related(RockRecipe, builds, ["recipe_id"])
+        getUtility(IRockRecipeSet).preloadDataForRecipes(recipes)
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""
