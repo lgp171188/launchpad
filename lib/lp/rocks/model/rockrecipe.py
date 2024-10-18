@@ -1033,8 +1033,15 @@ class RockRecipeSet:
         if repositories:
             GenericGitCollection.preloadDataForRepositories(repositories)
 
+        # We only store git refs from Launchpad git repositories, not from
+        # remote git repositories. As such, skip fetching git refs from remote
+        # reositories, i.e., that don't have the `git_repository` property set.
         git_refs = GitRef.findByReposAndPaths(
-            [(recipe.git_repository, recipe.git_path) for recipe in recipes]
+            [
+                (recipe.git_repository, recipe.git_path)
+                for recipe in recipes
+                if recipe.git_repository
+            ]
         )
         for recipe in recipes:
             git_ref = git_refs.get((recipe.git_repository, recipe.git_path))

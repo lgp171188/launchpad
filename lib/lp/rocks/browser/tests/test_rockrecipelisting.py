@@ -129,6 +129,27 @@ class TestRockRecipeListing(BrowserTestCase):
             text,
         )
 
+    def test_person_recipe_listing_remote_repos(self):
+        # We can see rock recipes for a person, evewhen recipes refer to remote
+        # repositories
+        owner = self.factory.makePerson(displayname="Rock Owner")
+        remote_ref = self.factory.makeGitRefRemote()
+        with MemoryFeatureFixture({ROCK_RECIPE_ALLOW_CREATE: "on"}):
+            self.factory.makeRockRecipe(
+                registrant=owner,
+                owner=owner,
+                git_ref=remote_ref,
+                date_created=ONE_DAY_AGO,
+            )
+        text = self.getMainText(owner, "+rock-recipes")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
+            Rock recipes for Rock Owner
+            Name            Source                  Registered
+            rock-name.*    ~.*:.*                  .*""",
+            text,
+        )
+
     def test_project_recipe_listing(self):
         # We can see rock recipes for a project.
         project = self.factory.makeProduct(displayname="Rockable")
