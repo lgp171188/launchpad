@@ -829,6 +829,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -883,6 +885,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -926,6 +930,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -1000,6 +1006,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -1046,6 +1054,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -1089,6 +1099,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )

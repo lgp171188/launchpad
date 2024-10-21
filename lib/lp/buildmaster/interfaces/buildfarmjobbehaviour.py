@@ -144,6 +144,10 @@ class BuildArgs(TypedDict, total=False):
     trusted_keys: List[str]
     # Is true, use the fetch service as the proxy within the builder.
     use_fetch_service: bool
+    # The URL of the Launchpad server.
+    launchpad_server_url: str
+    # Launchpad instance: production, qastaging, staging, devel.
+    launchpad_instance: str
 
 
 class IBuildFarmJobBehaviour(Interface):
