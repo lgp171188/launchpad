@@ -98,6 +98,18 @@ class BuildFarmJobBehaviourBase:
 
     def extraBuildArgs(self, logger=None) -> BuildArgs:
         """The default behaviour is to send only common extra arguments."""
+        assert (
+            config.vhost.mainsite.hostname
+        ), "Hostname (domain) not configured!"
+
+        launchpad_urls = {
+            "launchpad.net": "production",
+            "qastaging.launchpad.net": "qastaging",
+            "staging.launchpad.net": "staging",
+        }
+
+        launchpad_server_url = config.vhost.mainsite.hostname
+        launchpad_instance = launchpad_urls.get(launchpad_server_url, "devel")
         return {
             "arch_tag": self.distro_arch_series.architecturetag,
             "archive_private": self.archive.private,
@@ -107,6 +119,8 @@ class BuildFarmJobBehaviourBase:
             ),
             "fast_cleanup": self._builder.virtualized,
             "series": self.distro_arch_series.distroseries.name,
+            "launchpad_instance": launchpad_instance,
+            "launchpad_server_url": launchpad_server_url,
         }
 
     @defer.inlineCallbacks
