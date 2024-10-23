@@ -208,6 +208,8 @@ class TestAsyncLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
                 "builder_constraints": [],
                 "datestamp": "20140425-103800",
                 "fast_cleanup": True,
+                "launchpad_instance": "devel",
+                "launchpad_server_url": "launchpad.test",
                 "pocket": "release",
                 "project": "distro",
                 "subproject": "special",

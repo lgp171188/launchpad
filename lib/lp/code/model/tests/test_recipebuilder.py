@@ -212,6 +212,8 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
                 "build_url": canonical_url(job.build),
                 "builder_constraints": [],
                 "fast_cleanup": True,
+                "launchpad_instance": "devel",
+                "launchpad_server_url": "launchpad.test",
                 "ogrecomponent": "universe",
                 "recipe_text": "# bzr-builder format 0.3 "
                 "deb-version {debupstream}-0~{revno}\n"
@@ -314,6 +316,8 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
                 "build_url": canonical_url(job.build),
                 "builder_constraints": [],
                 "fast_cleanup": True,
+                "launchpad_instance": "devel",
+                "launchpad_server_url": "launchpad.test",
                 "ogrecomponent": "universe",
                 "recipe_text": "# bzr-builder format 0.3 "
                 "deb-version {debupstream}-0~{revno}\n"
@@ -364,6 +368,8 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
                 "builder_constraints": [],
                 "fast_cleanup": True,
                 "git": True,
+                "launchpad_instance": "devel",
+                "launchpad_server_url": "launchpad.test",
                 "ogrecomponent": "universe",
                 "recipe_text": "# git-build-recipe format 0.4 deb-version "
                 "{debupstream}-0~{revtime}\n"

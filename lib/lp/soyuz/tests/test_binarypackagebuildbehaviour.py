@@ -172,6 +172,8 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             "builder_constraints": [],
             "fast_cleanup": builder.virtualized,
             "image_type": "chroot",
+            "launchpad_instance": "devel",
+            "launchpad_server_url": "launchpad.test",
             "ogrecomponent": component,
             "series": ds_name,
             "suite": suite,
