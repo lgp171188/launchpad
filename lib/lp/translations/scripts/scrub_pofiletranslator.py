@@ -275,11 +275,15 @@ def process_work_items(logger, work_items, pofiles):
 class ScrubPOFileTranslator(TunableLoop):
     """Tunable loop, meant for running from inside Garbo."""
 
-    maximum_chunk_size = 5000
+    maximum_chunk_size = 2500
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pofile_ids = tuple(get_pofile_ids())
+        self.log.info(
+            f"[ScrubPOFileTranslator] Found {len(self.pofile_ids)} "
+            "PO Files to process."
+        )
         self.next_offset = 0
 
     def __call__(self, chunk_size):
