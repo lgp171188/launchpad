@@ -88,7 +88,7 @@ class PackageCacheUpdater(LaunchpadCronScript):
             self.txn.commit()
 
     def main(self):
-        self.logger.debug("Starting the package cache update")
+        self.logger.info("Starting the package cache update")
 
         # Do the package counter and cache update for each distribution.
         distroset = getUtility(IDistributionSet)
@@ -122,4 +122,4 @@ class PackageCacheUpdater(LaunchpadCronScript):
             self.txn.commit()
             self.logger.info("%s done" % distribution.name)
 
-        self.logger.debug("Finished the package cache update")
+        self.logger.info("Finished the package cache update")
