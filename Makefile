@@ -617,4 +617,4 @@ pydoctor:
 
 .PHONY: build-lxd-image
 build-lxd-image:
-	sudo lxd-imagebuilder  --debug build-lxd  /home/tushar-gupta/projects/lp-image-builder/lpdev.yaml --type unified
+	sudo lxd-imagebuilder --debug build-lxd $(CURDIR)/lpdev-image-file.yaml --type unified
