@@ -530,6 +530,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         request = LaunchpadTestRequest(
             form={"resize_frame": "<script>alert(1)</script>"}
         )
+        LaunchpadView(object(), request)
         self.assertEqual(
             request.form["resize_frame"],
             "&lt;script&gt;alert(1)&lt;/script&gt;",
@@ -540,6 +541,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         request = LaunchpadTestRequest(
             form={"resize_frame": "normal123-value.text"}
         )
+        LaunchpadView(object(), request)
         self.assertEqual(request.form["resize_frame"], "normal123-value.text")
 
     def test_request_form_sanitizes_multiple_values(self):
@@ -550,6 +552,7 @@ class TestLaunchpadView(TestCaseWithFactory):
                 "field2": "<script>alert(2)</script>",
             }
         )
+        LaunchpadView(object(), request)
         self.assertEqual(request.form["field1"], "&lt;p&gt;test&lt;/p&gt;")
         self.assertEqual(
             request.form["field2"], "&lt;script&gt;alert(2)&lt;/script&gt;"
@@ -558,12 +561,14 @@ class TestLaunchpadView(TestCaseWithFactory):
     def test_request_form_handles_non_string_values(self):
         """Test that non-string form values are not modified."""
         request = LaunchpadTestRequest(form={"number": 123, "boolean": True})
+        LaunchpadView(object(), request)
         self.assertEqual(request.form["number"], 123)
         self.assertEqual(request.form["boolean"], True)
 
     def test_request_form_handles_empty_values(self):
         """Test that empty or None form values are handled properly."""
         request = LaunchpadTestRequest(form={"empty": "", "none": None})
+        LaunchpadView(object(), request)
         self.assertEqual(request.form["empty"], "")
         self.assertIsNone(request.form["none"])
 
