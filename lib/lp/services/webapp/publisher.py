@@ -306,6 +306,7 @@ class LaunchpadView(UserAttributeCache):
         cache = self._get_json_cache()
         if cache is None:
             return
+        self.form = request.form_ng
         related_features = cache.setdefault("related_features", {})
         related_features.update(self.related_feature_info)
 
