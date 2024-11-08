@@ -549,14 +549,12 @@ class TestLaunchpadView(TestCaseWithFactory):
         request = LaunchpadTestRequest(
             form={
                 "field1": "<p>test</p>",
-                "field2": "<script>alert(2)</script>",
+                "field2": "'); test //",
             }
         )
         LaunchpadView(object(), request)
         self.assertEqual(request.form["field1"], "&lt;p&gt;test&lt;/p&gt;")
-        self.assertEqual(
-            request.form["field2"], "&lt;script&gt;alert(2)&lt;/script&gt;"
-        )
+        self.assertEqual(request.form["field2"], "&#x27;); test //")
 
     def test_request_form_handles_non_string_values(self):
         """Test that non-string form values are not modified."""
