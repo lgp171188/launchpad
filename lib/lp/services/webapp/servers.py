@@ -68,6 +68,7 @@ from lp.services.webapp.authorization import (
     LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY,
 )
 from lp.services.webapp.errorlog import ErrorReportRequest
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interaction import get_interaction_extras
 from lp.services.webapp.interfaces import (
     IBasicLaunchpadRequest,
@@ -748,6 +749,10 @@ class BrowserFormNG:
     def __init__(self, form):
         """Create a new BrowserFormNG that wraps a dict of form data."""
         self.form = form
+        # sanitize the form data
+        for key, value in list(self.form.items()):
+            if isinstance(value, str):
+                self.form[key] = html_escape(value)
 
     def __contains__(self, name):
         """See IBrowserFormNG."""
