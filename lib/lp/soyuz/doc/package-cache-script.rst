@@ -51,8 +51,8 @@ distribution and respective distroseriess considered in stderr.
     >>> print(stdout)
 
     >>> print(stderr)
-    INFO    Starting the package cache update
     INFO    Creating lockfile: /var/lock/launchpad-update-cache.lock
+    INFO    Starting the package cache update
     INFO    Updating ubuntu package counters
     INFO    Updating ubuntu main archives
     ...
