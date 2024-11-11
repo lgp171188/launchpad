@@ -522,6 +522,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
                         }
                     ),
                     "use_fetch_service": Is(False),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -626,6 +628,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
                         }
                     ),
                     "use_fetch_service": Is(False),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -687,6 +691,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
                         }
                     ),
                     "use_fetch_service": Is(False),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )

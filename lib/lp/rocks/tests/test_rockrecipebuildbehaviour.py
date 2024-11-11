@@ -36,6 +36,7 @@ from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
 from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
@@ -323,6 +324,8 @@ class TestAsyncRockRecipeBuildBehaviour(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "use_fetch_service": Is(False),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -366,6 +369,8 @@ class TestAsyncRockRecipeBuildBehaviour(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "use_fetch_service": Is(False),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -500,6 +505,8 @@ class TestAsyncRockRecipeBuildBehaviour(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "use_fetch_service": Is(False),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -711,6 +718,61 @@ class TestAsyncRockRecipeBuildBehaviourFetchService(
                 ),
                 "json": MatchesDict(
                     {
+                        "policy": Equals("strict"),
+                    }
+                ),
+            }
+        )
+        self.assertThat(
+            self.fetch_service_api.sessions.requests,
+            MatchesListwise([request_matcher]),
+        )
+        self.assertIn("proxy_url", args)
+        self.assertIn("revocation_endpoint", args)
+        self.assertTrue(args["use_fetch_service"])
+        self.assertIn("secrets", args)
+        self.assertIn("fetch_service_mitm_certificate", args["secrets"])
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_permissive(self):
+        """Create a rock recipe build request with a successful fetch service
+        configuration.
+
+        `proxy_url` and `revocation_endpoint` are correctly populated.
+        """
+        job = self.makeJob(
+            use_fetch_service=True,
+            fetch_service_policy=FetchServicePolicy.PERMISSIVE,
+        )
+        args = yield job.extraBuildArgs()
+        request_matcher = MatchesDict(
+            {
+                "method": Equals(b"POST"),
+                "uri": Equals(b"/session"),
+                "headers": ContainsDict(
+                    {
+                        b"Authorization": MatchesListwise(
+                            [
+                                Equals(
+                                    b"Basic "
+                                    + base64.b64encode(
+                                        b"admin-launchpad.test:admin-secret"
+                                    )
+                                )
+                            ]
+                        ),
+                        b"Content-Type": MatchesListwise(
+                            [
+                                Equals(b"application/json"),
+                            ]
+                        ),
+                    }
+                ),
+                "json": MatchesDict(
+                    {
                         "policy": Equals("permissive"),
                     }
                 ),
@@ -766,7 +828,8 @@ class TestAsyncRockRecipeBuildBehaviourFetchService(
     @defer.inlineCallbacks
     def test_endProxySession(self):
         """By ending a fetch service session, metadata is retrieved from the
-        fetch service and saved to a file; and call to end the session is made.
+        fetch service and saved to a file; and call to end the session and
+        removing resources are made.
         """
         tem_upload_path = self.useFixture(TempDir()).path
 
@@ -790,8 +853,8 @@ class TestAsyncRockRecipeBuildBehaviourFetchService(
         # End the session
         yield job.endProxySession(upload_path=tem_upload_path)
 
-        # We expect 3 calls made to the fetch service API, in this order
-        self.assertEqual(3, len(self.fetch_service_api.sessions.requests))
+        # We expect 4 calls made to the fetch service API, in this order
+        self.assertEqual(4, len(self.fetch_service_api.sessions.requests))
 
         # Request start a session
         start_session_request = self.fetch_service_api.sessions.requests[0]
@@ -810,6 +873,14 @@ class TestAsyncRockRecipeBuildBehaviourFetchService(
         self.assertEqual(b"DELETE", end_session_request["method"])
         self.assertEqual(
             f"/session/{session_id}".encode(), end_session_request["uri"]
+        )
+
+        # Request removal of resources
+        remove_resources_request = self.fetch_service_api.sessions.requests[3]
+        self.assertEqual(b"DELETE", remove_resources_request["method"])
+        self.assertEqual(
+            f"/resources/{session_id}".encode(),
+            remove_resources_request["uri"],
         )
 
         # The expected file is created in the `tem_upload_path`

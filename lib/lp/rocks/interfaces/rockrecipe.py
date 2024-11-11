@@ -69,6 +69,7 @@ from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
@@ -288,11 +289,15 @@ class IRockRecipeBuildRequest(Interface):
         readonly=True,
     )
 
-    architectures = Set(
-        title=_("If set, this request is limited to these architecture tags"),
-        value_type=TextLine(),
-        required=False,
-        readonly=True,
+    architectures = exported(
+        Set(
+            title=_(
+                "If set, this request is limited to these architecture tags"
+            ),
+            value_type=TextLine(),
+            required=False,
+            readonly=True,
+        )
     )
 
 
@@ -749,6 +754,20 @@ class IRockRecipeAdminAttributes(Interface):
         )
     )
 
+    fetch_service_policy = exported(
+        Choice(
+            title=_("Fetch service policy"),
+            vocabulary=FetchServicePolicy,
+            required=False,
+            readonly=False,
+            default=FetchServicePolicy.STRICT,
+            description=_(
+                "Which policy to use when using the fetch service. Ignored if "
+                "`use_fetch_service` flag is False."
+            ),
+        )
+    )
+
 
 # XXX jugmac00 2024-09-16 https://bugs.launchpad.net/lazr.restful/+bug/760849:
 # "beta" is a lie to get WADL generation working.
@@ -815,6 +834,7 @@ class IRockRecipeSet(Interface):
         store_channels=None,
         date_created=None,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Create an `IRockRecipe`."""
 

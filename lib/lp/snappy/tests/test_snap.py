@@ -38,6 +38,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.app.errors import SubscriptionPrivacyViolation
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -2283,6 +2284,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertFalse(snap.build_source_tarball)
         self.assertFalse(snap.pro_enable)
         self.assertFalse(snap.use_fetch_service)
+        self.assertEqual(FetchServicePolicy.STRICT, snap.fetch_service_policy)
 
     def test_creation_git(self):
         # The metadata entries supplied when a Snap is created for a Git
@@ -2308,6 +2310,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertFalse(snap.build_source_tarball)
         self.assertFalse(snap.pro_enable)
         self.assertFalse(snap.use_fetch_service)
+        self.assertEqual(FetchServicePolicy.STRICT, snap.fetch_service_policy)
 
     def test_creation_git_url(self):
         # A Snap can be backed directly by a URL for an external Git
@@ -2329,18 +2332,19 @@ class TestSnapSet(TestCaseWithFactory):
         components = self.makeSnapComponents(git_ref=ref)
         snap = getUtility(ISnapSet).new(**components)
 
-        admin_fields = [
-            "allow_internet",
-            "pro_enable",
-            "require_virtualized",
-            "use_fetch_service",
-        ]
+        admin_fields = {
+            "allow_internet": True,
+            "pro_enable": True,
+            "require_virtualized": True,
+            "use_fetch_service": True,
+            "fetch_service_policy": FetchServicePolicy.PERMISSIVE,
+        }
 
-        for field_name in admin_fields:
+        for field_name, field_value in admin_fields.items():
             # exception is raised when user tries updating admin-only fields
             with person_logged_in(non_admin):
                 self.assertRaises(
-                    Unauthorized, setattr, snap, field_name, True
+                    Unauthorized, setattr, snap, field_name, field_value
                 )
 
     def test_admins_can_update_admin_only_fields(self):
@@ -2353,18 +2357,19 @@ class TestSnapSet(TestCaseWithFactory):
         components = self.makeSnapComponents(git_ref=ref)
         snap = getUtility(ISnapSet).new(**components)
 
-        admin_fields = [
-            "allow_internet",
-            "pro_enable",
-            "require_virtualized",
-            "use_fetch_service",
-        ]
+        admin_fields = {
+            "allow_internet": True,
+            "pro_enable": True,
+            "require_virtualized": True,
+            "use_fetch_service": True,
+            "fetch_service_policy": FetchServicePolicy.PERMISSIVE,
+        }
 
-        for field_name in admin_fields:
+        for field_name, field_value in admin_fields.items():
             # exception isn't raised when an admin does the same
             with admin_logged_in():
-                setattr(snap, field_name, True)
-                self.assertTrue(getattr(snap, field_name))
+                setattr(snap, field_name, field_value)
+                self.assertEqual(field_value, getattr(snap, field_name))
 
     def test_snap_use_fetch_service_feature_flag(self):
         # The snap.use_fetch_service API only works when feature flag is set

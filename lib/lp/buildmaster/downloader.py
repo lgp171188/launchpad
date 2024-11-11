@@ -10,6 +10,7 @@ anything from the rest of Launchpad.
 __all__ = [
     "DownloadCommand",
     "EndFetchServiceSessionCommand",
+    "RemoveResourcesFetchServiceSessionCommand",
     "RequestFetchServiceSessionCommand",
     "RequestProcess",
     "RequestProxyTokenCommand",
@@ -51,6 +52,7 @@ class RequestFetchServiceSessionCommand(amp.Command):
     arguments = [
         (b"url", amp.Unicode()),
         (b"auth_header", amp.String()),
+        (b"policy", amp.Unicode()),
     ]
     response = [
         (b"id", amp.Unicode()),
@@ -82,6 +84,23 @@ class RetrieveFetchServiceSessionCommand(amp.Command):
 
 class EndFetchServiceSessionCommand(amp.Command):
     """Fetch service API Command subclass to end a session.
+
+    It defines arguments and error conditions. For reference:
+    https://docs.twisted.org/en/twisted-18.7.0/core/howto/amp.html
+    """
+
+    arguments = [
+        (b"url", amp.Unicode()),
+        (b"auth_header", amp.String()),
+    ]
+    response: List[Tuple[bytes, amp.Argument]] = []
+    errors = {
+        RequestException: b"REQUEST_ERROR",
+    }
+
+
+class RemoveResourcesFetchServiceSessionCommand(amp.Command):
+    """Fetch service API Command subclass to remove resources from a session.
 
     It defines arguments and error conditions. For reference:
     https://docs.twisted.org/en/twisted-18.7.0/core/howto/amp.html
@@ -165,20 +184,13 @@ class RequestProcess(AMPChild):
             return response.json()
 
     @RequestFetchServiceSessionCommand.responder
-    def requestFetchServiceSessionCommand(self, url, auth_header):
+    def requestFetchServiceSessionCommand(self, url, auth_header, policy):
         with Session() as session:
             session.trust_env = False
-            # XXX pelpsi: from ST108 and from what Claudio
-            # said `timeout` and `policy` are not mandatory now:
-            # `timeout` will never be mandatory and we don't pass
-            # it as parameter to the call.
-            # `policy` could be mandatory or optional in future
-            # (assuming `strict` as default), so for now it's better
-            # to pass it explicitly and set it as `permissive`.
             response = session.post(
                 url,
                 headers={"Authorization": auth_header},
-                json={"policy": "permissive"},
+                json={"policy": policy},
             )
             response.raise_for_status()
             return response.json()
@@ -199,6 +211,17 @@ class RequestProcess(AMPChild):
 
     @EndFetchServiceSessionCommand.responder
     def endFetchServiceSessionCommand(self, url, auth_header):
+        with Session() as session:
+            session.trust_env = False
+            response = session.delete(
+                url,
+                headers={"Authorization": auth_header},
+            )
+            response.raise_for_status()
+            return {}
+
+    @RemoveResourcesFetchServiceSessionCommand.responder
+    def removeResourcesFetchServiceSessionCommand(self, url, auth_header):
         with Session() as session:
             session.trust_env = False
             response = session.delete(

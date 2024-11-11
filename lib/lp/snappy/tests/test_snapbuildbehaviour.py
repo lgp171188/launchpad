@@ -41,6 +41,7 @@ from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
 from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
@@ -388,6 +389,66 @@ class TestAsyncSnapBuildBehaviourFetchService(
                 ),
                 "json": MatchesDict(
                     {
+                        "policy": Equals("strict"),
+                    }
+                ),
+            }
+        )
+        self.assertThat(
+            self.fetch_service_api.sessions.requests,
+            MatchesListwise([request_matcher]),
+        )
+        self.assertIn("proxy_url", args)
+        self.assertIn("revocation_endpoint", args)
+        self.assertTrue(args["use_fetch_service"])
+        self.assertIn("secrets", args)
+        self.assertIn("fetch_service_mitm_certificate", args["secrets"])
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_permissive(self):
+        """Create a snap build request with a successful fetch service
+        configuration.
+
+        `proxy_url` and `revocation_endpoint` are correctly populated.
+        """
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        snap = self.factory.makeSnap(
+            use_fetch_service=True,
+            fetch_service_policy=FetchServicePolicy.PERMISSIVE,
+        )
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        args = yield job.extraBuildArgs()
+        request_matcher = MatchesDict(
+            {
+                "method": Equals(b"POST"),
+                "uri": Equals(b"/session"),
+                "headers": ContainsDict(
+                    {
+                        b"Authorization": MatchesListwise(
+                            [
+                                Equals(
+                                    b"Basic "
+                                    + base64.b64encode(
+                                        b"admin-launchpad.test:admin-secret"
+                                    )
+                                )
+                            ]
+                        ),
+                        b"Content-Type": MatchesListwise(
+                            [
+                                Equals(b"application/json"),
+                            ]
+                        ),
+                    }
+                ),
+                "json": MatchesDict(
+                    {
                         "policy": Equals("permissive"),
                     }
                 ),
@@ -460,7 +521,8 @@ class TestAsyncSnapBuildBehaviourFetchService(
     @defer.inlineCallbacks
     def test_endProxySession(self):
         """By ending a fetch service session, metadata is retrieved from the
-        fetch service and saved to a file; and call to end the session is made.
+        fetch service and saved to a file; and call to end the session and
+        removing resources are made.
         """
         self.useFixture(
             FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
@@ -489,8 +551,8 @@ class TestAsyncSnapBuildBehaviourFetchService(
         # End the session
         yield job.endProxySession(upload_path=tem_upload_path)
 
-        # We expect 3 calls made to the fetch service API, in this order
-        self.assertEqual(3, len(self.fetch_service_api.sessions.requests))
+        # We expect 4 calls made to the fetch service API, in this order
+        self.assertEqual(4, len(self.fetch_service_api.sessions.requests))
 
         # Request start a session
         start_session_request = self.fetch_service_api.sessions.requests[0]
@@ -509,6 +571,14 @@ class TestAsyncSnapBuildBehaviourFetchService(
         self.assertEqual(b"DELETE", end_session_request["method"])
         self.assertEqual(
             f"/session/{session_id}".encode(), end_session_request["uri"]
+        )
+
+        # Request removal of resources
+        remove_resources_request = self.fetch_service_api.sessions.requests[3]
+        self.assertEqual(b"DELETE", remove_resources_request["method"])
+        self.assertEqual(
+            f"/resources/{session_id}".encode(),
+            remove_resources_request["uri"],
         )
 
         # The expected file is created in the `tem_upload_path`
@@ -759,6 +829,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -813,6 +885,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -856,6 +930,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -930,6 +1006,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -976,6 +1054,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )
@@ -1019,6 +1099,8 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
                     "use_fetch_service": Is(None),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
                 }
             ),
         )

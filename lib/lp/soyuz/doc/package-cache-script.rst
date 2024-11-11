@@ -52,6 +52,7 @@ distribution and respective distroseriess considered in stderr.
 
     >>> print(stderr)
     INFO    Creating lockfile: /var/lock/launchpad-update-cache.lock
+    INFO    Starting the package cache update
     INFO    Updating ubuntu package counters
     INFO    Updating ubuntu main archives
     ...
@@ -59,6 +60,7 @@ distribution and respective distroseriess considered in stderr.
     INFO    Updating ubuntu PPAs
     ...
     INFO    redhat done
+    INFO    Finished the package cache update
 
 Rollback the old transaction in order to get the modifications done by
 the external script:

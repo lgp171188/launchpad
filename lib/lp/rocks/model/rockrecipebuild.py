@@ -18,6 +18,7 @@ from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
+from lp.buildmaster.builderproxy import BUILD_METADATA_FILENAME_FORMAT
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildQueueStatus,
@@ -31,6 +32,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
+from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.rocks.interfaces.rockrecipebuild import (
     IRockFile,
     IRockRecipeBuild,
@@ -44,6 +46,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
@@ -305,6 +308,23 @@ class RockRecipeBuild(PackageBuildMixin, StormBase):
 
         raise NotFoundError(filename)
 
+    def getFileUrls(self):
+        """See `IRockRecipeBuild`."""
+        return [
+            ProxiedLibraryFileAlias(lfa, self).http_url
+            for _, lfa, _ in self.getFiles()
+        ]
+
+    @property
+    def build_metadata_url(self):
+        metadata_filename = BUILD_METADATA_FILENAME_FORMAT.format(
+            build_id=self.build_cookie
+        )
+        for url in self.getFileUrls():
+            if url.endswith(metadata_filename):
+                return url
+        return None
+
     def addFile(self, lfa):
         """See `IRockRecipeBuild`."""
         rock_file = RockFile(build=self, library_file=lfa)
@@ -410,7 +430,7 @@ class RockRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         # Circular import.
-        # from lp.rocks.model.rockrecipe import RockRecipe
+        from lp.rocks.model.rockrecipe import RockRecipe
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
@@ -422,12 +442,8 @@ class RockRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             DistroSeries, distroarchserieses, ["distroseries_id"]
         )
         load_related(Distribution, distroserieses, ["distribution_id"])
-        # XXX jugmac00 2024-10-06: we need to skip preloading until the
-        # function is able to handle rock recipes with external git
-        # repositories, see https://warthogs.atlassian.net/browse/LP-1972
-        #
-        # recipes = load_related(RockRecipe, builds, ["recipe_id"])
-        # getUtility(IRockRecipeSet).preloadDataForRecipes(recipes)
+        recipes = load_related(RockRecipe, builds, ["recipe_id"])
+        getUtility(IRockRecipeSet).preloadDataForRecipes(recipes)
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""

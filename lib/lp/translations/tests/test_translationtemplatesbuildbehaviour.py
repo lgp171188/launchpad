@@ -114,6 +114,8 @@ class TestTranslationTemplatesBuildBehaviour(
                     "build_url": canonical_url(behaviour.build),
                     "builder_constraints": [],
                     "fast_cleanup": True,
+                    "launchpad_instance": "devel",
+                    "launchpad_server_url": "launchpad.test",
                     "series": das.distroseries.name,
                 },
             ),

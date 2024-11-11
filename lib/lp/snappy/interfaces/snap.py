@@ -76,6 +76,7 @@ from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.validators.name import name_validator
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitref import IGitRef
@@ -1203,6 +1204,20 @@ class ISnapAdminAttributes(Interface):
         )
     )
 
+    fetch_service_policy = exported(
+        Choice(
+            title=_("Fetch service policy"),
+            vocabulary=FetchServicePolicy,
+            required=False,
+            readonly=False,
+            default=FetchServicePolicy.STRICT,
+            description=_(
+                "Which policy to use when using the fetch service. Ignored if "
+                "`use_fetch_service` flag is False."
+            ),
+        )
+    )
+
     def subscribe(person, subscribed_by):
         """Subscribe a person to this snap recipe."""
 
@@ -1282,6 +1297,7 @@ class ISnapSet(Interface):
         project=None,
         pro_enable=None,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Create an `ISnap`."""
 

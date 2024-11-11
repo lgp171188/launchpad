@@ -80,7 +80,9 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         build = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
         yield self.startProxySession(
-            args, use_fetch_service=build.recipe.use_fetch_service
+            args,
+            use_fetch_service=build.recipe.use_fetch_service,
+            fetch_service_policy=build.recipe.fetch_service_policy,
         )
         args["name"] = build.recipe.store_name or build.recipe.name
         channels = build.channels or {}

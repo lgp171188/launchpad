@@ -18,6 +18,7 @@ from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
+from lp.buildmaster.builderproxy import BUILD_METADATA_FILENAME_FORMAT
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildQueueStatus,
@@ -44,6 +45,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
@@ -358,6 +360,23 @@ class CraftRecipeBuild(PackageBuildMixin, StormBase):
         mailer = CraftRecipeBuildMailer.forStatus(self)
         mailer.sendAll()
 
+    def getFileUrls(self):
+        """See `ICraftRecipeBuild`."""
+        return [
+            ProxiedLibraryFileAlias(lfa, self).http_url
+            for _, lfa, _ in self.getFiles()
+        ]
+
+    @property
+    def build_metadata_url(self):
+        metadata_filename = BUILD_METADATA_FILENAME_FORMAT.format(
+            build_id=self.build_cookie
+        )
+        for url in self.getFileUrls():
+            if url.endswith(metadata_filename):
+                return url
+        return None
+
 
 @implementer(ICraftRecipeBuildSet)
 class CraftRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
@@ -414,7 +433,7 @@ class CraftRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
-        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(LibraryFileContent, lfas, ["content_id"])
         distroarchserieses = load_related(
             DistroArchSeries, builds, ["distro_arch_series_id"]
         )

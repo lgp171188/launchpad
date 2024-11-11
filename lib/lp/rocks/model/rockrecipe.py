@@ -39,6 +39,7 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.app.errors import IncompatibleArguments
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
@@ -282,6 +283,13 @@ class RockRecipe(StormBase):
 
     use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
 
+    fetch_service_policy = DBEnum(
+        enum=FetchServicePolicy,
+        default=FetchServicePolicy.STRICT,
+        name="fetch_service_policy",
+        allow_none=True,
+    )
+
     def __init__(
         self,
         registrant,
@@ -301,6 +309,7 @@ class RockRecipe(StormBase):
         store_channels=None,
         date_created=DEFAULT,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Construct a `RockRecipe`."""
         if not getFeatureFlag(ROCK_RECIPE_ALLOW_CREATE):
@@ -327,6 +336,7 @@ class RockRecipe(StormBase):
         self.store_secrets = store_secrets
         self.store_channels = store_channels
         self.use_fetch_service = use_fetch_service
+        self.fetch_service_policy = fetch_service_policy
 
     def __repr__(self):
         return "<RockRecipe ~%s/%s/+rock/%s>" % (
@@ -791,6 +801,7 @@ class RockRecipeSet:
         store_channels=None,
         date_created=DEFAULT,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """See `IRockRecipeSet`."""
         if not registrant.inTeam(owner):
@@ -864,6 +875,7 @@ class RockRecipeSet:
             store_channels=store_channels,
             date_created=date_created,
             use_fetch_service=use_fetch_service,
+            fetch_service_policy=fetch_service_policy,
         )
         store.add(recipe)
 
@@ -1021,8 +1033,15 @@ class RockRecipeSet:
         if repositories:
             GenericGitCollection.preloadDataForRepositories(repositories)
 
+        # We only store git refs from Launchpad git repositories, not from
+        # remote git repositories. As such, skip fetching git refs from remote
+        # reositories, i.e., that don't have the `git_repository` property set.
         git_refs = GitRef.findByReposAndPaths(
-            [(recipe.git_repository, recipe.git_path) for recipe in recipes]
+            [
+                (recipe.git_repository, recipe.git_path)
+                for recipe in recipes
+                if recipe.git_repository
+            ]
         )
         for recipe in recipes:
             git_ref = git_refs.get((recipe.git_repository, recipe.git_path))

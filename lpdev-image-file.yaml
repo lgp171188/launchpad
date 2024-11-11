@@ -1,0 +1,148 @@
+# This LXD image file is based on top of the following LXD image file. 
+# https://github.com/canonical/lxd-ci/blob/main/images/ubuntu.yaml
+
+image:
+  distribution: ubuntu
+  release: focal
+  variant: default
+  description: Ubuntu {{ image.release }}
+  architecture: amd64
+
+source:
+  downloader: debootstrap
+  url: http://archive.ubuntu.com/ubuntu
+
+  # You can also build images from a local rootfs
+  # downloader: rootfs-http
+  # url: file:///home/tushar-gupta/projects/lp-image-builder/rootfs.squash.fs
+
+  skip_verification: true # Otherwise, GPG keys have to be provided under "source.keys" (or an HTTPS server has to be used).
+
+packages:
+  manager: apt
+  update: true
+  cleanup: true
+  sets:
+    - packages:
+        - curl
+        - wget
+        - gnupg2
+        - fuse
+        - language-pack-en
+        - openssh-client
+        - openssh-server
+        - nano
+        - vim
+        - cloud-init
+        - make
+        - git
+      action: install
+
+  repositories:
+    - name: sources.list
+      url: |-
+        deb http://archive.ubuntu.com/ubuntu {{ image.release }} main restricted universe multiverse
+        deb http://archive.ubuntu.com/ubuntu {{ image.release }}-updates main restricted universe multiverse
+        deb http://security.ubuntu.com/ubuntu {{ image.release }}-security main restricted universe multiverse
+
+files:
+  - path: /etc/hostname
+    generator: hostname
+
+  - path: /etc/hosts
+    generator: hosts
+
+  - path: /etc/resolvconf/resolv.conf.d/original
+    generator: remove
+
+  - path: /etc/resolvconf/resolv.conf.d/tail
+    generator: remove
+
+  - path: /etc/machine-id
+    generator: dump
+
+  - path: /etc/user/profile
+    generator: copy
+    source: /etc/profile
+
+  - path: /var/lib/dbus/machine-id
+    generator: remove
+
+  - path: /etc/netplan/10-lxc.yaml
+    generator: dump
+    content: |-
+      network:
+        version: 2
+        ethernets:
+          eth0:
+            dhcp4: true
+            dhcp-identifier: mac
+    releases:
+    - bionic
+    - eoan
+    - focal
+    - groovy
+    - hirsute
+    - impish
+    - jammy
+    types:
+    - container
+    variants:
+    - default
+
+  - name: meta-data
+    generator: cloud-init
+
+  - name: network-config
+    generator: cloud-init
+
+  - name: user-data
+    generator: cloud-init
+
+  - name: vendor-data
+    generator: cloud-init
+
+
+  - path: /etc/sudoers.d/90-lxd
+    generator: dump
+    mode: 0440
+    content: |-
+      # User rules for ubuntu
+      ubuntu ALL=(ALL) NOPASSWD:ALL
+    variants:
+      - default
+
+
+actions:
+  - trigger: post-packages
+    action: |-
+      #!/bin/sh
+      set -eux
+      systemctl enable systemd-networkd
+
+  - trigger: post-update
+    action: |-
+      #!/bin/sh
+      set -eux
+
+      getent group sudo >/dev/null 2>&1 || groupadd --system sudo
+      useradd --create-home -s /bin/bash -G sudo -U ubuntu
+
+
+  - trigger: post-files
+    action: |-
+      #! /bin/bash
+      su - ubuntu << 'EOF'
+      mkdir ~/launchpad
+      cd ~/launchpad
+      curl https://git.launchpad.net/launchpad/plain/utilities/rocketfuel-setup > rocketfuel-setup
+      chmod a+x rocketfuel-setup
+      # specify a random non existing user to create a generic LXD image. 
+      # we will do user-specific modifications in cloud-init of the dev profile 
+      ./rocketfuel-setup --assume-yes --lpusername lp-non-existing-user
+      cd launchpad  
+      # Allow connections from outside hosts to be able to access LP from host system
+      make LISTEN_ADDRESS='*' install 
+      ./utilities/launchpad-database-setup ubuntu
+      make schema
+      EOF
