@@ -525,6 +525,55 @@ class TestLaunchpadView(TestCaseWithFactory):
         ]
         self.assertEqual(expected_beta_features, view.beta_features)
 
+    def test_request_safe_form_sanitizes_html(self):
+        """Test that HTML in form parameters is properly escaped."""
+        request = LaunchpadTestRequest(
+            form={"resize_frame": "<script>alert(1)</script>"}
+        )
+        LaunchpadView(object(), request)
+        self.assertEqual(
+            request.safe_form["resize_frame"],
+            "&lt;script&gt;alert(1)&lt;/script&gt;",
+        )
+
+    def test_request_safe_form_preserves_safe_values(self):
+        """Test that safe form values are not modified."""
+        request = LaunchpadTestRequest(
+            form={"resize_frame": "normal123-value.text"}
+        )
+        LaunchpadView(object(), request)
+        self.assertEqual(
+            request.safe_form["resize_frame"], "normal123-value.text"
+        )
+
+    def test_request_safe_form_sanitizes_multiple_values(self):
+        """Test that multiple form values containing HTML are escaped."""
+        request = LaunchpadTestRequest(
+            form={
+                "field1": "<p>test</p>",
+                "field2": "'); test //",
+            }
+        )
+        LaunchpadView(object(), request)
+        self.assertEqual(
+            request.safe_form["field1"], "&lt;p&gt;test&lt;/p&gt;"
+        )
+        self.assertEqual(request.safe_form["field2"], "&#x27;); test //")
+
+    def test_request_safe_form_handles_non_string_values(self):
+        """Test that non-string form values are not modified."""
+        request = LaunchpadTestRequest(form={"number": 123, "boolean": True})
+        LaunchpadView(object(), request)
+        self.assertEqual(request.safe_form["number"], 123)
+        self.assertEqual(request.safe_form["boolean"], True)
+
+    def test_request_safe_form_handles_empty_values(self):
+        """Test that empty or None form values are handled properly."""
+        request = LaunchpadTestRequest(form={"empty": "", "none": None})
+        LaunchpadView(object(), request)
+        self.assertEqual(request.safe_form["empty"], "")
+        self.assertIsNone(request.safe_form["none"])
+
 
 class TestRedirectionView(TestCase):
     layer = DatabaseFunctionalLayer

@@ -140,10 +140,10 @@
   </script>
   <script
     tal:define="
-      include_inactive request/form/include_inactive | string:false;
-      resize_frame request/form/resize_frame | string:;
-      start request/form/start | string:;
-      size request/form/size | string:"
+      include_inactive request/safe_form/include_inactive | string:false;
+      resize_frame request/safe_form/resize_frame | string:;
+      start request/safe_form/start | string:;
+      size request/safe_form/size | string:"
     tal:content="
       string: show_timeline_graph(
         '${include_inactive}', '${resize_frame}', '${start}', '${size}');"/>
