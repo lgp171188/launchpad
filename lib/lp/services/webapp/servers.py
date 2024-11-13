@@ -68,6 +68,7 @@ from lp.services.webapp.authorization import (
     LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY,
 )
 from lp.services.webapp.errorlog import ErrorReportRequest
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interaction import get_interaction_extras
 from lp.services.webapp.interfaces import (
     IBasicLaunchpadRequest,
@@ -541,6 +542,22 @@ def get_query_string_params(request):
     )
 
 
+def safe_form_values(form: dict) -> dict:
+    """Return a copy of the form with values escaped for use in JavaScript."""
+    safe_form = {}
+    for key, value in form.items():
+        if isinstance(value, str):
+            value = html_escape(value)
+        elif isinstance(value, list):
+            value = []
+            for item in value:
+                if isinstance(item, str):
+                    item = html_escape(item)
+                value.append(item)
+        safe_form[key] = value
+    return safe_form
+
+
 class LaunchpadBrowserRequestMixin:
     """Provides methods used for both API and web browser requests."""
 
@@ -712,6 +729,14 @@ class LaunchpadBrowserRequest(
     def form_ng(self):
         """See ILaunchpadBrowserApplicationRequest."""
         return BrowserFormNG(self.form)
+
+    @cachedproperty
+    def safe_form(self):
+        """
+        use the safe_form when the value will be used in a JavaScript string,
+        to avoid injection attacks.
+        """
+        return safe_form_values(self.form)
 
     def setPrincipal(self, principal):
         self.clearSecurityPolicyCache()
@@ -1035,6 +1060,10 @@ class LaunchpadTestRequest(
     def form_ng(self):
         """See ILaunchpadBrowserApplicationRequest."""
         return BrowserFormNG(self.form)
+
+    @property
+    def safe_form(self):
+        return safe_form_values(self.form)
 
     @property
     def query_string_params(self):
