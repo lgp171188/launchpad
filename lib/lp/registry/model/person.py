@@ -1143,7 +1143,10 @@ class Person(
         # We want this person's total karma on a given context (that is,
         # across all different categories) here; that's why we use a
         # "KarmaCache.category IS NULL" clause here.
-        from lp.registry.model.distribution import Distribution
+        from lp.registry.model.distribution import (
+            Distribution,
+            DistributionSet,
+        )
         from lp.registry.model.product import Product, ProductSet
 
         tableset = Store.of(self).using(
@@ -1164,7 +1167,11 @@ class Person(
                     Product.active == True,
                     ProductSet.getProductPrivacyFilter(user),
                 ),
-                Distribution.id != None,
+                And(
+                    Distribution.id != None,
+                    Distribution.active == True,
+                    DistributionSet.getDistributionPrivacyFilter(user),
+                ),
             ),
         )
         result.order_by(
