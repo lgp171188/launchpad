@@ -1,8 +1,10 @@
 # Copyright 2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from functools import partial
+
 from testscenarios import WithScenarios, load_tests_apply_scenarios
-from testtools.matchers import HasLength
+from testtools.matchers import HasLength, MatchesException, Raises
 
 from lp.snappy.adapters.buildarch import (
     AllConflictInBuildForError,
@@ -424,7 +426,9 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
             {
                 "architectures": [{"build-on": ["all", "amd64"]}],
                 "supported_architectures": ["amd64"],
-                "expected_exception": AllConflictInBuildOnError,
+                "expected_exception": MatchesException(
+                    AllConflictInBuildOnError
+                ),
             },
         ),
         (
@@ -434,7 +438,9 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                     {"build-on": "amd64", "build-for": ["amd64", "all"]}
                 ],
                 "supported_architectures": ["amd64"],
-                "expected_exception": AllConflictInBuildForError,
+                "expected_exception": MatchesException(
+                    AllConflictInBuildForError
+                ),
             },
         ),
         (
@@ -473,7 +479,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                     {"build-on": "amd64", "build-for": ["i386"]},
                 ],
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected_exception": DuplicateBuildOnError,
+                "expected_exception": MatchesException(DuplicateBuildOnError),
             },
         ),
         (
@@ -533,7 +539,11 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                     "ubuntu-unsupported": {},
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected_exception": BadPropertyError,
+                "expected_exception": MatchesException(
+                    BadPropertyError,
+                    r"\'ubuntu-unsupported\' is not a supported platform for "
+                    r"\'snap-base-name-.*\'",
+                ),
             },
         ),
         (
@@ -564,7 +574,9 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                     },
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected_exception": AllConflictInBuildOnError,
+                "expected_exception": MatchesException(
+                    AllConflictInBuildOnError
+                ),
             },
         ),
         (
@@ -577,7 +589,9 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                     },
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected_exception": AllConflictInBuildForError,
+                "expected_exception": MatchesException(
+                    AllConflictInBuildForError, r".*"
+                ),
             },
         ),
         (
@@ -630,7 +644,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                     },
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected_exception": DuplicateBuildOnError,
+                "expected_exception": MatchesException(DuplicateBuildOnError),
             },
         ),
         (
@@ -694,12 +708,15 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
         snap_base_features = getattr(self, "snap_base_features", {})
         snap_base = self.factory.makeSnapBase(features=snap_base_features)
         if hasattr(self, "expected_exception"):
-            self.assertRaises(
-                self.expected_exception,
+            determine_arches_to_builds = partial(
                 determine_architectures_to_build,
                 snap_base,
                 snapcraft_data,
                 self.supported_architectures,
+            )
+            self.assertThat(
+                determine_arches_to_builds,
+                Raises(self.expected_exception),
             )
         else:
             build_instances = determine_architectures_to_build(
