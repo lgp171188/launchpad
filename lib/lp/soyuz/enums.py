@@ -297,6 +297,19 @@ class BinaryPackageFileType(DBEnumeratedType):
         """,
     )
 
+    # This is particularly confusing for Crate packages since they don't have
+    # a formal package format specification - they're just tarballs of source
+    # code. We still need entries in both enums to maintain database
+    # consistency.
+    CRATE = DBItem(
+        10,
+        """
+        Crate Package
+
+        The "crate" binary package format for Rust.
+        """,
+    )
+
     GENERIC = DBItem(
         9,
         """
@@ -391,6 +404,18 @@ class BinaryPackageFormat(DBEnumeratedType):
 
         Version 2 of the Conda package format, with the ".conda" extension;
         introduced in Conda 4.7.
+        """,
+    )
+
+    # As noted above, there's unclear distinction between BinaryPackageFormat
+    # and BinaryPackageFileType. CRATE was added for Rust crate packages,
+    # requiring entries in both enums.
+    CRATE = DBItem(
+        10,
+        """
+        Crate Package
+
+        The "crate" binary package format for Rust.
         """,
     )
 
@@ -973,5 +998,14 @@ class ArchiveRepositoryFormat(DBEnumeratedType):
         Generic
 
         A generic repository with a basic name/version layout and no indexing.
+        """,
+    )
+
+    RUST = DBItem(
+        5,
+        """
+        Rust
+
+        A Rust package index
         """,
     )

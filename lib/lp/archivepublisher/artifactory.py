@@ -615,6 +615,10 @@ class ArtifactoryPool:
                 "*.mod",
                 "*.zip",
             ]
+        elif repository_format == ArchiveRepositoryFormat.RUST:
+            return [
+                "*.tar.xz",
+            ]
         elif repository_format == ArchiveRepositoryFormat.GENERIC:
             return ["*"]
         else:
