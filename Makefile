@@ -330,8 +330,8 @@ $(VENV_INSTANCE_NAME): download-cache requirements/combined.txt setup.py
 		--extra-search-dir=$(WD)/wheels/ \
 		env
 	ln -sfn env/bin bin
-	$(SHHH) $(PIP) install -r requirements/setup.txt
-	$(SHHH) LPCONFIG=$(LPCONFIG) $(PIP) \
+	$(PIP) install -r requirements/setup.txt
+	LPCONFIG=$(LPCONFIG) $(PIP) \
 		install \
 		-c requirements/setup.txt -c requirements/combined.txt -e . \
 		|| { code=$$?; rm -f $@; exit $$code; }
