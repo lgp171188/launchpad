@@ -195,7 +195,7 @@ cd "$LP_PROJECT_ROOT" || exit 1
 echo "Configuring git..."
 if [ "$(git ls-remote --get-url lp:launchpad)" = lp:launchpad ]; then
   if [ "$(curl --fail --silent "https://launchpad.net/~$lpusername/+sshkeys")" ]; then
-    git config --global url.git+ssh://git.launchpad.net/.insteadof lp:
+    git config --global "url.git+ssh://$lpusername@git.launchpad.net/.insteadof" lp:
   else
     git config --global url.https://git.launchpad.net/.insteadof lp:
   fi
@@ -218,7 +218,7 @@ if ! git status; then
 fi
 if [[ "$(git remote get-url origin)" != *"//git.launchpad.net/launchpad" ]]; then
   echo "ERROR: Your clone in $LP_TRUNK_PATH has an incorrect pull location, correcting now..."
-  if ! git remote set-url origin git+ssh://git.launchpad.net/launchpad; then
+  if ! git remote set-url origin "git+ssh://$lpusername@git.launchpad.net/launchpad"; then
     echo "ERROR: Unable to set trunk pull location to lp:launchpad"
     exit 1
   fi
