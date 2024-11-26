@@ -90,15 +90,6 @@ for hostname in $hostnames; do
   dev_host;
 done
 
-# Enable relevant Ubuntu package repositories
-if ! grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*universe" /etc/apt/sources.list; then
-    echo "Please enable the 'universe' component in /etc/apt/sources.list'"
-    exit 1
-fi
-if ! grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*multiverse" /etc/apt/sources.list; then
-    echo "Please enable the 'multiverse' component in /etc/apt/sources.list'"
-    exit 1
-fi
 
 LPDEV_SOURCES="/etc/apt/sources.list.d/launchpad-dev.list"
 if [ ! -e $LPDEV_SOURCES ]; then
