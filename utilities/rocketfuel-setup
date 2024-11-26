@@ -7,12 +7,6 @@
 # workstation, from scratch. The script lives in the LP codebase itself,
 # as utilities/rocketfuel-setup
 
-# load up Ubuntu release details so we know which repos to enable
-DISTRIB_CODENAME="$(sed -n 's/^DISTRIB_CODENAME=//p' /etc/lsb-release | tr -d '"')"
-if [ -z "$DISTRIB_CODENAME" ]; then
-  echo "Cannot find DISTRIB_CODENAME in /etc/lsb-release" >&2
-  exit 1
-fi
 DO_WORKSPACE=1
 INSTALL_OPTS=""
 getopt_output="$(getopt -o '' -l no-workspace,lpusername:,assume-yes -- "$@")" || exit 1
@@ -90,34 +84,7 @@ for hostname in $hostnames; do
   dev_host;
 done
 
-
-LPDEV_SOURCES="/etc/apt/sources.list.d/launchpad-dev.list"
-if [ ! -e $LPDEV_SOURCES ]; then
-  sudo touch $LPDEV_SOURCES
-fi
-
-LP_PPA="deb http://ppa.launchpad.net/launchpad/ppa/ubuntu ${DISTRIB_CODENAME} main"
-if ! grep -q "^${LP_PPA}" $LPDEV_SOURCES; then
-  echo "Adding ~launchpad PPA repository to package source list."
-  echo "$LP_PPA"  | sudo tee -a $LPDEV_SOURCES
-fi
-REQUIRED_PPA_KEYS="2AF499CB24AC5F65461405572D1FFB6C0A5174AF"
-
-# Get the key used to sign the launchpad-developer-dependencies in the PPA.
-for key in $REQUIRED_PPA_KEYS; do
-   if ! sudo APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
-       apt-key adv --list-keys --with-colons --fingerprint | grep -qE "^fpr:+$key"; then
-     echo "Retrieving key $key."
-     if ! gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys "$key"; then
-       echo "Could not retrieve key $key."
-       exit 1
-     fi
-     if ! gpg --export -a "$key" | sudo apt-key add -; then
-       echo "Could not install key $key."
-       exit 1
-     fi
-   fi
-done
+sudo add-apt-repository ppa:launchpad/ppa
 
 do_install() {
   if ! dpkg -s "$pkg" | grep -q "^Status: install ok installed"; then
