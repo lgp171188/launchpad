@@ -800,6 +800,11 @@ class DistroSeries(
         return self.distribution.bug_reporting_guidelines
 
     @property
+    def content_templates(self):
+        """See 'IBugTarget'."""
+        return self.distribution.content_templates
+
+    @property
     def bug_reported_acknowledgement(self):
         """See `IBugTarget`."""
         return self.distribution.bug_reported_acknowledgement

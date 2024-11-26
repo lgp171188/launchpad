@@ -17,7 +17,7 @@ guided filebug form.
     ...     "A totally new " "bug with attachments"
     ... )
     >>> user_browser.getControl("Continue").click()
-    >>> user_browser.getControl("Further information").value = (
+    >>> user_browser.getControl("Bug Description").value = (
     ...     "We can now add attachments!"
     ... )
 
@@ -31,7 +31,7 @@ a file-like object to demonstrate this.
     >>> user_browser.getControl("Attachment").add_file(
     ...     example_file, "text/plain", "example.txt"
     ... )
-    >>> user_browser.getControl("Description").value = (
+    >>> user_browser.getControl("Description", index=1).value = (
     ...     "A description " "of the attachment"
     ... )
     >>> user_browser.getControl("Submit Bug Report").click()

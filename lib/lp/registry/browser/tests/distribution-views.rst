@@ -131,7 +131,8 @@ The view accepts most of the distribution fields.
 
     >>> view.field_names
     ['display_name', 'summary', 'description',
-     'bug_reporting_guidelines', 'bug_reported_acknowledgement',
+     'bug_reporting_guidelines', 'content_templates',
+     'bug_reported_acknowledgement',
      'package_derivatives_email', 'icon',
      'logo', 'mugshot', 'official_malone', 'enable_bug_expiration',
      'blueprints_usage', 'translations_usage', 'answers_usage',

@@ -6,14 +6,20 @@ __all__ = [
     "BugTagsWidget",
     "BugWidget",
     "LargeBugTagsWidget",
+    "DictBugTemplatesWidget",
 ]
 
 import json
 import re
 
 from zope.component import getUtility
-from zope.formlib.interfaces import ConversionError, WidgetInputError
+from zope.formlib.interfaces import (
+    ConversionError,
+    IInputWidget,
+    WidgetInputError,
+)
 from zope.formlib.textwidgets import IntWidget, TextAreaWidget, TextWidget
+from zope.interface import implementer
 from zope.schema.interfaces import ConstraintNotSatisfied
 
 from lp.app.errors import NotFoundError
@@ -201,3 +207,36 @@ class LargeBugTagsWidget(BugTagsWidgetBase, TextAreaWidget):
 
     def _getInputValue(self):
         return TextAreaWidget.getInputValue(self)
+
+
+@implementer(IInputWidget)
+class DictBugTemplatesWidget(TextAreaWidget):
+    """Widget for editing bug templates as JSON or plain text.
+    This currently only modifies the 'default' template. To be
+    extended to addapt when adding more templates.
+    """
+
+    template_type = "bug_templates"
+    template_name = "default"
+
+    def _toFieldValue(self, input):
+        """Convert the input text to a dictionary for the schema."""
+        if not input:
+            return {self.template_type: {self.template_name: ""}}
+
+        # Perform length validation
+        if len(input) > 50000:
+            raise ConversionError(
+                "The bug template is too long. If you have lots of text to "
+                "add, ask to attach a file to the bug instead."
+            )
+
+        # Add text input as default bug template
+        return {self.template_type: {self.template_name: input.strip()}}
+
+    def _toFormValue(self, value):
+        """Convert a dictionary from the schema back to string for the form."""
+        if not value:
+            return ""
+        # Return the default bug template
+        return value.get(self.template_type, {}).get(self.template_name, "")

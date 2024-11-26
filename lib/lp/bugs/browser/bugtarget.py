@@ -72,7 +72,11 @@ from lp.app.widgets.product import (
 from lp.bugs.browser.structuralsubscription import (
     expose_structural_subscription_data_to_js,
 )
-from lp.bugs.browser.widgets.bug import BugTagsWidget, LargeBugTagsWidget
+from lp.bugs.browser.widgets.bug import (
+    BugTagsWidget,
+    DictBugTemplatesWidget,
+    LargeBugTagsWidget,
+)
 from lp.bugs.browser.widgets.bugtask import FileBugSourcePackageNameWidget
 from lp.bugs.interfaces.apportjob import IProcessApportBlobJobSource
 from lp.bugs.interfaces.bug import (
@@ -143,6 +147,7 @@ class IProductBugConfiguration(Interface):
     bug_reporting_guidelines = copy_field(
         IBugTarget["bug_reporting_guidelines"]
     )
+    content_templates = copy_field(IBugTarget["content_templates"])
     bug_reported_acknowledgement = copy_field(
         IBugTarget["bug_reported_acknowledgement"]
     )
@@ -167,6 +172,7 @@ class ProductConfigureBugTrackerView(ProductConfigureBase):
     custom_widget_bugtracker = ProductBugTrackerWidget
     custom_widget_enable_bug_expiration = GhostCheckBoxWidget
     custom_widget_remote_product = GhostWidget
+    custom_widget_bug_templates = CustomWidgetFactory(DictBugTemplatesWidget)
 
     @property
     def field_names(self):
@@ -176,6 +182,7 @@ class ProductConfigureBugTrackerView(ProductConfigureBase):
             "enable_bug_expiration",
             "remote_product",
             "bug_reporting_guidelines",
+            "content_templates",
             "bug_reported_acknowledgement",
             "enable_bugfiling_duplicate_search",
         ]
@@ -211,6 +218,8 @@ class FileBugViewBase(LaunchpadFormView):
         TextAreaWidget, cssClass="comment-text"
     )
     custom_widget_packagename = FileBugSourcePackageNameWidget
+    custom_widget_bug_templates = CustomWidgetFactory(DictBugTemplatesWidget)
+
     next_url = None
 
     extra_data_token = None
@@ -292,6 +301,11 @@ class FileBugViewBase(LaunchpadFormView):
                 "Extra debug information will be added to the bug report"
                 " automatically."
             )
+        # Update 'comment' field with a bug reporting template if it exists
+        content_templates = self.context.content_templates
+        if content_templates and "bug_templates" in content_templates:
+            template_text = content_templates["bug_templates"]["default"]
+            self.widgets["comment"].setRenderedValue(template_text)
 
     @cachedproperty
     def redirect_ubuntu_filebug(self):
@@ -897,6 +911,13 @@ class FileBugViewBase(LaunchpadFormView):
         if next_context is not None:
             return self.getAcknowledgementMessage(next_context)
         return self.default_bug_reported_acknowledgement
+
+    def getBugTemplate(self, context):
+        """Default bug template configured that is displayed to the user."""
+        bug_template = context.content_templates["bug_templates"]["default"]
+        if bug_template is not None and len(bug_template.strip()) > 0:
+            return bug_template
+        return ""
 
     @cachedproperty
     def extra_data_processing_job(self):

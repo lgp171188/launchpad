@@ -387,6 +387,19 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
         ]
         self.assertEqual(expected_guidelines, view.bug_reporting_guidelines)
 
+    def test_filebug_template_in_comment(self):
+        # Create a product
+        product = self.factory.makeProduct()
+        login_person(product.owner)
+        # Set up content_templates
+        product.content_templates = {
+            "bug_templates": {"default": "This is a default bug template"}
+        }
+        # Create and initialize the product filebug view
+        view = create_initialized_view(product, "+filebug")
+        expected_template = "This is a default bug template"
+        self.assertEqual(expected_template, view.getBugTemplate(product))
+
     def filebug_via_view(
         self,
         information_type=None,

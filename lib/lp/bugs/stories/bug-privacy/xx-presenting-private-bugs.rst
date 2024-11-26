@@ -36,7 +36,7 @@ have the full message:
     ... )
     >>> browser.getControl("Continue").click()
 
-    >>> browser.getControl("Further information").value = "foo"
+    >>> browser.getControl("Bug Description").value = "foo"
     >>> browser.getControl("Private Security").selected = True
     >>> browser.getControl("Submit Bug Report").click()
 

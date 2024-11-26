@@ -45,6 +45,7 @@ And for every distribution we publish most of its attributes.
     icon_link: 'http://.../ubuntu/icon'
     information_type: 'Public'
     logo_link: 'http://.../ubuntu/logo'
+    content_templates: None
     main_archive_link: 'http://.../ubuntu/+archive/primary'
     members_link: 'http://.../~ubuntu-team'
     mirror_admin_link: 'http://.../~ubuntu-mirror-admins'

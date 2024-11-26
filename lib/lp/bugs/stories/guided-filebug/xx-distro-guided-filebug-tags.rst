@@ -28,7 +28,7 @@ After submitting the bug, the tags are added to the bug.
 
     >>> from lp.bugs.tests.bug import print_bug_tag_anchors
 
-    >>> user_browser.getControl("Further information").value = "Thanks."
+    >>> user_browser.getControl("Bug Description").value = "Thanks."
     >>> user_browser.getControl("Submit Bug Report").click()
 
     >>> user_browser.url

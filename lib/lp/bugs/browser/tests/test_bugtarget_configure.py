@@ -31,6 +31,7 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
             "field.enable_bug_expiration": "on",
             "field.remote_product": "sf-boing",
             "field.bug_reporting_guidelines": "guidelines",
+            "field.content_templates": "launchpad templates",
             "field.bug_reported_acknowledgement": "acknowledgement message",
             "field.enable_bugfiling_duplicate_search": False,
             "field.actions.change": "Change",
@@ -47,6 +48,7 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
             "enable_bug_expiration",
             "remote_product",
             "bug_reporting_guidelines",
+            "content_templates",
             "bug_reported_acknowledgement",
             "enable_bugfiling_duplicate_search",
             "bug_supervisor",
@@ -67,6 +69,7 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
             "enable_bug_expiration",
             "remote_product",
             "bug_reporting_guidelines",
+            "content_templates",
             "bug_reported_acknowledgement",
             "enable_bugfiling_duplicate_search",
         ]
@@ -90,6 +93,10 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
         self.assertTrue(self.product.enable_bug_expiration)
         self.assertEqual("sf-boing", self.product.remote_product)
         self.assertEqual("guidelines", self.product.bug_reporting_guidelines)
+        self.assertEqual(
+            {"bug_templates": {"default": "launchpad templates"}},
+            self.product.content_templates,
+        )
         self.assertEqual(
             "acknowledgement message",
             self.product.bug_reported_acknowledgement,
@@ -150,26 +157,38 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
         self.product.bug_supervisor = bug_team
         login_person(weak_owner)
         form = self._makeForm()
-        # Only the bug_reporting_guidelines are different.
+        # Only the bug_reporting_guidelines and content_templates
+        # are different.
         form["field.bug_supervisor"] = bug_team.name
         form["field.bug_reporting_guidelines"] = "new guidelines"
+        form["field.content_templates"] = "new lp template"
         view = create_initialized_view(
             self.product, name="+configure-bugtracker", form=form
         )
         self.assertEqual([], view.errors)
         self.assertEqual(
             "new guidelines", self.product.bug_reporting_guidelines
+        )
+        self.assertEqual(
+            {"bug_templates": {"default": "new lp template"}},
+            self.product.content_templates,
         )
 
     def test_bug_supervisor_can_edit(self):
         login_person(self.bug_supervisor)
         form = self._makeForm()
-        # Only the bug_reporting_guidelines are different.
+        # Only the bug_reporting_guidelines and content_templates
+        # are different.
         form["field.bug_reporting_guidelines"] = "new guidelines"
+        form["field.content_templates"] = "new lp template"
         view = create_initialized_view(
             self.product, name="+configure-bugtracker", form=form
         )
         self.assertEqual([], view.errors)
         self.assertEqual(
             "new guidelines", self.product.bug_reporting_guidelines
+        )
+        self.assertEqual(
+            {"bug_templates": {"default": "new lp template"}},
+            self.product.content_templates,
         )

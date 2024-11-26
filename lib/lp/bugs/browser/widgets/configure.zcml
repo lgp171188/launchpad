@@ -16,4 +16,10 @@
       permission="zope.Public"
       />
 
+  <!-- Adapter for DictBugTemplatesWidget -->
+  <adapter
+      factory="lp.bugs.browser.widgets.bug.DictBugTemplatesWidget"
+      for="zope.schema.interfaces.IDict zope.publisher.interfaces.browser.IBrowserRequest"
+      provides="zope.formlib.interfaces.IInputWidget"
+      />
 </configure>
