@@ -410,16 +410,32 @@ class FileBugViewBase(LaunchpadFormView):
         # The comment field is only required if filing a new bug.
         if self.submit_bug_action.submitted():
             comment = data.get("comment")
+            title = data.get("title", "").strip()
             # The widget only exposes the error message. The private
             # attr contains the real error.
-            widget_error = self.widgets.get("comment")._error
-            if widget_error and isinstance(widget_error.errors, TooLong):
+            widget_error_title = self.widgets.get("title")._error
+            widget_error_comment = self.widgets.get("comment")._error
+            if widget_error_title and isinstance(
+                widget_error_title.errors, TooLong
+            ):
+                self.setFieldError(
+                    "title",
+                    "The summary is too long. Please, provide a one-line "
+                    "summary of the problem.",
+                )
+            elif not title or widget_error_title is not None:
+                self.setFieldError(
+                    "title", "Provide a one-line summary of the problem."
+                )
+            if widget_error_comment and isinstance(
+                widget_error_comment.errors, TooLong
+            ):
                 self.setFieldError(
                     "comment",
                     "The description is too long. If you have lots of "
                     "text to add, attach a file to the bug instead.",
                 )
-            elif not comment or widget_error is not None:
+            elif not comment or widget_error_comment is not None:
                 self.setFieldError(
                     "comment", "Provide details about the issue."
                 )

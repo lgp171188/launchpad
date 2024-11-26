@@ -224,6 +224,8 @@ class IBugView(Interface):
             title=_("Summary"),
             required=True,
             description=_("""A one-line summary of the problem."""),
+            min_length=1,
+            max_length=200,
         )
     )
     description = exported(
@@ -1437,7 +1439,9 @@ class IBugAddForm(IBug):
         ),
         vocabulary="BinaryAndSourcePackageName",
     )
-    title = Title(title=_("Summary"), required=True)
+    title = Title(
+        title=_("Summary"), min_length=1, max_length=200, required=True
+    )
     distribution = Choice(
         title=_("Linux Distribution"),
         required=True,

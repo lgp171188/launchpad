@@ -71,7 +71,7 @@ will be displayed as well.
     ...     print(message.decode_contents())
     ...
     There is 1 error.
-    Required input is missing.
+    Provide a one-line summary of the problem.
 
 With both values set, the bug is created.
 
