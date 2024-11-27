@@ -88,7 +88,6 @@ host.
     homepage_url: 'http://www.mozilla.org/'
     icon_link: 'http://.../mozilla/icon'
     logo_link: 'http://.../mozilla/logo'
-    content_templates: None
     mugshot_link: 'http://.../mozilla/mugshot'
     name: 'mozilla'
     official_bug_tags: []
@@ -194,7 +193,6 @@ Projects are available at their canonical URL on the API virtual host.
     license_info: None
     licenses: ['MIT / X / Expat Licence']
     logo_link: 'http://.../firefox/logo'
-    content_templates: None
     name: 'firefox'
     official_answers: True
     official_blueprints: False
@@ -847,7 +845,6 @@ virtual host.
     display_name: 'foobadoo'
     driver_link: None
     drivers_collection_link: 'http://.../babadoo/foobadoo/drivers'
-    content_templates: None
     name: 'foobadoo'
     official_bug_tags: []
     owner_link: 'http://.../~babadoo-owner'

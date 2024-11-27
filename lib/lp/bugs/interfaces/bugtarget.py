@@ -276,6 +276,8 @@ class IBugTarget(IHasBugs):
         )
     )
 
+    # XXX alvarocs 2024-11-27:
+    # To be exported to the API once a validator is added.
     content_templates = Dict(
         title=("Templates to use for reporting a bug"),
         description=(
