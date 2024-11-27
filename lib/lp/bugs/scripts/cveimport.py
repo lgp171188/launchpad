@@ -7,7 +7,12 @@ CVE's are fully registered in Launchpad."""
 
 import gzip
 import io
+import os
 import time
+import zipfile
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from urllib.parse import urljoin
 
 import defusedxml.ElementTree as ElementTree
 import requests
@@ -193,20 +198,362 @@ class CVEUpdater(LaunchpadCronScript):
         self.parser.add_option(
             "-f",
             "--cvefile",
-            dest="cvefile",
-            default=None,
             help="An XML file containing the CVE database.",
         )
         self.parser.add_option(
             "-u",
             "--cveurl",
-            dest="cveurl",
             default=config.cveupdater.cve_db_url,
             help="The URL for the XML CVE database.",
         )
+        self.parser.add_option(
+            "--baselinecvedir",
+            help="Directory containing CVE JSON files in year/group structure",
+        )
+        self.parser.add_option(
+            "--deltacvedir",
+            help="Directory containing delta CVE JSON files (flat structure)",
+        )
+        self.parser.add_option(
+            "-b",
+            "--baseline",
+            action="store_true",
+            default=False,
+            help="Download baseline full CVE data from GitHub releases",
+        )
+        self.parser.add_option(
+            "-d",
+            "--delta",
+            action="store_true",
+            default=False,
+            help="Download and process hourly delta CVE data from GitHub "
+            "releases",
+        )
+
+    def construct_github_url(self, delta=False):
+        """Construct the GitHub release URL for CVE data.
+
+        :param delta: If True, construct URL for hourly delta, otherwise for
+            daily baseline
+        :return: tuple of (url, year)
+        """
+        now = datetime.now(timezone.utc)
+        year, _, date_str = now.strftime("%Y-%m-%d").partition("-")
+        date_str = f"{year}-{date_str}"
+        hour = now.hour
+
+        base_url = config.cveupdater.github_cve_url
+
+        if delta:
+            # If we are past midnight and we run a delta update, it most likely
+            # means we want the delta for the previous day (at_end_of_day).
+            # A "real" delta update at midnight is empty since we just formed
+            # a new baseline for the day.
+            if hour == 0:
+                # Go back 24 hours to get yesterday's date
+                yesterday = now - timedelta(days=1)
+                date_str = yesterday.strftime("%Y-%m-%d")
+                release_tag = f"cve_{date_str}_at_end_of_day"
+                filename = f"{date_str}_delta_CVEs_at_end_of_day.zip"
+            else:
+                # For all hours, use the standard hourly format
+                hour_str = f"{hour:02d}00"
+                release_tag = f"cve_{date_str}_{hour_str}Z"
+                filename = f"{date_str}_delta_CVEs_at_{hour_str}Z.zip"
+        else:
+            release_tag = f"cve_{date_str}_0000Z"
+            filename = f"{date_str}_all_CVEs_at_midnight.zip.zip"
+
+        # Construct the full URL
+        url = urljoin(base_url, f"{release_tag}/{filename}")
+        return url
+
+    def process_delta_directory(self, delta_dir):
+        """Process a directory containing delta CVE JSON files.
+
+        Expected structure:
+        deltaCves/
+            CVE-XXXX-XXXX.json
+            CVE-XXXX-YYYY.json
+            ...
+
+        :param delta_dir: Path to the directory containing delta CVE files
+        :return: tuple of (processed_count, error_count)
+        """
+        total_processed = 0
+        total_errors = 0
+
+        delta_path = Path(delta_dir)
+        if not delta_path.exists():
+            raise LaunchpadScriptFailure(
+                f"Delta directory not found: {delta_dir}"
+            )
+
+        # process each CVE JSON file in the delta directory
+        for cve_file in sorted(delta_path.glob("CVE-*.json")):
+            try:
+                with open(cve_file) as f:
+                    import json
+
+                    cve_data = json.load(f)
+
+                self.logger.debug(f"Processing delta {cve_file.name}")
+                self.processCVEJSON(cve_data)
+                total_processed += 1
+
+                # commit after each CVE to avoid large transactions
+                self.txn.commit()
+
+            except (OSError, json.JSONDecodeError) as e:
+                self.logger.error(
+                    f"Error processing delta {cve_file}: {str(e)}"
+                )
+                total_errors += 1
+                continue
+
+            if total_processed % 10 == 0:
+                self.logger.info(
+                    f"Processed {total_processed} delta CVE files..."
+                )
+
+        return total_processed, total_errors
+
+    def extract_github_zip(self, zip_content, delta=False):
+        """Extract the GitHub ZIP file to a temporary directory.
+
+        :param zip_content: The downloaded ZIP file content
+        :param delta: If True, expect delta structure, otherwise baseline
+            structure
+        :return: Path to the extracted directory containing CVE files
+        """
+        import shutil
+        import tempfile
+
+        # create a temporary directory
+        temp_dir = tempfile.mkdtemp(prefix="cve_import_")
+
+        try:
+            # write outer zip content to a temporary file
+            outer_zip_path = os.path.join(temp_dir, "downloaded.zip")
+            with open(outer_zip_path, "wb") as f:
+                f.write(zip_content)
+
+            # extract the outer zip file
+            with zipfile.ZipFile(outer_zip_path) as outer_zf:
+                if delta:
+                    # for delta, extract deltacves directory
+                    members = [
+                        m
+                        for m in outer_zf.namelist()
+                        if m.startswith("deltaCves/")
+                    ]
+                    outer_zf.extractall(temp_dir, members=members)
+                    target_dir = os.path.join(temp_dir, "deltaCves")
+                else:
+                    # for baseline, handle nested zip structure
+                    outer_zf.extract("cves.zip", temp_dir)
+                    inner_zip_path = os.path.join(temp_dir, "cves.zip")
+
+                    with zipfile.ZipFile(inner_zip_path) as inner_zf:
+                        inner_zf.extractall(temp_dir)
+
+                    os.unlink(inner_zip_path)
+                    target_dir = os.path.join(temp_dir, "cves")
+
+            os.unlink(outer_zip_path)
+
+            if not os.path.exists(target_dir):
+                raise LaunchpadScriptFailure(
+                    f"Expected directory not found in ZIP: {target_dir}"
+                )
+
+            return target_dir
+
+        except Exception as e:
+            # clean up on any error
+            shutil.rmtree(temp_dir)
+            raise LaunchpadScriptFailure(
+                f"Failed to extract ZIP files: {str(e)}"
+            )
+
+    def process_json_directory(self, base_dir):
+        """Process a directory of CVE JSON files organized by year and groups.
+
+        Expected structure:
+        base_dir/
+            1999/
+                0xxx/
+                    CVE-1999-0001.json
+                    ...
+                1xxx/
+                    CVE-1999-1001.json
+                    ...
+            2024/
+                0xxx/
+                    CVE-2024-0001.json
+                    ...
+                1xxx/
+                    CVE-2024-1001.json
+                    ...
+
+        :param base_dir: Path to the base directory containing year folders
+        """
+        base_path = Path(base_dir)
+        total_processed = 0
+        total_errors = 0
+
+        # process each year directory
+        for year in sorted(base_path.glob("[0-9][0-9][0-9][0-9]")):
+            self.logger.info(f"Processing year {year.name}...")
+
+            # process each group directory (0xxx, 1xxx, etc)
+            for group in sorted(year.glob("[0-9]xxx")):
+                self.logger.info(f"Processing group {group.name}...")
+
+                # process each cve json file
+                for cve_file in sorted(group.glob("CVE-*.json")):
+                    try:
+                        with open(cve_file) as f:
+                            import json
+
+                            cve_data = json.load(f)
+
+                        self.logger.debug(f"Processing {cve_file.name}")
+                        self.processCVEJSON(cve_data)
+                        total_processed += 1
+
+                        # commit after each cve to avoid large transactions
+                        self.txn.commit()
+
+                    except (OSError, json.JSONDecodeError) as e:
+                        self.logger.error(
+                            f"Error processing {cve_file}: {str(e)}"
+                        )
+                        total_errors += 1
+                        continue
+
+                    if total_processed % 100 == 0:
+                        self.logger.info(
+                            f"Processed {total_processed} CVE files..."
+                        )
+
+        return total_processed, total_errors
 
     def main(self):
         self.logger.info("Initializing...")
+
+        # handle GitHub delta download case
+        if self.options.delta:
+            try:
+                url = self.construct_github_url(delta=True)
+                self.logger.info(
+                    f"Downloading delta CVE data from GitHub: {url}"
+                )
+
+                # download the ZIP file
+                response = self.fetchCVEURL(url)
+
+                # extract to temporary directory
+                temp_dir = self.extract_github_zip(response, delta=True)
+
+                try:
+                    # process the extracted directory
+                    total_processed, total_errors = (
+                        self.process_delta_directory(temp_dir)
+                    )
+                    self.logger.info(
+                        f"Processed {total_processed} delta CVE files "
+                        f"({total_errors} errors)"
+                    )
+                finally:
+                    # clean up temporary directory
+                    import shutil
+
+                    shutil.rmtree(temp_dir)
+
+                return
+
+            except Exception as e:
+                raise LaunchpadScriptFailure(
+                    f"Error processing GitHub delta CVE data: {str(e)}"
+                )
+
+        # handle local delta directory case
+        if self.options.deltacvedir is not None:
+            try:
+                start_time = time.time()
+                total_processed, total_errors = self.process_delta_directory(
+                    self.options.deltacvedir
+                )
+                finish_time = time.time()
+
+                self.logger.info(
+                    f"Processed {total_processed} delta CVE files "
+                    f"({total_errors} errors) in "
+                    f"{finish_time - start_time:.2f} seconds"
+                )
+                return
+
+            except Exception as e:
+                raise LaunchpadScriptFailure(
+                    f"Error processing local delta CVE directory: {str(e)}"
+                )
+
+        # handle GitHub download case
+        if self.options.baseline:
+            try:
+                url = self.construct_github_url()
+
+                # download the ZIP file
+                response = self.fetchCVEURL(url)
+
+                # extract to temporary directory
+                temp_dir = self.extract_github_zip(response)
+
+                try:
+                    # process the extracted directory
+                    total_processed, total_errors = (
+                        self.process_json_directory(temp_dir)
+                    )
+                    self.logger.info(
+                        f"Processed {total_processed} CVE files "
+                        f"({total_errors} errors)"
+                    )
+                finally:
+                    # clean up temporary directory
+                    import shutil
+
+                    shutil.rmtree(temp_dir)
+
+                return
+
+            except Exception as e:
+                raise LaunchpadScriptFailure(
+                    f"Error processing GitHub CVE data: {str(e)}"
+                )
+
+        # handle local JSON directory case
+        if self.options.baselinecvedir is not None:
+            try:
+                start_time = time.time()
+                total_processed, total_errors = self.process_json_directory(
+                    self.options.baselinecvedir
+                )
+                finish_time = time.time()
+
+                self.logger.info(
+                    f"Processed {total_processed} CVE files "
+                    f"({total_errors} errors) in "
+                    f"{finish_time - start_time:.2f} seconds"
+                )
+                return
+
+            except Exception as e:
+                raise LaunchpadScriptFailure(
+                    f"Error processing JSON CVE directory: {str(e)}"
+                )
+
+        # existing XML handling
         if self.options.cvefile is not None:
             try:
                 with open(self.options.cvefile) as f:
@@ -220,7 +567,7 @@ class CVEUpdater(LaunchpadCronScript):
         else:
             raise LaunchpadScriptFailure("No CVE database file or URL given.")
 
-        # Start analysing the data.
+        # start analysing the data
         start_time = time.time()
         self.logger.info("Processing CVE XML...")
         self.processCVEXML(cve_db)
@@ -234,8 +581,8 @@ class CVEUpdater(LaunchpadCronScript):
         self.logger.info("Downloading CVE database from %s..." % url)
         try:
             with override_timeout(config.cveupdater.timeout):
-                # Command-line options are trusted, so allow file://
-                # URLs to ease testing.
+                # command-line options are trusted, so allow file://
+                # URLs to ease testing
                 response = urlfetch(url, use_proxy=True, allow_file=True)
         except requests.RequestException:
             raise LaunchpadScriptFailure(
@@ -262,8 +609,112 @@ class CVEUpdater(LaunchpadCronScript):
             raise LaunchpadScriptFailure("No CVEs found in XML file.")
         self.logger.info("Updating database...")
 
-        # We use Looptuner to control the ideal number of CVEs
-        # processed in each transaction, during at least 2 seconds.
+        # we use Looptuner to control the ideal number of CVEs
+        # processed in each transaction, during at least 2 seconds
         loop = CveUpdaterTunableLoop(items, self.txn, self.logger)
         loop_tuner = LoopTuner(loop, 2)
         loop_tuner.run()
+
+    def processCVEJSON(self, cve_json):
+        """Process the CVE JSON data.
+
+        :param cve_json: The CVE JSON as a string or dict.
+        """
+        if isinstance(cve_json, str):
+            import json
+
+            data = json.loads(cve_json)
+        else:
+            data = cve_json
+
+        if data.get("dataType") != "CVE_RECORD":
+            raise LaunchpadScriptFailure("Invalid CVE record format")
+
+        # process each CVE record
+        cve_metadata = data.get("cveMetadata", {})
+        containers = data.get("containers", {})
+        cna_data = containers.get("cna", {})
+
+        # get basic CVE information
+        sequence = cve_metadata.get("cveId", "").replace("CVE-", "")
+
+        # get description (required to be in English)
+        description = None
+        for desc in cna_data.get("descriptions", []):
+            if desc.get("lang", "").startswith("en"):
+                description = desc.get("value")
+                break
+
+        if not description:
+            self.logger.debug(f"No description for CVE-{sequence}")
+            return
+
+        # find or create CVE entry
+        cveset = getUtility(ICveSet)
+        cve = cveset[sequence]
+        if cve is None:
+            cve = cveset.new(sequence, description, CveStatus.ENTRY)
+            self.logger.info(f"CVE-{sequence} created")
+
+        # update CVE if needed
+        modified = False
+        if cve.description != description:
+            self.logger.info(f"CVE-{sequence} updated description")
+            cve.description = description
+            modified = True
+
+        # handle references
+        if self._handle_json_references(cna_data.get("references", []), cve):
+            modified = True
+
+        if modified:
+            notify(ObjectModifiedEvent(cve))
+
+    def _handle_json_references(self, references, cve):
+        """Handle references from the JSON format.
+
+        :param references: List of reference objects from JSON
+        :param cve: CVE database object
+        :return: True if references were modified
+        """
+        modified = False
+        old_references = set(cve.references)
+        new_references = set()
+
+        for ref in references:
+            url = ref.get("url")
+            source = "external"  # default source
+            content = ref.get("name", "")
+
+            # look for existing reference
+            was_there_previously = False
+            for old_ref in old_references:
+                if (
+                    old_ref.url == url
+                    and old_ref.source == source
+                    and old_ref.content == content
+                ):
+                    was_there_previously = True
+                    new_references.add(old_ref)
+                    break
+
+            if not was_there_previously:
+                self.logger.info(
+                    f"Creating new {source} reference for {cve.sequence}"
+                )
+                ref_obj = cve.createReference(source, content, url=url)
+                new_references.add(ref_obj)
+                modified = True
+
+        # remove old references not in new set
+        for ref in sorted(
+            old_references, key=lambda a: (a.source, a.content, a.url)
+        ):
+            if ref not in new_references:
+                self.logger.info(
+                    f"Removing {ref.source} reference for {cve.sequence}"
+                )
+                cve.removeReference(ref)
+                modified = True
+
+        return modified
