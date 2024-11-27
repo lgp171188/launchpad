@@ -16,10 +16,10 @@ from http.client import IncompleteRead
 from unittest import mock
 
 import responses
-from tenacity import wait_fixed
 import transaction
 from fixtures import MockPatch
 from requests.exceptions import ConnectionError, HTTPError
+from tenacity import wait_fixed
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
@@ -692,8 +692,12 @@ class TestOCIRegistryClient(
                 side_effect=counting_method,
             )
         )
-        # Set wait_fixed in tenacity to 0 so we don't wait in order to speed up the test
-        with mock.patch.object(target=self.client._upload.retry, attribute="wait", new=wait_fixed(0)):
+        # Set wait_fixed in tenacity to 0 to speed up the test
+        with mock.patch.object(
+            target=self.client._upload.retry,
+            attribute="wait",
+            new=wait_fixed(0),
+        ):
             try:
                 push_rule = self.build.recipe.push_rules[0]
                 self.client._upload(
