@@ -287,6 +287,13 @@ class TestArtifactoryPool(TestCase):
             pool.getArtifactPatterns(ArchiveRepositoryFormat.GO_PROXY),
         )
 
+    def test_getArtifactPatterns_rust(self):
+        pool = self.makePool()
+        self.assertEqual(
+            ["*.tar.xz"],
+            pool.getArtifactPatterns(ArchiveRepositoryFormat.RUST),
+        )
+
     def test_getArtifactPatterns_generic(self):
         pool = self.makePool()
         self.assertEqual(
