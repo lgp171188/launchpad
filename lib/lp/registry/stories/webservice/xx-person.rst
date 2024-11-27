@@ -815,7 +815,6 @@ Subscribed packages can be listed with getBugSubscriberPackages:
     bug_reporting_guidelines: None
     display_name: '...'
     distribution_link: '...'
-    content_templates: None
     name: 'fooix'
     official_bug_tags: []
     resource_type_link: '...'
