@@ -8,9 +8,8 @@ __all__ = [
     "IBuildFarmJobBehaviour",
 ]
 
-from typing import Any, Dict, Generator, List, Sequence, Union
+from typing import Any, Dict, Generator, List, Sequence, TypedDict, Union
 
-from typing_extensions import TypedDict
 from zope.interface import Attribute, Interface
 
 
