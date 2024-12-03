@@ -146,7 +146,7 @@ python-debian==0.1.32
 python-keystoneclient==3.21.0
 python-openid2==3.2
 python-swiftclient==4.6.0
-PyYAML==6.0.1
+PyYAML==6.0.2
 rabbitfixture==0.5.3
 requests==2.32.3
 requests-file==1.4.3
