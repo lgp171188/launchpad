@@ -8,7 +8,7 @@ from lazr.restful.interfaces import IJSONRequestCache
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
-from zope.schema.interfaces import TooLong, TooShort
+from zope.schema.interfaces import RequiredMissing, TooLong, TooShort
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import PUBLIC_INFORMATION_TYPES, InformationType
@@ -337,6 +337,44 @@ class FileBugViewMixin:
 
 class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
+
+    def test_submit_title_empty_error(self):
+        # The title cannot be an empty string.
+        form = self.get_form(title="")
+        view = self.create_initialized_view(form=form)
+        self.assertEqual(2, len(view.errors))
+        self.assertEqual(
+            "Provide a one-line summary of the problem.",
+            view.getFieldError("title"),
+        )
+
+    def test_submit_title_withespace_only_error(self):
+        # The title cannot be a whitespace only string.
+        form = self.get_form(title=" ")
+        view = self.create_initialized_view(form=form)
+        self.assertEqual(2, len(view.errors))
+        self.assertIsInstance(view.errors[0].errors, RequiredMissing)
+        self.assertEqual(
+            "Provide a one-line summary of the problem.", view.errors[1]
+        )
+
+    def test_submit_title_too_large_error(self):
+        # The title cannot exceed the max length of 200.
+        title = "x" * 201
+        form = self.get_form(title=title)
+        view = self.create_initialized_view(form=form)
+        self.assertEqual(2, len(view.errors))
+        self.assertIsInstance(view.errors[0].errors, TooLong)
+        message_start = "The summary is too long. Please, provide a "
+        "one-line summary of the problem."
+        self.assertTrue(view.getFieldError("title").startswith(message_start))
+
+    def test_submit_title_max(self):
+        # The title can be as large as 200.
+        form = self.get_form(title="x" * 200)
+        view = self.create_initialized_view(form=form)
+        self.assertEqual(0, len(view.errors))
+        self.assertTrue(view.added_bug is not None)
 
     def test_submit_comment_empty_error(self):
         # The comment cannot be an empty string.
