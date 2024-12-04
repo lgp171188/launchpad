@@ -5,7 +5,7 @@ import os
 import re
 from datetime import timezone
 
-import defusedxml.cElementTree as ET
+import defusedxml.ElementTree as ET
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility

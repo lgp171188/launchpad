@@ -8,7 +8,7 @@ __all__ = [
 import io
 from email.utils import parseaddr
 
-import defusedxml.cElementTree as cElementTree
+import defusedxml.ElementTree as ElementTree
 from zope.interface import implementer
 
 from lp.translations.interfaces.translationcommonformat import (
@@ -61,13 +61,13 @@ class XpiHeader:
         """See `ITranslationHeaderData`."""
         last_name, last_email = None, None
         contributor_tag = "{http://www.mozilla.org/2004/em-rdf#}contributor"
-        # Both cElementTree and elementtree fail when trying to parse
+        # Both ElementTree and elementtree fail when trying to parse
         # proper unicode strings.  Use our raw input instead.
         try:
             raw_content = self._raw_content
             if not isinstance(raw_content, bytes):
                 raw_content = raw_content.encode()
-            parse = cElementTree.iterparse(
+            parse = ElementTree.iterparse(
                 io.BytesIO(raw_content), forbid_dtd=True
             )
             for _, elem in parse:
