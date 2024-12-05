@@ -22,9 +22,9 @@ setup:
     >>> import io
     >>> import sys
     >>> try:
-    ...     import xml.etree.cElementTree as ET
+    ...     import xml.etree.ElementTree as ET
     ... except ImportError:
-    ...     import cElementTree as ET
+    ...     import ElementTree as ET
     ...
     >>> from zope.component import getUtility
     >>> from lp.bugs.interfaces.bug import IBugSet

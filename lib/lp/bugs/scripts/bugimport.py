@@ -21,7 +21,7 @@ import time
 from datetime import datetime, timezone
 
 import six
-from defusedxml import cElementTree
+from defusedxml import ElementTree
 from storm.store import Store
 from zope.component import getUtility
 from zope.contenttype import guess_content_type
@@ -237,7 +237,7 @@ class BugImporter:
 
     def importBugs(self, ztm):
         """Import bugs from a file."""
-        tree = cElementTree.parse(self.bugs_filename, forbid_dtd=True)
+        tree = ElementTree.parse(self.bugs_filename, forbid_dtd=True)
         root = tree.getroot()
         assert root.tag == "{%s}launchpad-bugs" % BUGS_XMLNS, (
             "Root element is wrong: %s" % root.tag

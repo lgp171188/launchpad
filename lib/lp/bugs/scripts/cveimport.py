@@ -9,7 +9,7 @@ import gzip
 import io
 import time
 
-import defusedxml.cElementTree as cElementTree
+import defusedxml.ElementTree as ElementTree
 import requests
 import six
 from zope.component import getUtility
@@ -256,7 +256,7 @@ class CVEUpdater(LaunchpadCronScript):
 
         :param cve_xml: The CVE XML as a string.
         """
-        dom = cElementTree.fromstring(cve_xml, forbid_dtd=True)
+        dom = ElementTree.fromstring(cve_xml, forbid_dtd=True)
         items = dom.findall(CVEDB_NS + "item")
         if len(items) == 0:
             raise LaunchpadScriptFailure("No CVEs found in XML file.")
