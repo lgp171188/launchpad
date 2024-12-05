@@ -192,7 +192,6 @@ webencodings==0.5.1
 WebOb==1.8.9
 WebTest==2.0.35
 Werkzeug==1.0.1
-wheel-filename==1.1.0
 wrapt==1.12.1
 wsgi-intercept==1.9.2
 WSGIProxy2==0.4.6
