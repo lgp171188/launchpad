@@ -617,7 +617,7 @@ class ArtifactoryPool:
             ]
         elif repository_format == ArchiveRepositoryFormat.RUST:
             return [
-                "*.tar.xz",
+                "*.crate",
             ]
         elif repository_format == ArchiveRepositoryFormat.GENERIC:
             return ["*"]
