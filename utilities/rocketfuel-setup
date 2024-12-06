@@ -9,8 +9,9 @@
 
 DO_WORKSPACE=1
 INSTALL_POSTGRES_14=0
+INSTALL_POSTGRES_16=0
 INSTALL_OPTS=""
-getopt_output="$(getopt -o '' -l no-workspace,postgres14,lpusername:,assume-yes -- "$@")" || exit 1
+getopt_output="$(getopt -o '' -l no-workspace,postgres14,postgres16,lpusername:,assume-yes -- "$@")" || exit 1
 eval set -- "$getopt_output"
 while :; do
   case $1 in
@@ -20,6 +21,10 @@ while :; do
         ;;
     --postgres14)
         INSTALL_POSTGRES_14=1
+        shift
+        ;;
+    --postgres16)
+        INSTALL_POSTGRES_16=1
         shift
         ;;
     --lpusername)
@@ -104,8 +109,11 @@ do_install() {
 sudo apt update
 REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi-py3"
 if [ $INSTALL_POSTGRES_14 == 1 ]; then
-  sudo add-apt-repository ppa:launchpad/postgresql-ports
+  sudo add-apt-repository ppa:launchpad/postgresql-14-ports
   REQUIRED_PACKAGES="launchpad-database-dependencies-14 ${REQUIRED_PACKAGES}"
+elif [ $INSTALL_POSTGRES_16 == 1 ]; then
+  sudo add-apt-repository ppa:launchpad/postgresql-16-ports
+  REQUIRED_PACKAGES="launchpad-database-dependencies-16 ${REQUIRED_PACKAGES}"
 fi
 for pkg in $REQUIRED_PACKAGES; do
   do_install;
