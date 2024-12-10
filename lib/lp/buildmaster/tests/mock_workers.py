@@ -22,12 +22,8 @@ import shlex
 import sys
 import xmlrpc.client
 from collections import OrderedDict
+from importlib import resources
 from textwrap import dedent
-
-try:
-    from importlib import resources
-except ImportError:
-    import importlib_resources as resources  # type: ignore
 
 import fixtures
 from testtools.content import attach_file

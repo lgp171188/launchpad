@@ -61,7 +61,6 @@ hyperlink==18.0.0
 immutables==0.14
 importlib==1.0.2
 importlib-metadata==8.5.0
-importlib-resources==0.5
 incremental==21.3.0
 ipython==7.9.0
 ipython-genutils==0.2.0
