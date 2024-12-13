@@ -79,6 +79,7 @@ host.
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
     bug_tracker_link: None
+    content_templates: None
     date_created: '...'
     description: 'The Mozilla Project...'
     display_name: 'The Mozilla Project'
@@ -177,6 +178,7 @@ Projects are available at their canonical URL on the API virtual host.
     bug_tracker_link: None
     commercial_subscription_is_due: False
     commercial_subscription_link: None
+    content_templates: None
     date_created: '2004-09-24T20:58:02.185708+00:00'
     date_next_suggest_packaging: None
     description: 'The Mozilla Firefox web browser'
@@ -841,6 +843,7 @@ virtual host.
     branch_link: 'http://.../~babadoo-owner/babadoo/fooey'
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
+    content_templates: None
     date_created: '...'
     display_name: 'foobadoo'
     driver_link: None

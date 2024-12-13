@@ -4,6 +4,7 @@
 """Unit tests for bug configuration views."""
 
 from lp.app.enums import ServiceUsage
+from lp.app.validators.validation import validate_content_templates
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -191,4 +192,35 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
         self.assertEqual(
             {"bug_templates": {"default": "new lp template"}},
             self.product.content_templates,
+        )
+
+
+class TestValidateContentTemplates(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    # Test the validator for content templates
+    def test_none_value(self):
+        self.assertTrue(validate_content_templates(None))
+
+    def test_valid_content_templates(self):
+        valid_value = {
+            "bug_templates": {
+                "default": "A default bug template",
+                "security": "A bug template for security related bugs",
+            },
+        }
+        self.assertTrue(validate_content_templates(valid_value))
+
+    def test_invalid_key(self):
+        invalid_value = {"invalid_key": {"default": "A default bug template"}}
+        self.assertRaises(
+            ValueError, validate_content_templates, invalid_value
+        )
+
+    def test_missing_default(self):
+        invalid_value = {
+            "bug_templates": {"not_default": "A not default bug template"}
+        }
+        self.assertRaises(
+            ValueError, validate_content_templates, invalid_value
         )

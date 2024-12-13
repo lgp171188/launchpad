@@ -32,6 +32,7 @@ distribution series.
     >>> pprint_entry(evolution)
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
+    content_templates: None
     displayname: 'evolution in My-distro My-series'
     distribution_link: 'http://.../my-distro'
     distroseries_link: 'http://.../my-distro/my-series'

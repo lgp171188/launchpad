@@ -52,6 +52,7 @@ from lp.app.enums import (
     PROPRIETARY_INFORMATION_TYPES,
     InformationType,
 )
+from lp.app.validators.validation import validate_content_templates
 from lp.bugs.interfaces.bugtask import IBugTask
 from lp.bugs.interfaces.bugtasksearch import (
     BugBlueprintSearch,
@@ -276,26 +277,27 @@ class IBugTarget(IHasBugs):
         )
     )
 
-    # XXX alvarocs 2024-11-27:
-    # To be exported to the API once a validator is added.
-    content_templates = Dict(
-        title=("Templates to use for reporting a bug"),
-        description=(
-            "This pre-defined template will be given to the "
-            "users to guide them when reporting a bug. "
-        ),
-        key_type=TextLine(),
-        value_type=Dict(
+    content_templates = exported(
+        Dict(
+            title=("Templates to use for reporting a bug"),
+            description=(
+                "This pre-defined template will be given to the "
+                "users to guide them when reporting a bug. "
+            ),
             key_type=TextLine(),
-            value_type=Text(
+            value_type=Dict(
+                key_type=TextLine(),
+                value_type=Text(
+                    required=False,
+                    max_length=50000,
+                ),
                 required=False,
                 max_length=50000,
             ),
             required=False,
             max_length=50000,
-        ),
-        required=False,
-        max_length=50000,
+            constraint=validate_content_templates,
+        )
     )
 
     bug_reported_acknowledgement = exported(
