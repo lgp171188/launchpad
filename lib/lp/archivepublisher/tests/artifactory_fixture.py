@@ -272,12 +272,25 @@ class FakeArtifactoryFixture(Fixture):
             return 400, {}, ""
         # Treating this as JSON is cheating a bit, but it works.
         criteria = json.loads(match.group(1))
+
+        pattern = r"\.offset\((\d+)\)\.limit\((\d+)\)"
+
+        offset = 0
+        limit = 1000
+        match = re.search(pattern, request.body)
+
+        if match:
+            offset = int(match.group(1))  # Group 1 is the offset value
+            limit = int(match.group(2))
+
         items = [
             self._make_aql_item(path)
             for path in sorted(self._fs)
             if "size" in self._fs[path]
         ]
         results = [item for item in items if self._matches_aql(item, criteria)]
+        limit = min(limit, len(results) - offset)
+        results = results[offset : offset + limit]
         return 200, {}, json.dumps({"results": results})
 
     def _handle_delete(self, request):
