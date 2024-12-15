@@ -34,7 +34,6 @@ from lazr.restful.declarations import (
     rename_parameters_as,
 )
 from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
-from typing_extensions import TypedDict
 from zope.component import getUtility
 from zope.interface import Attribute, Interface
 from zope.schema import Bool, Choice, Datetime, List, Object, TextLine
@@ -169,7 +168,7 @@ class DistroSeriesVersionField(UniqueField):
             raise LaunchpadValidationError("'%s': %s" % (version, error))
 
 
-class DistroSeriesTranslationTemplateStatistics(TypedDict):
+class DistroSeriesTranslationTemplateStatistics(typing.TypedDict):
     # The name of the source package that uses the template.
     sourcepackage: str
     # The translation domain for the template.

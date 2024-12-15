@@ -13,13 +13,9 @@ __all__ = [
 ]
 
 import http.client
-import signal
 
 from lazr.restful.declarations import error_status
 from zope.interface import Interface
-
-SIGDUMPMEM = signal.SIGRTMIN + 10
-DUMP_FILE = "/tmp/librarian-memory.dump"
 
 
 class LibrarianFailure(Exception):

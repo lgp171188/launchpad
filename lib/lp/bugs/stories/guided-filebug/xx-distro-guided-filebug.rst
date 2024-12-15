@@ -53,9 +53,9 @@ back...
     >>> user_browser.getControl(name="packagename_option").value = ["choose"]
     >>> user_browser.getControl("In what package").value = "mozilla-firefox"
     >>> user_browser.getControl("Summary", index=0).value = "a new ubuntu bug"
-    >>> user_browser.getControl("Further information").value = "test"
+    >>> user_browser.getControl("Bug Description").value = "test"
 
-The comment field ("Further information") is not optional when
+The comment field ("Bug Description") is not optional when
 filing a bug, but it is optional when subscribing to a similar
 bug. Nevertheless, we don't show an "(Optional)" hint next to the
 description.
@@ -64,12 +64,12 @@ description.
 
     >>> page_soup = find_main_content(user_browser.contents)
     >>> field_labels = page_soup.find_all(
-    ...     "label", text=re.compile("Further information")
+    ...     "label", text=re.compile("Bug Description")
     ... )
     >>> for field_label in field_labels:
     ...     print(extract_text(field_label.parent))
     ...
-    Further information:
+    Bug Description:
 
 Finally, let's submit the bug.
 
@@ -107,7 +107,7 @@ But the bug can be filed as before.
 
     >>> user_browser.getControl(name="packagename_option").value = ["choose"]
     >>> user_browser.getControl("In what package").value = "mozilla-firefox"
-    >>> user_browser.getControl("Further information").value = (
+    >>> user_browser.getControl("Bug Description").value = (
     ...     "Frobnobulator is a Firefox add-on, ..."
     ... )
     >>> user_browser.getControl("Submit Bug Report").click()

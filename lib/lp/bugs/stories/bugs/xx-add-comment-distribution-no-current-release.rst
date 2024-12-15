@@ -7,7 +7,7 @@ it's still possible to add comments to the bug.
     >>> user_browser.open("http://launchpad.test/gentoo/+filebug")
     >>> user_browser.getControl("Summary", index=0).value = "Test bug"
     >>> user_browser.getControl("Continue").click()
-    >>> user_browser.getControl("Further information").value = "A test bug."
+    >>> user_browser.getControl("Bug Description").value = "A test bug."
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/gentoo/+bug/...'

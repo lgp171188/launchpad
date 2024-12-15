@@ -23,7 +23,7 @@ from lazr.restful.declarations import (
 from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
 from lazr.restful.interface import copy_field
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Datetime, Int, Object, Text, TextLine
+from zope.schema import Bool, Datetime, Dict, Int, Object, Text, TextLine
 
 from lp import _
 from lp.app.interfaces.launchpad import (
@@ -382,6 +382,28 @@ class IProjectGroupPublic(
             required=False,
             max_length=50000,
         )
+    )
+
+    # XXX alvarocs 2024-11-27:
+    # To be exported to the API once a validator is added.
+    content_templates = Dict(
+        title=("Templates to use for reporting a bug"),
+        description=(
+            "This pre-defined template will be given to the "
+            "users to guide them when reporting a bug. "
+        ),
+        key_type=TextLine(),
+        value_type=Dict(
+            key_type=TextLine(),
+            value_type=Text(
+                required=False,
+                max_length=50000,
+            ),
+            required=False,
+            max_length=50000,
+        ),
+        required=False,
+        max_length=50000,
     )
 
     bug_reported_acknowledgement = exported(

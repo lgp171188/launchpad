@@ -797,12 +797,18 @@ class Publisher:
             spphs_by_spr[spph.sourcepackagerelease_id].append(spph)
             release_id = "source:%d" % spph.sourcepackagerelease_id
             releases_by_id.setdefault(release_id, spph.sourcepackagerelease)
+            self.log.debug(
+                "Collecting %s for %s", release_id, spph.sourcepackagename
+            )
             pubs_by_id[release_id].append(spph)
         for bpph in publishing_set.getBinariesForPublishing(
             archive=self.archive
         ):
             bpphs_by_bpr[bpph.binarypackagerelease_id].append(bpph)
             release_id = "binary:%d" % bpph.binarypackagerelease_id
+            self.log.debug(
+                "Collecting %s for %s", release_id, bpph.binarypackagename
+            )
             releases_by_id.setdefault(release_id, bpph.binarypackagerelease)
             pubs_by_id[release_id].append(bpph)
         artifacts = self._diskpool.getAllArtifacts(
@@ -885,6 +891,12 @@ class Publisher:
             if publications:
                 source_name = publications[0].pool_name
                 source_version = publications[0].pool_version
+            self.log.debug(
+                "Updating properties for %s:%s, # publications: %s",
+                source_name,
+                source_version,
+                len(publications),
+            )
             self._diskpool.updateProperties(
                 source_name,
                 source_version,

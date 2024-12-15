@@ -232,7 +232,7 @@ product:
     >>> browser.getControl("Summary", index=0).value = "Test Bug 1"
     >>> browser.getControl("Continue").click()
 
-    >>> browser.getControl("Further information").value = "Test Bug 1"
+    >>> browser.getControl("Bug Description").value = "Test Bug 1"
     >>> browser.getControl("Submit").click()
     >>> print_feedback_messages(browser.contents)
     Thank you for your bug report...
@@ -242,7 +242,7 @@ product:
     >>> browser.open(report_bug_url)
     >>> browser.getControl("Summary", index=0).value = "Test Bug 2"
     >>> browser.getControl("Continue").click()
-    >>> browser.getControl("Further information").value = "Test Bug 2"
+    >>> browser.getControl("Bug Description").value = "Test Bug 2"
     >>> browser.getControl("Submit").click()
     >>> print_feedback_messages(browser.contents)
     Thank you for your bug report...

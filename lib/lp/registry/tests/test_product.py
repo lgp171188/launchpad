@@ -977,6 +977,7 @@ class TestProduct(TestCaseWithFactory):
             "blueprints_usage",
             "branch_sharing_policy",
             "bug_reported_acknowledgement",
+            "content_templates",
             "bug_reporting_guidelines",
             "bug_sharing_policy",
             "bug_subscriptions",
@@ -1145,6 +1146,7 @@ class TestProduct(TestCaseWithFactory):
         expected_set_permissions = {
             "launchpad.BugSupervisor": {
                 "bug_reported_acknowledgement",
+                "content_templates",
                 "bug_reporting_guidelines",
                 "bugtracker",
                 "enable_bug_expiration",

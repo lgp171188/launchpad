@@ -17,6 +17,7 @@ from datetime import datetime, time, timedelta, timezone
 
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.declarations import error_status
+from storm.databases.postgres import JSON
 from storm.expr import (
     SQL,
     And,
@@ -736,6 +737,7 @@ class Product(
     )
     development_focus = Reference(development_focus_id, "ProductSeries.id")
     bug_reporting_guidelines = Unicode(default=None)
+    content_templates = JSON(name="content_templates", default=None)
     bug_reported_acknowledgement = Unicode(default=None)
     enable_bugfiling_duplicate_search = Bool(allow_none=False, default=True)
 

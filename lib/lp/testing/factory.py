@@ -6504,6 +6504,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         date_created=DEFAULT,
         description=None,
         bug_reporting_guidelines=None,
+        content_templates=None,
         bug_reported_acknowledgement=None,
         bugfiling_duplicate_search=False,
     ):
@@ -6521,6 +6522,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             date_created=date_created,
             description=description,
             bug_reporting_guidelines=bug_reporting_guidelines,
+            content_templates=content_templates,
             bug_reported_acknowledgement=bug_reported_acknowledgement,
             bugfiling_duplicate_search=bugfiling_duplicate_search,
         )

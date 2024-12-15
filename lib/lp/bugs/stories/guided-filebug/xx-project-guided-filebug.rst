@@ -35,7 +35,7 @@ product's +filebug page to search for duplicates.
 Entering a description and submitting the bug takes the user to the bug
 page.
 
-    >>> user_browser.getControl("Further information").value = "Crash."
+    >>> user_browser.getControl("Bug Description").value = "Crash."
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/evolution/+bug/...'

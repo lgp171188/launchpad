@@ -282,12 +282,6 @@
         class="lp.services.webapp.notifications.NotificationTestView4"
         />
 
-    <!-- Signal handlers -->
-    <subscriber
-        for="zope.processlifetime.IProcessStarting"
-        handler="lp.services.webapp.sigdumpmem.setup_sigdumpmem"
-        />
-
     <!-- Set the default timeout function. -->
     <subscriber
         for="zope.processlifetime.IProcessStarting"

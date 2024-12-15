@@ -296,6 +296,11 @@ class ProductSeries(
         return self.product.bug_reporting_guidelines
 
     @property
+    def content_templates(self):
+        """See `IBugTarget`."""
+        return self.product.content_templates
+
+    @property
     def bug_reported_acknowledgement(self):
         """See `IBugTarget`."""
         return self.product.bug_reported_acknowledgement

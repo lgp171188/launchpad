@@ -11,6 +11,7 @@ __all__ = [
 from collections import defaultdict
 from datetime import timezone
 
+from storm.databases.postgres import JSON
 from storm.expr import Join, LeftJoin, Or
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from zope.component import getUtility
@@ -105,6 +106,7 @@ class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
     description = Unicode(name="description")
 
     bug_reporting_guidelines = Unicode(name="bug_reporting_guidelines")
+    content_templates = JSON(name="content_templates", default=None)
     bug_reported_acknowledgement = Unicode(name="bug_reported_acknowledgement")
     enable_bugfiling_duplicate_search = Bool(
         name="enable_bugfiling_duplicate_search"
@@ -412,6 +414,7 @@ class OCIProjectSet:
         date_created=DEFAULT,
         description=None,
         bug_reporting_guidelines=None,
+        content_templates=None,
         bug_reported_acknowledgement=None,
         bugfiling_duplicate_search=False,
     ):
@@ -427,6 +430,7 @@ class OCIProjectSet:
         target.ociprojectname = name
         target.description = description
         target.bug_reporting_guidelines = bug_reporting_guidelines
+        target.content_templates = content_templates
         target.bug_reported_acknowledgement = bug_reported_acknowledgement
         target.enable_bugfiling_duplicate_search = bugfiling_duplicate_search
         store.add(target)

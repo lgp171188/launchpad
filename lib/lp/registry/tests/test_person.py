@@ -39,8 +39,10 @@ from lp.registry.interfaces.person import ImmutableVisibilityError, IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.teammembership import ITeamMembershipSet
+from lp.registry.model.distribution import Distribution
 from lp.registry.model.karma import KarmaCategory, KarmaTotalCache
 from lp.registry.model.person import Person, get_recipients
+from lp.registry.model.product import Product
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
@@ -49,8 +51,10 @@ from lp.services.database.sqlbase import (
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.propertycache import clear_property_cache
+from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import (
+    BrowserTestCase,
     StormStatementRecorder,
     TestCaseWithFactory,
     celebrity_logged_in,
@@ -1335,13 +1339,23 @@ class TestPersonRelatedBugTaskSearch(TestCaseWithFactory):
 class KarmaTestMixin:
     """Helper methods for setting karma."""
 
-    def _makeKarmaCache(self, person, product, category_name_values):
+    def _makeKarmaCache(self, person, pillar, category_name_values):
         """Create a KarmaCache entry with the given arguments.
 
-        In order to create the KarmaCache record we must switch to the DB
-        user 'karma'. This invalidates the objects under test so they
+        'pillar' can be a Product or a Distribution.
+
+        In order to create the KarmaCache record, we must switch to the DB
+        user 'karma'. This invalidates the objects under test, so they
         must be retrieved again.
         """
+        pillar_unproxied = removeSecurityProxy(pillar)
+        pillar_kwargs = {}
+        if isinstance(pillar_unproxied, Product):
+            pillar_kwargs["product_id"] = pillar.id
+        elif isinstance(pillar_unproxied, Distribution):
+            pillar_kwargs["distribution_id"] = pillar.id
+        else:
+            raise ValueError("Pillar must be a Product or Distribution")
         with dbuser("karma"):
             total = 0
             # Insert category total for person and project.
@@ -1352,13 +1366,11 @@ class KarmaTestMixin:
                     .one()
                 )
                 self.cache_manager.new(
-                    value, person.id, category.id, product_id=product.id
+                    value, person.id, category.id, **pillar_kwargs
                 )
                 total += value
             # Insert total cache for person and project.
-            self.cache_manager.new(
-                total, person.id, None, product_id=product.id
-            )
+            self.cache_manager.new(total, person.id, None, **pillar_kwargs)
 
     def _makeKarmaTotalCache(self, person, total):
         """Create a KarmaTotalCache entry.
@@ -1468,6 +1480,61 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
         ).getProjectsAndCategoriesContributedTo(d_owner)
         names = [entry["project"].name for entry in results]
         self.assertEqual(["cc", "bb", "aa", "dd", "ee"], names)
+
+
+class TestAccessProfileView(BrowserTestCase, KarmaTestMixin):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.user = self.factory.makePerson(displayname="user_displayname")
+        self.cache_manager = getUtility(IKarmaCacheManager)
+
+    def test_own_profile_without_access_to_distribution(self):
+        # Verify user without access to private distro cannot see it in
+        # their own profile view, and can access their profile.
+        distribution = self.factory.makeDistribution(
+            name="distribution",
+            displayname="distribution_displayname",
+            information_type=InformationType.PROPRIETARY,
+        )
+        self._makeKarmaCache(self.user, distribution, [("code", 100)])
+        # User does not have access to the private distro.
+        results = removeSecurityProxy(
+            self.user
+        ).getProjectsAndCategoriesContributedTo(self.user)
+        projects = [entry["project"].name for entry in results]
+        self.assertNotIn("distribution", projects)
+        # User can view own profile
+        profile_url = canonical_url(self.user)
+        browser = self.getUserBrowser(url=profile_url, user=self.user)
+        browser.open(profile_url)
+        self.assertEqual(browser.responseStatusCode, 200)
+        self.assertNotIn("distribution_displayname", browser.contents)
+        self.assertIn("user_displayname", browser.contents)
+
+    def test_own_profile_with_access_to_distribution(self):
+        # Verify user with access to distro can see it in
+        # their own profile view, and can access their profile.
+        distribution = self.factory.makeDistribution(
+            name="distribution",
+            displayname="distribution_displayname",
+            information_type=InformationType.PUBLIC,
+        )
+        self._makeKarmaCache(self.user, distribution, [("code", 100)])
+        # User has access to the private distro.
+        results = removeSecurityProxy(
+            self.user
+        ).getProjectsAndCategoriesContributedTo(self.user)
+        projects = [entry["project"].name for entry in results]
+        self.assertIn("distribution", projects)
+        # User can view own profile
+        profile_url = canonical_url(self.user)
+        browser = self.getUserBrowser(url=profile_url, user=self.user)
+        browser.open(profile_url)
+        self.assertEqual(browser.responseStatusCode, 200)
+        self.assertIn("distribution_displayname", browser.contents)
+        self.assertIn("user_displayname", browser.contents)
 
 
 class TestAPIParticipation(TestCaseWithFactory):

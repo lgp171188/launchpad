@@ -5,7 +5,6 @@
 # Use with "twistd2.4 -y <file.tac>", e.g. "twistd -noy server.tac"
 
 import os
-import signal
 
 # Turn off the http_proxy environment variable if it is set. We
 # don't need it, but we do need to contact Keystone & Swift directly.
@@ -16,7 +15,6 @@ if "http_proxy" in os.environ:
 if "HTTP_PROXY" in os.environ:
     del os.environ["HTTP_PROXY"]
 
-from meliae import scanner
 from twisted.application import service, strports
 from twisted.internet import reactor
 from twisted.python import log
@@ -25,7 +23,6 @@ from twisted.web import server
 
 from lp.services.config import config, dbconfig
 from lp.services.daemons import readyservice
-from lp.services.librarian.interfaces.client import DUMP_FILE, SIGDUMPMEM
 from lp.services.librarianserver import db, storage
 from lp.services.librarianserver import web as fatweb
 from lp.services.librarianserver.libraryprotocol import FileUploadFactory
@@ -125,11 +122,3 @@ options.parseOptions()
 logfile = options.get("logfile")
 observer = set_up_oops_reporting("librarian", "librarian", logfile)
 application.addComponent(observer, ignoreClass=1)
-
-
-# Setup a signal handler to dump the process' memory upon 'kill -44'.
-def sigdumpmem_handler(signum, frame):
-    scanner.dump_all_objects(DUMP_FILE)
-
-
-signal.signal(SIGDUMPMEM, sigdumpmem_handler)

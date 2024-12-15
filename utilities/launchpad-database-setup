@@ -24,7 +24,7 @@ pgversion=
 # This loop contains multiple versions when we are in the process of
 # migrating between PostgreSQL versions.
 # shellcheck disable=SC2043
-for try_pgversion in 10 12
+for try_pgversion in 12 14 16
 do
   if sudo grep -qs "^auto" /etc/postgresql/$try_pgversion/main/start.conf; then
     pgversion="$try_pgversion"
@@ -101,7 +101,7 @@ echo Waiting 10 seconds for postgresql to come up...
 sleep 10
 
 echo "Creating postgresql user $USER"
-sudo -u postgres /usr/lib/postgresql/$pgversion/bin/createuser -a -d "$USER"
+sudo -u postgres /usr/lib/postgresql/$pgversion/bin/createuser -s -d "$USER"
 
 echo
 echo Looks like everything went ok.

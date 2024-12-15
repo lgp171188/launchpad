@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 
+from storm.databases.postgres import JSON
 from storm.expr import (
     SQL,
     And,
@@ -277,6 +278,7 @@ class Distribution(
     )
     bug_supervisor = Reference(bug_supervisor_id, "Person.id")
     bug_reporting_guidelines = Unicode(default=None)
+    content_templates = JSON(name="content_templates", default=None)
     bug_reported_acknowledgement = Unicode(default=None)
     driver_id = Int(
         name="driver",
