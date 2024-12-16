@@ -54,11 +54,11 @@ class BaseStormOpenIDAssociation:
     def as_association(self):
         """Return an equivalent openid-python `Association` object."""
         return Association(
-            self.handle.encode("ASCII"),
+            str(self.handle),
             self.secret,
             self.issued,
             self.lifetime,
-            self.assoc_type.encode("ASCII"),
+            str(self.assoc_type),
         )
 
 
@@ -103,11 +103,11 @@ class BaseStormOpenIDStore(OpenIDStore):
     def getAssociation(self, server_url, handle=None):
         """See `OpenIDStore`."""
         store = IPrimaryStore(self.Association)
-        server_url = six.ensure_text(server_url)
+        server_url = str(server_url)
         if handle is None:
             result = store.find(self.Association, server_url=server_url)
         else:
-            handle = six.ensure_text(handle, "ASCII")
+            handle = str(handle)
             result = store.find(
                 self.Association, server_url=server_url, handle=handle
             )
@@ -116,7 +116,7 @@ class BaseStormOpenIDStore(OpenIDStore):
         associations = []
         for db_assoc in db_associations:
             assoc = db_assoc.as_association()
-            if assoc.getExpiresIn() == 0:
+            if assoc.expiresIn == 0:
                 store.remove(db_assoc)
             else:
                 associations.append(assoc)
