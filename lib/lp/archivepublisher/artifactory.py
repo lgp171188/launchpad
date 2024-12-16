@@ -636,31 +636,51 @@ class ArtifactoryPool:
         # length):
         #   https://www.jfrog.com/confluence/display/JFROG/\
         #     Artifactory+Query+Language
-        artifacts = self.rootpath.aql(
-            "items.find",
-            {
-                "repo": repository_name,
-                "$or": [
-                    {"name": {"$match": pattern}}
-                    for pattern in self.getArtifactPatterns(repository_format)
-                ],
-            },
-            ".include",
-            # We don't use "repo", but the AQL documentation says that
-            # non-admin users must include all of "name", "repo", and "path"
-            # in the include directive.
-            ["repo", "path", "name", "property"],
-        )
+
+        offset = 0
+        limit = 500000
         artifacts_by_path = {}
-        for artifact in artifacts:
-            path = PurePath(artifact["path"], artifact["name"])
-            properties = defaultdict(set)
-            for prop in artifact["properties"]:
-                properties[prop["key"]].add(prop.get("value", ""))
-            # AQL returns each value of multi-value properties separately
-            # and in an undefined order.  Always sort them to ensure that we
-            # can compare properties reliably.
-            artifacts_by_path[path] = {
-                key: sorted(values) for key, values in properties.items()
-            }
+        iterations = 100
+
+        while iterations > 0:
+            artifacts = self.rootpath.aql(
+                "items.find",
+                {
+                    "repo": repository_name,
+                    "$or": [
+                        {"name": {"$match": pattern}}
+                        for pattern in self.getArtifactPatterns(
+                            repository_format
+                        )
+                    ],
+                },
+                ".include",
+                # We don't use "repo", but the AQL documentation says that
+                # non-admin users must include all of "name", "repo",
+                # and "path" in the include directive.
+                ["repo", "path", "name", "property"],
+                ".offset(%s)" % offset,
+                ".limit(%s)" % limit,
+            )
+            if len(artifacts) == 0:
+                break
+            for artifact in artifacts:
+                path = PurePath(artifact["path"], artifact["name"])
+                properties = defaultdict(set)
+                for prop in artifact["properties"]:
+                    properties[prop["key"]].add(prop.get("value", ""))
+                # AQL returns each value of multi-value properties separately
+                # and in an undefined order.  Always sort them to ensure that
+                # we can compare properties reliably.
+                artifacts_by_path[path] = {
+                    key: sorted(values) for key, values in properties.items()
+                }
+            offset += limit
+            iterations -= 1
+
+        if iterations == 0:
+            self.logger.warning(
+                "getAllArtifacts(%r, %r) exceeded the maximum number of "
+                "iterations (%s); the results may be incomplete."
+            )
         return artifacts_by_path
