@@ -165,7 +165,7 @@ class with_timeout:
 
     timeout = DefaultTimeout()
 
-    def __init__(self, cleanup=None, timeout=None):
+    def __init__(self, cleanup=None, timeout=None, set_timeout=False):
         """Creates the function decorator.
 
         :param cleanup: That may be a callable or a string. If it's a string,
@@ -187,6 +187,7 @@ class with_timeout:
         self.cleanup = cleanup
         if timeout is not None:
             self.timeout = timeout
+        self.set_timeout = set_timeout
 
     def __call__(self, f):
         """Wraps the method."""
@@ -211,6 +212,10 @@ class with_timeout:
                     timeout = timeout(args[0])
                 else:
                     timeout = timeout()
+
+            if self.set_timeout:
+                kwargs["timeout"] = timeout
+
             t = ThreadCapturingResult(f, args, kwargs)
             t.start()
             try:
@@ -337,7 +342,7 @@ class URLFetcher:
     def __init__(self):
         self.session = None
 
-    @with_timeout(cleanup="cleanup")
+    @with_timeout(cleanup="cleanup", set_timeout=True)
     def fetch(
         self,
         url,
