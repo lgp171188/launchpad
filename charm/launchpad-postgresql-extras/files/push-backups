@@ -71,7 +71,7 @@ def main():
         command.append(f"--rsh=ssh -i {shlex.quote(args.ssh_key)}")
     else:
         command.append("--rsh=ssh")
-    command.extend(["-a", "--delete-after"])
+    command.extend(["-a", "--delete-after", "--delete-excluded"])
     for database in args.databases:
         for path in find_latest_dumps(args.backups_path, database, args.count):
             command.extend(["--include", path.name])
