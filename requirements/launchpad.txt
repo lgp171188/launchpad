@@ -123,7 +123,7 @@ pgbouncer==0.0.9
 pickleshare==0.7.5
 pkginfo==1.11.2
 prettytable==0.7.2
-psutil==5.4.2
+psutil==6.1.0
 psycopg2==2.8.6
 ptyprocess==0.7.0
 pyasn1==0.6.1
