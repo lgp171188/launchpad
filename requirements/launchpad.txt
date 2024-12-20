@@ -143,7 +143,7 @@ pyOpenSSL==17.5.0
 pyparsing==3.1.4
 pystache==0.6.6
 python-dateutil==2.9.0.post0
-python-debian==0.1.32
+python-debian==0.1.49
 python-keystoneclient==3.21.0
 python3-openid==3.2
 python-swiftclient==4.6.0
