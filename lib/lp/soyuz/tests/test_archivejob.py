@@ -1895,7 +1895,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         expected_logs = [
             "Running %r (ID %d) in status Waiting" % (job, job.job_id),
             "Failed to scan _invalid.whl as a Python wheel: Invalid wheel "
-            "filename: '_invalid.whl'",
+            "filename (wrong number of parts): '_invalid'",
             "%r (ID %d) failed with user error %r."
             % (
                 job,
