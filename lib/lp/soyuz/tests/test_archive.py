@@ -3814,6 +3814,29 @@ class TestGetPublishedSources(TestCaseWithFactory):
             list(archive.getPublishedSources(order_by_date=True)),
         )
 
+    def test_order_by_date_ascending(self):
+        archive = self.factory.makeArchive()
+        middle_spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            date_uploaded=datetime(2009, 1, 1, tzinfo=timezone.utc),
+        )
+        newest_spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            date_uploaded=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        )
+        oldest_spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            date_uploaded=datetime(2000, 1, 1, tzinfo=timezone.utc),
+        )
+        expected_order = [oldest_spph, middle_spph, newest_spph]
+
+        self.assertEqual(
+            expected_order,
+            list(
+                archive.api_getPublishedSources(order_by_date_ascending=True)
+            ),
+        )
+
     def test_matches_version_as_text(self):
         # Versions such as 0.7-4 and 0.07-4 are equal according to the
         # "debversion" type, but for lookup purposes we compare the text of
@@ -5183,6 +5206,29 @@ class TestgetAllPublishedBinaries(TestCaseWithFactory):
         self.assertEqual(
             [pubs[i] for i in (3, 2, 1, 0, 4)],
             list(archive.getAllPublishedBinaries(order_by_date=True)),
+        )
+
+    def test_order_by_date_ascending(self):
+        archive = self.factory.makeArchive()
+        middle_bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            datecreated=datetime(2009, 1, 1, tzinfo=timezone.utc),
+        )
+        newest_bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            datecreated=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        )
+        oldest_bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            datecreated=datetime(2000, 1, 1, tzinfo=timezone.utc),
+        )
+        expected_order = [oldest_bpph, middle_bpph, newest_bpph]
+
+        self.assertEqual(
+            expected_order,
+            list(
+                archive.getAllPublishedBinaries(order_by_date_ascending=True)
+            ),
         )
 
     def test_matches_version_as_text(self):

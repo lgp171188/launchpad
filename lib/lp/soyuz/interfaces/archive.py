@@ -612,6 +612,11 @@ class IArchiveSubscriberView(Interface):
             ),
             required=False,
         ),
+        order_by_date_ascending=Bool(
+            title=_("Order by ascending creation date"),
+            description=_("Return oldest results first."),
+            required=False,
+        ),
     )
     # Really ISourcePackagePublishingHistory, patched in
     # lp.soyuz.interfaces.webservice.
@@ -628,6 +633,7 @@ class IArchiveSubscriberView(Interface):
         created_since_date=None,
         component_name=None,
         order_by_date=False,
+        order_by_date_ascending=False,
     ):
         """All `ISourcePackagePublishingHistory` target to this archive."""
         # It loads additional related objects only needed in the API call
@@ -644,6 +650,7 @@ class IArchiveSubscriberView(Interface):
         eager_load=False,
         component_name=None,
         order_by_date=False,
+        order_by_date_ascending=False,
         include_removed=True,
         only_unpublished=False,
     ):
@@ -669,6 +676,8 @@ class IArchiveSubscriberView(Interface):
             If not specified, publications are ordered by source
             package name (lexicographically), then by descending version
             and then descending ID.
+        :param order_by_date_ascending: Order publications by descending
+            creation date and then by ascending ID.
         :param include_removed: If True, include publications that have been
             removed from disk as well as those that have not.
         :param only_unpublished: If True, only include publications that
@@ -749,6 +758,11 @@ class IArchiveSubscriberView(Interface):
             ),
             required=False,
         ),
+        order_by_date_ascending=Bool(
+            title=_("Order by ascending creation date"),
+            description=_("Return oldest results first."),
+            required=False,
+        ),
         component_name=TextLine(title=_("Component name"), required=False),
     )
     # Really IBinaryPackagePublishingHistory, patched in
@@ -767,6 +781,7 @@ class IArchiveSubscriberView(Interface):
         created_since_date=None,
         ordered=True,
         order_by_date=False,
+        order_by_date_ascending=False,
         include_removed=True,
         only_unpublished=False,
         eager_load=False,

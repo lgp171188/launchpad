@@ -26,6 +26,7 @@ from storm.databases.postgres import JSON as PgJSON
 from storm.expr import (
     Alias,
     And,
+    Asc,
     Cast,
     Count,
     Desc,
@@ -698,6 +699,7 @@ class Archive(StormBase):
         exact_match=False,
         created_since_date=None,
         order_by_date=False,
+        order_by_date_ascending=False,
         component_name=None,
     ):
         """See `IArchive`."""
@@ -714,6 +716,7 @@ class Archive(StormBase):
             eager_load=True,
             component_name=component_name,
             order_by_date=order_by_date,
+            order_by_date_ascending=order_by_date_ascending,
             include_removed=True,
         )
 
@@ -770,6 +773,7 @@ class Archive(StormBase):
         eager_load=False,
         component_name=None,
         order_by_date=False,
+        order_by_date_ascending=False,
         include_removed=True,
         only_unpublished=False,
     ):
@@ -781,13 +785,18 @@ class Archive(StormBase):
                 Desc(SourcePackagePublishingHistory.datecreated),
                 Desc(SourcePackagePublishingHistory.id),
             ]
+        elif order_by_date_ascending:
+            order_by = [
+                Asc(SourcePackagePublishingHistory.datecreated),
+                Asc(SourcePackagePublishingHistory.id),
+            ]
         else:
             order_by = [
                 SourcePackageName.name,
                 Desc(SourcePackagePublishingHistory.id),
             ]
 
-        if not order_by_date or name is not None:
+        if not (order_by_date or order_by_date_ascending) or name is not None:
             clauses.append(
                 SourcePackagePublishingHistory.sourcepackagename_id
                 == SourcePackageName.id
@@ -804,7 +813,10 @@ class Archive(StormBase):
             elif len(name) != 0:
                 clauses.append(SourcePackageName.name.is_in(name))
 
-        if not order_by_date or version is not None:
+        if (
+            not (order_by_date or order_by_date_ascending)
+            or version is not None
+        ):
             clauses.append(
                 SourcePackagePublishingHistory.sourcepackagerelease_id
                 == SourcePackageRelease.id
@@ -820,7 +832,7 @@ class Archive(StormBase):
                 Cast(SourcePackageRelease.version, "text")
                 == six.ensure_text(version)
             )
-        elif not order_by_date:
+        elif not (order_by_date or order_by_date_ascending):
             order_by.insert(1, Desc(SourcePackageRelease.version))
 
         if component_name is not None:
@@ -1001,6 +1013,7 @@ class Archive(StormBase):
         created_since_date=None,
         ordered=True,
         order_by_date=False,
+        order_by_date_ascending=False,
         include_removed=True,
         only_unpublished=False,
         need_bpr=False,
@@ -1012,13 +1025,18 @@ class Archive(StormBase):
         """
         clauses = [BinaryPackagePublishingHistory.archive == self]
 
-        if order_by_date:
+        if order_by_date or order_by_date_ascending:
             ordered = False
 
         if order_by_date:
             order_by = [
                 Desc(BinaryPackagePublishingHistory.datecreated),
                 Desc(BinaryPackagePublishingHistory.id),
+            ]
+        elif order_by_date_ascending:
+            order_by = [
+                Asc(BinaryPackagePublishingHistory.datecreated),
+                Asc(BinaryPackagePublishingHistory.id),
             ]
         elif ordered:
             order_by = [
@@ -1120,6 +1138,7 @@ class Archive(StormBase):
         created_since_date=None,
         ordered=True,
         order_by_date=False,
+        order_by_date_ascending=False,
         include_removed=True,
         only_unpublished=False,
         eager_load=False,
@@ -1140,6 +1159,7 @@ class Archive(StormBase):
             created_since_date=created_since_date,
             ordered=ordered,
             order_by_date=order_by_date,
+            order_by_date_ascending=order_by_date_ascending,
             include_removed=include_removed,
             only_unpublished=only_unpublished,
             component_name=component_name,
