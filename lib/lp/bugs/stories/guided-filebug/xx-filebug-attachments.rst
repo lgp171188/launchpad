@@ -110,7 +110,9 @@ treat all empty-equivalent values equally.
     ...
     ... Submit Bug Report
     ... -----------------------------2051078912280543729816242321--
-    ... """
+    ... """.replace(
+    ...             b"\n", b"\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other...

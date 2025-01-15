@@ -75,7 +75,9 @@ button:
     ...
     ... Save Changes
     ... -----------------------------19759086281403130373932339922--
-    ... """
+    ... """.replace(
+    ...             b"\n", b"\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other
@@ -157,7 +159,9 @@ But, you can also assign the task to another person, of course:
     ...
     ... Save Changes
     ... -----------------------------19759086281403130373932339922--
-    ... """
+    ... """.replace(
+    ...             b"\n", b"\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other
@@ -239,7 +243,9 @@ Lastly, the widget also allows you to simply assign the task to nobody
     ...
     ... Save Changes
     ... -----------------------------19759086281403130373932339922--
-    ... """
+    ... """.replace(
+    ...             b"\n", b"\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other
