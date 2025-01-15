@@ -71,7 +71,9 @@ so the targeting should NOT be automatically approved.
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """
+    ... """.replace(
+    ...             "\n", "\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other
@@ -124,7 +126,9 @@ OK, we will also pitch the e4x spec to the same series:
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """
+    ... """.replace(
+    ...             "\n", "\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other
@@ -232,7 +236,9 @@ because we are an admin, then we will move it back.
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """
+    ... """.replace(
+    ...             "\n", "\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other
@@ -278,7 +284,9 @@ And lets put it back:
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """
+    ... """.replace(
+    ...             "\n", "\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other
