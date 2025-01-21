@@ -290,7 +290,7 @@ class TestArtifactoryPool(TestCase):
     def test_getArtifactPatterns_rust(self):
         pool = self.makePool()
         self.assertEqual(
-            ["*.crate"],
+            ["*.tar.xz"],
             pool.getArtifactPatterns(ArchiveRepositoryFormat.RUST),
         )
 
