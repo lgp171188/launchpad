@@ -331,9 +331,6 @@ class CIBuildUploadJob(ArchiveJobDerived):
             SourcePackageFileType.GO_MODULE_MOD,
             SourcePackageFileType.GO_MODULE_ZIP,
         },
-        # XXX: ruinedyourlife 2024-12-06
-        # Remove the Rust format and it's scanner as we don't need it from
-        # CI builds. We only care about crates in craft recipe uploads.
         ArchiveRepositoryFormat.RUST: {
             BinaryPackageFormat.CRATE,
         },
