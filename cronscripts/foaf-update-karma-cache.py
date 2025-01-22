@@ -5,6 +5,8 @@
 
 import _pythonpath  # noqa: F401
 
+from decimal import Decimal
+
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -284,7 +286,15 @@ class KarmaCacheUpdater(LaunchpadCronScript):
         at C_add_summed_totals to see how the summed entries are generated.
         """
         (person_id, category_id, product_id, distribution_id, points) = entry
-        points *= scaling[category_id]  # Scaled. wow.
+        # XXX lgp171188 2025-01-22 In Postgres 14, the points column gets
+        # returned as a Decimal instead of a float as before. So convert the
+        # operands to Decimal to perform the arithmetic in that case, and then
+        # convert back to a float so that there is no precision lost during the
+        # operation, just at the time of conversion. This can be removed once
+        # we have upgraded to a Postgres version >= 14.
+        if isinstance(points, Decimal):
+            scaling[category_id] = Decimal(scaling[category_id])
+        points = float(points * scaling[category_id])  # Scaled. wow.
         self.logger.debug(
             "Setting person_id=%d, category_id=%d, points=%d"
             % (person_id, category_id, points)
