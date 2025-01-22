@@ -395,7 +395,7 @@ But our database connections are broken.
     >>> IStore(Person).find(Person, name="janitor")
     Traceback (most recent call last):
     ...
-    storm.exceptions.DisconnectionError:
+    storm.exceptions.DisconnectionError:...
     FATAL:  database "nonexistent" does not exist
 
     >>> _ = config.pop("no_db")
