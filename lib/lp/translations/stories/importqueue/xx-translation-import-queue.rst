@@ -55,9 +55,9 @@ shown as static HTML.
     >>> print(anon_browser.url)
     http://translations.launchpad.test/firefox/1.0/+imports
     >>> row = find_tags_by_class(anon_browser.contents, "import_entry_row")[1]
-    >>> print(extract_text(row.find("", "import_source")))
+    >>> print(extract_text(row.find(class_="import_source")))
     po/es.po in Mozilla Firefox 1.0 series
-    >>> print(extract_text(row.find("", "import_status")))
+    >>> print(extract_text(row.find(class_="import_status")))
     Needs Review
 
 Some tarballs contain files whose names look like PO or POT files, but
