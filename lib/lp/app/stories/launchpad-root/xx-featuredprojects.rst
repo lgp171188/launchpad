@@ -19,7 +19,7 @@ projects' pages in Launchpad.
     >>> print(extract_text(featured.h2))
     Featured projects
 
-    >>> featured_list = featured.find("", "featured-projects-list")
+    >>> featured_list = featured.find(class_="featured-projects-list")
     >>> for link in featured_list.find_all("a"):
     ...     print(extract_text(link))
     ...
@@ -82,7 +82,7 @@ is now at index '4' and is therefore displayed as the top project:
 
     >>> anon_browser.open("http://launchpad.test/")
     >>> featured = find_tag_by_id(anon_browser.contents, "homepage-featured")
-    >>> featured_list = featured.find("", "featured-projects-list")
+    >>> featured_list = featured.find(class_="featured-projects-list")
     >>> for link in featured_list.find_all("a"):
     ...     print(extract_text(link))
     ...
