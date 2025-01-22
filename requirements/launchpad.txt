@@ -17,7 +17,7 @@ backports.functools-lru-cache==1.5
 # ztk-versions.cfg uses 3.2.0 on Python 3, but that drops support for Python
 # 3.5.  Pin to 3.1.7 until we no longer care about xenial.
 bcrypt==3.1.7
-beautifulsoup4==4.12.3
+beautifulsoup4==4.7.1
 billiard==3.6.4.0
 bleach==6.1.0
 bleach-allowlist==1.0.3
@@ -162,7 +162,7 @@ setuptools-git==1.2
 setuptools-scm==3.4.3
 sgmllib3k==1.0.0
 soupmatchers==0.4
-soupsieve==2.6
+soupsieve==1.9
 statsd==3.3.0
 stevedore==1.32.0
 # lp:~launchpad-committers/storm/lp
