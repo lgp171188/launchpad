@@ -44,6 +44,16 @@ class TestBinarySourceReference(TestCaseWithFactory):
             self.reference_set.createFromRelationship(
                 bpr, "nonsense (", BinarySourceReferenceType.BUILT_USING
             )
+        with ExpectedException(UnparsableBuiltUsing, expected_message):
+            self.reference_set.createFromRelationship(
+                bpr, "nonsense )= 1(", BinarySourceReferenceType.BUILT_USING
+            )
+        with ExpectedException(UnparsableBuiltUsing, expected_message):
+            self.reference_set.createFromRelationship(
+                bpr,
+                "nonsense (nonsense)",
+                BinarySourceReferenceType.BUILT_USING,
+            )
 
     def test_createFromRelationship_alternatives(self):
         bpr = self.factory.makeBinaryPackageRelease()

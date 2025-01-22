@@ -296,6 +296,21 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         # Missing comma between dependencies.
         self.assertRaisesUnparsableDependencies(depwait_build, "name1 name2")
 
+        # Mismatched parentheses.
+        self.assertRaisesUnparsableDependencies(
+            depwait_build, "name (= version"
+        )
+
+        # Wrong parentheses.
+        self.assertRaisesUnparsableDependencies(
+            depwait_build, "name )= version("
+        )
+
+        # Invalid or.
+        self.assertRaisesUnparsableDependencies(
+            depwait_build, "name (>= version) | name2 ("
+        )
+
     def testBug378828(self):
         # `IBinaryPackageBuild.updateDependencies` copes with the
         # scenario where the corresponding source publication is not

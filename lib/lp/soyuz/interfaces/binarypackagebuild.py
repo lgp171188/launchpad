@@ -8,6 +8,7 @@ __all__ = [
     "IBinaryPackageBuild",
     "IBuildRescoreForm",
     "IBinaryPackageBuildSet",
+    "MissingDependencies",
     "UnparsableDependencies",
 ]
 
@@ -44,6 +45,10 @@ from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 class UnparsableDependencies(Exception):
     """Raised when parsing invalid dependencies on a binary package."""
+
+
+class MissingDependencies(UnparsableDependencies):
+    """Raised when there are missing dependencies on a binary package."""
 
 
 class IBinaryPackageBuildView(IPackageBuildView):
