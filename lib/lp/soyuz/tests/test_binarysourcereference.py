@@ -40,9 +40,7 @@ class TestBinarySourceReference(TestCaseWithFactory):
         # in newer versions of deb822, when the version can't be processed, it
         # will return None. Therefore, nonsense version will raise an exception
         # that the version must be strict
-        expected_message = (
-            r"Built-Using must contain strict dependencies: .*"
-        )
+        expected_message = r"Built-Using must contain strict dependencies: .*"
         with ExpectedException(UnparsableBuiltUsing, expected_message):
             self.reference_set.createFromRelationship(
                 bpr, "nonsense (", BinarySourceReferenceType.BUILT_USING
