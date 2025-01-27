@@ -6,6 +6,7 @@ __all__ = [
     "valid_cve_sequence",
     "validate_new_team_email",
     "validate_oci_branch_name",
+    "validate_content_templates",
 ]
 
 import re
@@ -113,4 +114,29 @@ def validate_oci_branch_name(branch_name):
     for segment in app_version:
         if "/" in segment:
             return False
+    return True
+
+
+# XXX alvarocs 2024-12-13:
+# To add merge proposal templates or other templates
+# as allowed keys when implemented.
+def validate_content_templates(value):
+    # Omit validation if None
+    if value is None:
+        return True
+    allowed_keys = {
+        "bug_templates",
+    }
+    for key, inner_dict in value.items():
+        # Validate allowed keys
+        if key not in allowed_keys:
+            raise ValueError(
+                f"Invalid key '{key}' in content_templates. "
+                "Allowed keys: {allowed_keys}"
+            )
+        # Validate 'default' key exists
+        if "default" not in inner_dict:
+            raise ValueError(
+                f"The '{key}' dictionary must contain a 'default' key."
+            )
     return True
