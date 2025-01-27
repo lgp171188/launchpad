@@ -276,12 +276,14 @@ class TestDatabaseErrorViews(TestCase):
                 MatchesAny(
                     # libpq < 14.0
                     Disconnects("database removed"),
-                    # libpq >= 14.0
+                    # libpq ~= 14.0
                     DisconnectsWithMessageRegex(
                         libpq_14_connection_error_prefix_regex
                         + ": ERROR: database does not allow connections: "
                         r"launchpad_ftest_.*"
                     ),
+                    # libpq ~= 16.0
+                    Disconnects("server closed the connection unexpectedly"),
                 )
             ),
         )
