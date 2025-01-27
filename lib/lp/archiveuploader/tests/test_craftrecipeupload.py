@@ -73,38 +73,25 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
 
             return archive_path
 
-    def test_sets_build_and_state(self):
-        # The upload processor uploads files and sets the correct status.
-        self.assertFalse(self.build.verifySuccessfulUpload())
-        upload_dir = os.path.join(
-            self.incoming_folder, "test", str(self.build.id), "ubuntu"
-        )
-        os.makedirs(upload_dir, exist_ok=True)
-        self._createArchiveWithCrate(upload_dir)
+    def _createArchiveWithoutCrate(self, upload_dir, filename="output.tar.xz"):
+        """Helper to create a tar.xz archive without crate files."""
+        archive_path = os.path.join(upload_dir, filename)
+        os.makedirs(os.path.dirname(archive_path), exist_ok=True)
 
-        handler = UploadHandler.forProcessor(
-            self.uploadprocessor, self.incoming_folder, "test", self.build
-        )
-        result = handler.processCraftRecipe(self.log)
-        self.assertEqual(
-            UploadStatusEnum.ACCEPTED,
-            result,
-            "Craft upload failed\nGot: %s" % self.log.getLogBuffer(),
-        )
-        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
-        self.assertTrue(self.build.verifySuccessfulUpload())
+        with tarfile.open(archive_path, "w:xz") as tar:
+            # Add a dummy file
+            with tempfile.NamedTemporaryFile(mode="w") as tmp:
+                tmp.write("test content")
+                tmp.flush()
+                tar.add(tmp.name, arcname="test.txt")
 
-        # Verify that the crate file was properly extracted and stored
-        build = removeSecurityProxy(self.build)
-        files = list(build.getFiles())
-        self.assertEqual(1, len(files))
-        stored_file = files[0][1]
-        self.assertTrue(stored_file.filename.endswith(".crate"))
+        return archive_path
 
     def test_processes_crate_from_archive(self):
-        """Test extracting/processing crates within .tar.xz archives."""
+        """Test that crates are properly extracted and processed
+        from archives."""
         upload_dir = os.path.join(
-            self.incoming_folder, "test", str(self.build.id), "ubuntu"
+            self.incoming_folder, "test", str(self.build.id)
         )
         os.makedirs(upload_dir, exist_ok=True)
 
@@ -122,7 +109,7 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
         self.assertEqual(UploadStatusEnum.ACCEPTED, result)
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
 
-        # Verify the crate file was properly stored
+        # Verify only the crate file was stored (not the archive)
         build = removeSecurityProxy(self.build)
         files = list(build.getFiles())
         self.assertEqual(1, len(files))
@@ -130,18 +117,46 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
         expected_filename = f"{crate_name}-{crate_version}.crate"
         self.assertEqual(expected_filename, stored_file.filename)
 
-    def test_requires_craft(self):
-        # The upload processor fails if the upload does not contain any
-        # .craft files.
-        self.assertFalse(self.build.verifySuccessfulUpload())
+    def test_uploads_archive_without_crate(self):
+        """Test that the original archive is uploaded when no crate
+        files exist."""
         upload_dir = os.path.join(
-            self.incoming_folder, "test", str(self.build.id), "ubuntu"
+            self.incoming_folder, "test", str(self.build.id)
         )
-        write_file(os.path.join(upload_dir, "foo_0_all.manifest"), b"manifest")
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Create archive without crate files
+        archive_name = "test-output.tar.xz"
+        self._createArchiveWithoutCrate(upload_dir, archive_name)
+
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build
         )
         result = handler.processCraftRecipe(self.log)
+
+        # Verify upload succeeded
+        self.assertEqual(UploadStatusEnum.ACCEPTED, result)
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+
+        # Verify the original archive was stored
+        build = removeSecurityProxy(self.build)
+        files = list(build.getFiles())
+        self.assertEqual(1, len(files))
+        stored_file = files[0][1]
+        self.assertEqual(archive_name, stored_file.filename)
+
+    def test_requires_craft(self):
+        """Test that the upload fails if no .tar.xz files are found."""
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id)
+        )
+        write_file(os.path.join(upload_dir, "foo_0_all.manifest"), b"manifest")
+
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build
+        )
+        result = handler.processCraftRecipe(self.log)
+
         self.assertEqual(UploadStatusEnum.REJECTED, result)
         self.assertIn(
             "ERROR Build did not produce any craft files.",
