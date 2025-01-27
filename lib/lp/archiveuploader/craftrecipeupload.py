@@ -53,51 +53,59 @@ class CraftRecipeUpload:
             raise UploadError("Build did not produce any craft files.")
 
         for craft_path in sorted(craft_paths):
-            # Extract and process .crate files from archive
-            self._process_rust_archive(build, str(craft_path))
+            # Check if archive contains .crate files
+            with tempfile.TemporaryDirectory() as tmpdir:
+                with tarfile.open(craft_path, "r:xz") as tar:
+                    tar.extractall(path=tmpdir)
+
+                # Look for .crate files and metadata.yaml
+                crate_files = list(Path(tmpdir).rglob("*.crate"))
+                metadata_path = Path(tmpdir) / "metadata.yaml"
+
+                if crate_files and metadata_path.exists():
+                    # If we found a crate file and metadata, upload it
+                    try:
+                        metadata = yaml.safe_load(metadata_path.read_text())
+                        crate_name = metadata.get("name")
+                        crate_version = metadata.get("version")
+                        self.logger.debug(
+                            "Found crate %s version %s",
+                            crate_name,
+                            crate_version,
+                        )
+                    except Exception as e:
+                        self.logger.warning(
+                            "Failed to parse metadata.yaml: %s", e
+                        )
+
+                    crate_path = crate_files[
+                        0
+                    ]  # Take the first (and should be only) crate file
+                    with open(crate_path, "rb") as file:
+                        libraryfile = self.librarian.create(
+                            os.path.basename(str(crate_path)),
+                            os.stat(crate_path).st_size,
+                            file,
+                            filenameToContentType(str(crate_path)),
+                            restricted=build.is_private,
+                        )
+                    build.addFile(libraryfile)
+                else:
+                    # If no crate file found, upload the original archive
+                    self.logger.debug(
+                        "No crate files found, uploading archive"
+                    )
+                    with open(craft_path, "rb") as file:
+                        libraryfile = self.librarian.create(
+                            os.path.basename(str(craft_path)),
+                            os.stat(craft_path).st_size,
+                            file,
+                            filenameToContentType(str(craft_path)),
+                            restricted=build.is_private,
+                        )
+                    build.addFile(libraryfile)
 
         # The master verifies the status to confirm successful upload.
         self.logger.debug("Updating %s" % build.title)
         build.updateStatus(BuildStatus.FULLYBUILT)
         self.logger.debug("Finished upload.")
-
-    def _process_rust_archive(self, build, archive_path):
-        """Process a .tar.xz archive that may contain .crate files."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with tarfile.open(archive_path, "r:xz") as tar:
-                tar.extractall(path=tmpdir)
-
-            # Read metadata.yaml for crate info
-            metadata_path = Path(tmpdir) / "metadata.yaml"
-            if metadata_path.exists():
-                try:
-                    metadata = yaml.safe_load(metadata_path.read_text())
-                    # XXX: ruinedyourlife 2024-12-06
-                    # We will need this later to give the crate a name and
-                    # version to artifactory. This is a placeholder for now,
-                    # which will be changed when we find a way to send that
-                    # information to artifactory.
-                    _ = metadata.get("name")
-                    _ = metadata.get("version")
-                except Exception as e:
-                    self.logger.warning("Failed to parse metadata.yaml: %s", e)
-            else:
-                self.logger.debug(
-                    "No metadata.yaml found at %s", metadata_path
-                )
-
-            # Look for .crate files in extracted contents
-            for crate_path in Path(tmpdir).rglob("*.crate"):
-                self._process_crate_file(build, str(crate_path))
-
-    def _process_crate_file(self, build, crate_path):
-        """Process a single .crate file."""
-        with open(crate_path, "rb") as file:
-            libraryfile = self.librarian.create(
-                os.path.basename(crate_path),
-                os.stat(crate_path).st_size,
-                file,
-                filenameToContentType(crate_path),
-                restricted=build.is_private,
-            )
-        build.addFile(libraryfile)
