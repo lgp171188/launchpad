@@ -42,18 +42,41 @@ class CraftRecipeUpload:
         """Process this upload, loading it into the database."""
         self.logger.debug("Beginning processing.")
 
-        # Find all .tar.xz files in subdirectories
+        # Find all files in subdirectories
         upload_path = Path(self.upload_path)
-        craft_paths = list(upload_path.rglob("*.tar.xz"))
+        found_tar = False
+        craft_paths = []
+        other_files = []
 
-        # Skip files directly in upload_path
-        craft_paths = [p for p in craft_paths if p.parent != upload_path]
+        # Collect all files, separating tar.xz from others
+        for path in upload_path.rglob("*"):
+            if path.parent == upload_path:
+                # Skip files directly in upload_path
+                continue
+            if path.is_file():
+                if path.name.endswith(".tar.xz"):
+                    found_tar = True
+                    craft_paths.append(path)
+                else:
+                    other_files.append(path)
 
-        if not craft_paths:
-            raise UploadError("Build did not produce any craft files.")
+        if not found_tar:
+            raise UploadError("Build did not produce any tar.xz archives.")
 
+        # Upload all non-tar.xz files first
+        for path in sorted(other_files):
+            with open(path, "rb") as file:
+                libraryfile = self.librarian.create(
+                    path.name,
+                    os.stat(path).st_size,
+                    file,
+                    filenameToContentType(str(path)),
+                    restricted=build.is_private,
+                )
+            build.addFile(libraryfile)
+
+        # Process tar.xz files
         for craft_path in sorted(craft_paths):
-            # Check if archive contains .crate files
             with tempfile.TemporaryDirectory() as tmpdir:
                 with tarfile.open(craft_path, "r:xz") as tar:
                     tar.extractall(path=tmpdir)
@@ -63,7 +86,7 @@ class CraftRecipeUpload:
                 metadata_path = Path(tmpdir) / "metadata.yaml"
 
                 if crate_files and metadata_path.exists():
-                    # If we found a crate file and metadata, upload it
+                    # If we found a crate file and metadata, upload those
                     try:
                         metadata = yaml.safe_load(metadata_path.read_text())
                         crate_name = metadata.get("name")
@@ -78,9 +101,8 @@ class CraftRecipeUpload:
                             "Failed to parse metadata.yaml: %s", e
                         )
 
-                    crate_path = crate_files[
-                        0
-                    ]  # Take the first (and should be only) crate file
+                    # Upload the crate file
+                    crate_path = crate_files[0]
                     with open(crate_path, "rb") as file:
                         libraryfile = self.librarian.create(
                             os.path.basename(str(crate_path)),
@@ -90,10 +112,21 @@ class CraftRecipeUpload:
                             restricted=build.is_private,
                         )
                     build.addFile(libraryfile)
+
+                    # Upload metadata.yaml
+                    with open(metadata_path, "rb") as file:
+                        libraryfile = self.librarian.create(
+                            "metadata.yaml",
+                            os.stat(metadata_path).st_size,
+                            file,
+                            filenameToContentType(str(metadata_path)),
+                            restricted=build.is_private,
+                        )
+                    build.addFile(libraryfile)
                 else:
                     # If no crate file found, upload the original archive
                     self.logger.debug(
-                        "No crate files found, uploading archive"
+                        "No crate files found in archive, " "uploading tar.xz"
                     )
                     with open(craft_path, "rb") as file:
                         libraryfile = self.librarian.create(
