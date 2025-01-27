@@ -646,6 +646,20 @@ def reset_permissions(con, config, options):
             "GRANT USAGE ON SCHEMA %s TO PUBLIC"
             % (quote_identifier(schema_name),)
         )
+
+    # XXX 2025-01-27 lgp171188: PostgreSQL 15+ stopped granting
+    # the permission to create tables in the 'public' namespace
+    # for all non-owner users as a part of security strengthening,
+    # in favour of requiring the users to do this manually as needed.
+    # We conditionally enable it here as various Launchpad roles
+    # need it to be able to run the Launchpad test suite without any errors.
+    if (
+        options.grant_create_on_public_schema
+        and con.server_version // 10000 >= 15
+    ):
+        log.debug("Granting CREATE on schema 'public' on PostgreSQL 15+.")
+        cur.execute("GRANT CREATE on SCHEMA public TO PUBLIC")
+
     for obj in schema.values():
         if obj.schema not in public_schemas:
             continue
@@ -760,6 +774,20 @@ if __name__ == "__main__":
         default="postgres",
         help="Owner of PostgreSQL objects",
     )
+    parser.add_option(
+        "--grant-create-on-public-schema",
+        dest="grant_create_on_public_schema",
+        default=False,
+        action="store_true",
+        help=(
+            "Grant CREATE on the 'public' schema in PostgreSQL 15+ to "
+            "all users. PostgreSQL <= 14 allowed this access automatically."
+            "This should only be used in the dev/test environments via the"
+            "'make schema' invocation and not anywhere in a production or"
+            "production-like environment."
+        ),
+    )
+
     db_options(parser)
     logger_options(parser)
 
