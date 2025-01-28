@@ -75,6 +75,7 @@ For distroseries we publish a subset of its attributes.
     bug_reporting_guidelines: None
     changeslist: 'hoary-changes@ubuntu.com'
     component_names: ['main', 'restricted']
+    content_templates: None
     date_created: '2006-10-16T18:31:43.483559+00:00'
     datereleased: None
     description: 'Hoary is the ...

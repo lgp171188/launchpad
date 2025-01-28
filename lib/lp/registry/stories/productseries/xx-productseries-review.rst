@@ -21,7 +21,9 @@ to bazaar. Also changes the name of the productseries to 'newname'.
     ...
     ... Change
     ... -----------------------------10572808480422220968425074--
-    ... """
+    ... """.replace(
+    ...             "\n", "\r\n"
+    ...         )  # Necessary to ensure it fits the HTTP standard
     ...     )
     ... )  # noqa
     HTTP/1.1 303 See Other

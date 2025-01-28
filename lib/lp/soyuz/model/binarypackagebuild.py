@@ -71,6 +71,7 @@ from lp.soyuz.interfaces.binarypackagebuild import (
     BuildSetStatus,
     IBinaryPackageBuild,
     IBinaryPackageBuildSet,
+    MissingDependencies,
     UnparsableDependencies,
 )
 from lp.soyuz.interfaces.binarysourcereference import (
@@ -651,6 +652,14 @@ class BinaryPackageBuild(PackageBuildMixin, StormBase):
         apt_pkg.init_system()
 
         # Check package build dependencies using debian.deb822
+
+        if self.dependencies is None:
+            raise MissingDependencies(
+                "Build dependencies for %s (%s) are missing.\n"
+                "It indicates that something is wrong in buildd-workers."
+                % (self.title, self.id)
+            )
+
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
@@ -661,6 +670,28 @@ class BinaryPackageBuild(PackageBuildMixin, StormBase):
                 "It indicates that something is wrong in buildd-workers."
                 % (self.title, self.id, self.dependencies)
             )
+
+        # For each dependency check if there is a name (without spaces) and
+        # version. See TestBuildUpdateDependencies.testInvalidDependencies()
+
+        def has_valid_name(dep):
+            return (
+                dep.get("name") is not None
+                and len(dep.get("name", "").split(" ")) == 1
+            )
+
+        def has_valid_version(dep):
+            return dep.get("version") is None or len(dep.get("version")) == 2
+
+        for or_dep in parsed_deps:
+            for dep in or_dep:
+                if not has_valid_name(dep) or not has_valid_version(dep):
+                    raise UnparsableDependencies(
+                        "Build dependencies for %s (%s) could not be parsed: "
+                        "'%s'\nIt indicates that something is wrong in "
+                        "buildd-workers."
+                        % (self.title, self.id, self.dependencies)
+                    )
 
         remaining_deps = []
         for or_dep in parsed_deps:

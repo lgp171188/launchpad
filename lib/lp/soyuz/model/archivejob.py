@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import os
+import os.path
 import tarfile
 import tempfile
 import zipfile
@@ -14,10 +15,10 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import zstandard
 from lazr.delegates import delegate_to
+from packaging.utils import parse_wheel_filename
 from pkginfo import SDist, Wheel
 from storm.expr import And
 from storm.locals import JSON, Int, Reference
-from wheel_filename import parse_wheel_filename
 from zope.component import getUtility
 from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
@@ -330,6 +331,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
             SourcePackageFileType.GO_MODULE_MOD,
             SourcePackageFileType.GO_MODULE_ZIP,
         },
+        # XXX: ruinedyourlife 2024-12-06
+        # Remove the Rust format and it's scanner as we don't need it from
+        # CI builds. We only care about crates in craft recipe uploads.
         ArchiveRepositoryFormat.RUST: {
             BinaryPackageFormat.CRATE,
         },
@@ -431,10 +435,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
     ) -> Dict[str, ArtifactMetadata]:
         all_metadata = {}
         for path in paths:
-            if not path.name.endswith(".whl"):
+            filename = str(os.path.basename(os.fsdecode(path)))
+            if not filename.endswith(".whl"):
                 continue
             try:
-                parsed_path = parse_wheel_filename(str(path))
+                _, _, _, tags = parse_wheel_filename(str(filename))
+                platforms = [tag.platform for tag in set(tags)]
                 wheel = Wheel(str(path))
             except Exception as e:
                 logger.warning(
@@ -448,7 +454,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 version=wheel.version,
                 summary=wheel.summary or "",
                 description=wheel.description or "",
-                architecturespecific="any" not in parsed_path.platform_tags,
+                architecturespecific="any" not in platforms,  # != platform,
                 homepage=wheel.home_page or "",
             )
         return all_metadata

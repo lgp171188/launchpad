@@ -37,12 +37,23 @@ class TestBinarySourceReference(TestCaseWithFactory):
 
     def test_createFromRelationship_nonsense(self):
         bpr = self.factory.makeBinaryPackageRelease()
-        expected_message = (
-            r"Invalid Built-Using field; cannot be parsed by deb822: .*"
-        )
+        # in newer versions of deb822, when the version can't be processed, it
+        # will return None. Therefore, nonsense version will raise an exception
+        # that the version must be strict
+        expected_message = r"Built-Using must contain strict dependencies: .*"
         with ExpectedException(UnparsableBuiltUsing, expected_message):
             self.reference_set.createFromRelationship(
                 bpr, "nonsense (", BinarySourceReferenceType.BUILT_USING
+            )
+        with ExpectedException(UnparsableBuiltUsing, expected_message):
+            self.reference_set.createFromRelationship(
+                bpr, "nonsense )= 1(", BinarySourceReferenceType.BUILT_USING
+            )
+        with ExpectedException(UnparsableBuiltUsing, expected_message):
+            self.reference_set.createFromRelationship(
+                bpr,
+                "nonsense (nonsense)",
+                BinarySourceReferenceType.BUILT_USING,
             )
 
     def test_createFromRelationship_alternatives(self):

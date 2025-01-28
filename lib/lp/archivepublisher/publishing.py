@@ -795,39 +795,51 @@ class Publisher:
             archive=self.archive
         ):
             spphs_by_spr[spph.sourcepackagerelease_id].append(spph)
-            release_id = "source:%d" % spph.sourcepackagerelease_id
-            releases_by_id.setdefault(release_id, spph.sourcepackagerelease)
-            self.log.debug(
-                "Collecting %s for %s", release_id, spph.sourcepackagename
+            launchpad_release_id = "source:%d" % spph.sourcepackagerelease_id
+            releases_by_id.setdefault(
+                launchpad_release_id, spph.sourcepackagerelease
             )
-            pubs_by_id[release_id].append(spph)
+            self.log.debug(
+                "Collecting %s for %s",
+                launchpad_release_id,
+                spph.sourcepackagename,
+            )
+            pubs_by_id[launchpad_release_id].append(spph)
         for bpph in publishing_set.getBinariesForPublishing(
             archive=self.archive
         ):
             bpphs_by_bpr[bpph.binarypackagerelease_id].append(bpph)
-            release_id = "binary:%d" % bpph.binarypackagerelease_id
+            launchpad_release_id = "binary:%d" % bpph.binarypackagerelease_id
             self.log.debug(
-                "Collecting %s for %s", release_id, bpph.binarypackagename
+                "Collecting %s for %s",
+                launchpad_release_id,
+                bpph.binarypackagename,
             )
-            releases_by_id.setdefault(release_id, bpph.binarypackagerelease)
-            pubs_by_id[release_id].append(bpph)
+            releases_by_id.setdefault(
+                launchpad_release_id, bpph.binarypackagerelease
+            )
+            pubs_by_id[launchpad_release_id].append(bpph)
         artifacts = self._diskpool.getAllArtifacts(
             self.archive.name, self.archive.repository_format
         )
 
         plan = []
         for path, properties in sorted(artifacts.items()):
-            release_id = properties.get("launchpad.release-id")
+            artifactory_release_id = properties.get("launchpad.release-id")
             source_name = properties.get("launchpad.source-name")
             source_version = properties.get("launchpad.source-version")
-            if not release_id or not source_name or not source_version:
+            if (
+                not artifactory_release_id
+                or not source_name
+                or not source_version
+            ):
                 # Skip any files that Launchpad didn't put in Artifactory.
                 continue
             plan.append(
                 (
                     source_name[0],
                     source_version[0],
-                    release_id[0],
+                    artifactory_release_id[0],
                     path,
                     properties,
                 )
@@ -839,14 +851,14 @@ class Publisher:
         # corresponding pool entries.
         missing_sources = set()
         missing_binaries = set()
-        for _, _, release_id, _, _ in plan:
-            if release_id in releases_by_id:
+        for _, _, artifactory_release_id, _, _ in plan:
+            if artifactory_release_id in releases_by_id:
                 continue
-            match = re.match(r"^source:(\d+)$", release_id)
+            match = re.match(r"^source:(\d+)$", artifactory_release_id)
             if match is not None:
                 missing_sources.add(int(match.group(1)))
             else:
-                match = re.match(r"^binary:(\d+)$", release_id)
+                match = re.match(r"^binary:(\d+)$", artifactory_release_id)
                 if match is not None:
                     missing_binaries.add(int(match.group(1)))
         for spr in load(SourcePackageRelease, missing_sources):
@@ -860,14 +872,16 @@ class Publisher:
         # in Debian-format source packages).
         pub_files_by_path = defaultdict(set)
         pubs_by_path = defaultdict(set)
-        for source_name, source_version, release_id, _, _ in plan:
-            for pub_file in releases_by_id[release_id].files:
+        for source_name, source_version, artifactory_release_id, _, _ in plan:
+            for pub_file in releases_by_id[artifactory_release_id].files:
                 path = self._diskpool.pathFor(
                     None, source_name, source_version, pub_file
                 )
                 pub_files_by_path[path].add(pub_file)
-                if release_id in pubs_by_id:
-                    pubs_by_path[path].update(pubs_by_id[release_id])
+                if artifactory_release_id in pubs_by_id:
+                    pubs_by_path[path].update(
+                        pubs_by_id[artifactory_release_id]
+                    )
 
         root_path = ArtifactoryPath(self._config.archiveroot)
         for source_name, source_version, _, path, properties in plan:

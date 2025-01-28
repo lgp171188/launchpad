@@ -117,7 +117,7 @@ create:
 	@ echo "* Patching the database schema"
 	@ ./upgrade.py --separate-sessions -d ${EMPTY_DBNAME}
 	@ echo "* Security setup"
-	@ ./security.py -q -d ${EMPTY_DBNAME}
+	@ ./security.py -q -d ${EMPTY_DBNAME} --grant-create-on-public-schema
 	@ echo "* Disabling autovacuum"
 	@ ./unautovacuumable.py -d ${EMPTY_DBNAME}
 	@ echo "* Vacuuming"

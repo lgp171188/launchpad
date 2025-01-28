@@ -424,9 +424,7 @@ class ErrorReportingUtility:
                 "database does not allow connections",
                 "pgbouncer database is disabled",
             ):
-                if message.startswith(ok) or message.startswith(
-                    "ERROR:  " + ok
-                ):
+                if ok in message or f"ERROR:  {ok}" in message:
                     return True
         return False
 

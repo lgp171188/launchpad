@@ -813,6 +813,7 @@ Subscribed packages can be listed with getBugSubscriberPackages:
     ---
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
+    content_templates: None
     display_name: '...'
     distribution_link: '...'
     name: 'fooix'

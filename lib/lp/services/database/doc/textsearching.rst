@@ -249,19 +249,26 @@ Repeated '-' are simply ignored by to_tsquery().
     >>> ftq("---foo--- ---bar---")
     ---foo---&---bar--- <=> 'foo' & 'bar'
 
+
+XXX 2025-01-23 lgp171188: The following doctests have a lot of placeholders
+ignoring key values like '&', '<->', and '<2>' since it is not straightforward
+to test different values in a doctest based on different PostgreSQL versions.
+So these ignored values have been checked in the unit tests in the
+lp.services.database.tests.test_text_searching module.
+
 Hyphens surrounded by two words are retained. This reflects the way
 how to_tsquery() and to_tsvector() handle such strings.
 
     >>> print(search_same("foo-bar"))
     FTI data: 'bar':3 'foo':2 'foo-bar':1
-    query: 'foo-bar' & 'foo' & 'bar'
+    query: 'foo-bar' ... 'foo' ... 'bar'
     match: True
 
 A '-' surrounded by numbers is treated as the sign of the right-hand number.
 
     >>> print(search_same("123-456"))
     FTI data: '-456':2 '123':1
-    query: '123' & '-456'
+    query: '123' ... '-456'
     match: True
 
 Punctuation is handled consistently. If a string containing punctuation
@@ -272,31 +279,31 @@ string finds the indexed text.
     >>> for symbol in punctuation:
     ...     print(repr(symbol), search_same("foo%sbar" % symbol))
     ...
-    "'" FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '"' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '#' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '$' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '%' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '*' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '+' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    ',' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
+    "'" FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '"' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '#' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '$' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '%' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '*' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '+' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    ',' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
     '.' FTI data: 'foo.bar':1 query: 'foo.bar' match: True
     '/' FTI data: 'foo/bar':1 query: 'foo/bar' match: True
-    ':' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    ';' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '<' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '=' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '>' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '?' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '@' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '[' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '\\' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    ']' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '^' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '`' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '{' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '}' FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
-    '~' FTI data: 'foo':1 '~bar':2 query: 'foo' & '~bar' match: True
+    ':' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    ';' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '<' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '=' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '>' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '?' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '@' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '[' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '\\' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    ']' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '^' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '`' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '{' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '}' FTI data: 'bar':2 'foo':1 query: 'foo' ... 'bar' match: True
+    '~' FTI data: 'foo':1 '~bar':2 query: 'foo' ... '~bar' match: True
 
     >>> for symbol in punctuation:
     ...     print(
@@ -399,14 +406,14 @@ Bug #44913 - Unicode characters in the wrong place.
 
     >>> print(search_same("abc-a\N{LATIN SMALL LETTER C WITH CEDILLA}"))
     FTI data: 'abc':2 'abc-aç':1 'aç':3
-    query: 'abc-aç' & 'abc' & 'aç'
+    query: 'abc-aç' ... 'abc' ... 'aç'
     match: True
 
 Cut & Paste of 'Smart' quotes. Note that the quotation mark is retained
 in the FTI.
 
     >>> print(search_same("a-a\N{RIGHT DOUBLE QUOTATION MARK}"))
-    FTI data: 'a-a”':1 'a”':3 query: 'a-a”' & 'a”' match: True
+    FTI data: 'a-a”':1 'a”':3 query: 'a-a”' ... 'a”' match: True
 
     >>> print(
     ...     search_same(
@@ -414,7 +421,7 @@ in the FTI.
     ...         "\N{RIGHT SINGLE QUOTATION MARK}"
     ...     )
     ... )
-    FTI data: 'a’':2 '‘a':1 query: '‘a' & 'a’' match: True
+    FTI data: 'a’':2 '‘a':1 query: '‘a' ... 'a’' match: True
 
 
 Bug #44913 - Nothing but stopwords in a query needing repair
@@ -543,7 +550,7 @@ or invalid leading operators
     Bug #160236
 
     >>> ftq("foo AND AND bar-baz")
-    foo&bar-baz <=> 'foo' & 'bar-baz' & 'bar' & 'baz'
+    foo&bar-baz <=> 'foo' ... 'bar-baz' ... 'bar' ... 'baz'
 
     >>> ftq("foo OR OR bar.baz")
     foo|bar.baz <=> 'foo' | 'bar.baz'

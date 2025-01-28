@@ -14,6 +14,7 @@ Source packages can be obtained from the context of a distribution.
     >>> pprint_entry(mozilla_firefox)
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
+    content_templates: None
     display_name: 'mozilla-firefox in Debian'
     distribution_link: 'http://.../debian'
     name: 'mozilla-firefox'

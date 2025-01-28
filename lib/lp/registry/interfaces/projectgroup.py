@@ -33,6 +33,7 @@ from lp.app.interfaces.launchpad import (
     IServiceUsage,
 )
 from lp.app.validators.name import name_validator
+from lp.app.validators.validation import validate_content_templates
 from lp.blueprints.interfaces.specificationtarget import IHasSpecifications
 from lp.blueprints.interfaces.sprint import IHasSprints
 from lp.bugs.interfaces.bugtarget import IHasBugs, IHasOfficialBugTags
@@ -384,26 +385,27 @@ class IProjectGroupPublic(
         )
     )
 
-    # XXX alvarocs 2024-11-27:
-    # To be exported to the API once a validator is added.
-    content_templates = Dict(
-        title=("Templates to use for reporting a bug"),
-        description=(
-            "This pre-defined template will be given to the "
-            "users to guide them when reporting a bug. "
-        ),
-        key_type=TextLine(),
-        value_type=Dict(
+    content_templates = exported(
+        Dict(
+            title=("Templates to use for reporting a bug"),
+            description=(
+                "This pre-defined template will be given to the "
+                "users to guide them when reporting a bug. "
+            ),
             key_type=TextLine(),
-            value_type=Text(
+            value_type=Dict(
+                key_type=TextLine(),
+                value_type=Text(
+                    required=False,
+                    max_length=50000,
+                ),
                 required=False,
                 max_length=50000,
             ),
             required=False,
             max_length=50000,
-        ),
-        required=False,
-        max_length=50000,
+            constraint=validate_content_templates,
+        )
     )
 
     bug_reported_acknowledgement = exported(

@@ -5,6 +5,7 @@
 
 import http.client
 import logging
+import re
 import socket
 import time
 from urllib.error import HTTPError
@@ -138,6 +139,28 @@ class TestDatabaseErrorViews(TestCase):
             def __init__(self, message):
                 super().__init__(("DisconnectionError", message))
 
+        class DisconnectsWithMessageRegex:
+            def __init__(self, message_regex):
+                self.message_regex = message_regex
+
+            def match(self, actual):
+                if "DisconnectionError" != actual[0] or not re.match(
+                    self.message_regex, actual[1]
+                ):
+
+                    class DisconnectsWithMessageRegexMismatch:
+                        def __init__(self, description):
+                            self.description = description
+
+                        def describe(self):
+                            return self.description
+
+                    return DisconnectsWithMessageRegexMismatch(
+                        "reference = ('DisconnectionError', "
+                        f"'{self.message_regex}')\n"
+                        f"actual    = ('{actual[0]}', '{actual[1]}')"
+                    )
+
         browser = Browser()
         browser.raiseHttpErrors = False
         with CaptureOops() as oopses:
@@ -145,6 +168,14 @@ class TestDatabaseErrorViews(TestCase):
         self.assertEqual(503, int(browser.headers["Status"].split(" ", 1)[0]))
         self.assertThat(
             browser.contents, Contains(DisconnectionErrorView.reason)
+        )
+        # XXX 2024-01-22 lgp171188: Since there isn't a straightforward
+        # way to query the Postgres version at test runtime and assert
+        # accordingly, I have added to the existing style of `MatchesAny`
+        # clauses for Postgres 14 support. Once we upgrade to Postgres,
+        # all the code and assertions for older versions can be removed.
+        libpq_14_connection_error_prefix_regex = (
+            r'connection to server at "localhost" \(.*\), port .* failed'
         )
         self.assertThat(
             [
@@ -164,9 +195,17 @@ class TestDatabaseErrorViews(TestCase):
                 ]
                 * 2
                 + [
-                    Disconnects(
-                        "could not connect to server: Connection refused"
-                    )
+                    MatchesAny(
+                        # libpq < 14.0
+                        Disconnects(
+                            "could not connect to server: Connection refused"
+                        ),
+                        # libpq >= 14.0
+                        DisconnectsWithMessageRegex(
+                            libpq_14_connection_error_prefix_regex
+                            + ": Connection refused"
+                        ),
+                    ),
                 ]
                 * 6
             ),
@@ -186,8 +225,16 @@ class TestDatabaseErrorViews(TestCase):
             ],
             MatchesListwise(
                 [
-                    Disconnects(
-                        "could not connect to server: Connection refused"
+                    MatchesAny(
+                        # libpa < 14.0
+                        Disconnects(
+                            "could not connect to server: Connection refused"
+                        ),
+                        # libpq >= 14.0
+                        DisconnectsWithMessageRegex(
+                            libpq_14_connection_error_prefix_regex
+                            + ": Connection refused"
+                        ),
                     )
                 ]
                 * 8
@@ -223,7 +270,21 @@ class TestDatabaseErrorViews(TestCase):
         ]
         self.assertNotEqual([], disconnection_oopses)
         self.assertThat(
-            disconnection_oopses, AllMatch(Disconnects("database removed"))
+            disconnection_oopses,
+            AllMatch(
+                MatchesAny(
+                    # libpq < 14.0
+                    Disconnects("database removed"),
+                    # libpq ~= 14.0
+                    DisconnectsWithMessageRegex(
+                        libpq_14_connection_error_prefix_regex
+                        + ": ERROR: database does not allow connections: "
+                        r"launchpad_ftest_.*"
+                    ),
+                    # libpq ~= 16.0
+                    Disconnects("server closed the connection unexpectedly"),
+                )
+            ),
         )
 
         # A second request doesn't log any OOPSes.
