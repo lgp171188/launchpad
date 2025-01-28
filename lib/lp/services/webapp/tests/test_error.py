@@ -175,8 +175,7 @@ class TestDatabaseErrorViews(TestCase):
         # clauses for Postgres 14 support. Once we upgrade to Postgres,
         # all the code and assertions for older versions can be removed.
         libpq_14_connection_error_prefix_regex = (
-            r'connection to server at "localhost" \(127\.0\.0\.1\), '
-            r"port .* failed"
+            r'connection to server at "localhost" \(.*\), port .* failed'
         )
         self.assertThat(
             [
