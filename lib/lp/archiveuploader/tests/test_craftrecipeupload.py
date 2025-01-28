@@ -109,13 +109,17 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
         self.assertEqual(UploadStatusEnum.ACCEPTED, result)
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
 
-        # Verify only the crate file was stored (not the archive)
+        # Verify crate and metadata were stored (not the archive)
         build = removeSecurityProxy(self.build)
         files = list(build.getFiles())
-        self.assertEqual(1, len(files))
-        stored_file = files[0][1]
-        expected_filename = f"{crate_name}-{crate_version}.crate"
-        self.assertEqual(expected_filename, stored_file.filename)
+        self.assertEqual(2, len(files))
+
+        filenames = {f[1].filename for f in files}
+        expected_files = {
+            f"{crate_name}-{crate_version}.crate",
+            "metadata.yaml",
+        }
+        self.assertEqual(expected_files, filenames)
 
     def test_uploads_archive_without_crate(self):
         """Test that the original archive is uploaded when no crate
@@ -159,7 +163,107 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
 
         self.assertEqual(UploadStatusEnum.REJECTED, result)
         self.assertIn(
-            "ERROR Build did not produce any craft files.",
+            "ERROR Build did not produce any tar.xz archives.",
             self.log.getLogBuffer(),
         )
         self.assertFalse(self.build.verifySuccessfulUpload())
+
+    def test_processes_all_files(self):
+        """Test that all files in subdirectories are processed."""
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id)
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Create archive with crate and additional files
+        crate_name = "test-crate"
+        crate_version = "0.2.0"
+        self._createArchiveWithCrate(upload_dir, crate_name, crate_version)
+
+        # Add additional files in subdirectories
+        subdir = os.path.join(upload_dir, "subdir")
+        os.makedirs(subdir, exist_ok=True)
+
+        # Create manifest file
+        manifest_path = os.path.join(subdir, "build.manifest")
+        with open(manifest_path, "w") as f:
+            f.write('{"type": "test"}')
+
+        # Create log file
+        log_path = os.path.join(subdir, "build.log")
+        with open(log_path, "w") as f:
+            f.write("Build log contents")
+
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build
+        )
+        result = handler.processCraftRecipe(self.log)
+
+        # Verify upload succeeded
+        self.assertEqual(UploadStatusEnum.ACCEPTED, result)
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+
+        # Verify all files were stored
+        build = removeSecurityProxy(self.build)
+        files = list(build.getFiles())
+
+        # Should have: crate, metadata.yaml, build.manifest, build.log
+        self.assertEqual(4, len(files))
+
+        filenames = {f[1].filename for f in files}
+        expected_files = {
+            f"{crate_name}-{crate_version}.crate",
+            "metadata.yaml",
+            "build.manifest",
+            "build.log",
+        }
+        self.assertEqual(expected_files, filenames)
+
+    def test_processes_all_files_without_crate(self):
+        """Test that all files are processed when no crate is present."""
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id)
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Create archive without crate
+        archive_name = "test-output.tar.xz"
+        self._createArchiveWithoutCrate(upload_dir, archive_name)
+
+        # Add additional files in subdirectories
+        subdir = os.path.join(upload_dir, "subdir")
+        os.makedirs(subdir, exist_ok=True)
+
+        # Create manifest file
+        manifest_path = os.path.join(subdir, "build.manifest")
+        with open(manifest_path, "w") as f:
+            f.write('{"type": "test"}')
+
+        # Create log file
+        log_path = os.path.join(subdir, "build.log")
+        with open(log_path, "w") as f:
+            f.write("Build log contents")
+
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build
+        )
+        result = handler.processCraftRecipe(self.log)
+
+        # Verify upload succeeded
+        self.assertEqual(UploadStatusEnum.ACCEPTED, result)
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+
+        # Verify all files were stored
+        build = removeSecurityProxy(self.build)
+        files = list(build.getFiles())
+
+        # Should have: archive, build.manifest, build.log
+        self.assertEqual(3, len(files))
+
+        filenames = {f[1].filename for f in files}
+        expected_files = {
+            archive_name,
+            "build.manifest",
+            "build.log",
+        }
+        self.assertEqual(expected_files, filenames)
