@@ -275,6 +275,8 @@
                 <var>&lt;distribution.name&gt;</var>
                 <xsl:text>/+source/</xsl:text>
                 <var>&lt;source_package.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;build.source_package_version&gt;</var>
                 <xsl:text>/+build/</xsl:text>
                 <var>&lt;id&gt;</var>
             </xsl:when>
