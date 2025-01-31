@@ -29,6 +29,7 @@ from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.propertycache import get_property_cache
+from lp.services.scripts import log
 from lp.snappy.interfaces.snapbuildjob import (
     ISnapBuildJob,
     ISnapBuildStoreUploadStatusChangedEvent,
@@ -409,6 +410,15 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                         )
                         self.attempt_count = 1
                 if "status_url" not in self.store_metadata:
+                    log.info(
+                        "[SnapStoreUploadJob] Pushing build %s with id %s.",
+                        self.snapbuild.snap.name,
+                        self.snapbuild.id,
+                    )
+                    log.info(
+                        "[SnapStoreUploadJob] Components: %s",
+                        self.components_ids,
+                    )
                     self.status_url = client.push(
                         self.snapbuild, self.upload_id, self.components_ids
                     )
