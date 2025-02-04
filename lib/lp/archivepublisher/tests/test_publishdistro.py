@@ -24,7 +24,7 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.archivepublisher.publishing import Publisher
+from lp.archivepublisher.publishing import GLOBAL_PUBLISHER_LOCK, Publisher
 from lp.archivepublisher.scripts.publishdistro import PublishDistro
 from lp.archivepublisher.tests.artifactory_fixture import (
     FakeArtifactoryFixture,
@@ -34,9 +34,9 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.log.logger import BufferLogger, DevNullLogger
+from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
-from lp.services.scripts.base import LaunchpadScriptFailure
+from lp.services.scripts.base import LOCK_PATH, LaunchpadScriptFailure
 from lp.soyuz.enums import (
     ArchivePublishingMethod,
     ArchivePurpose,
@@ -330,10 +330,93 @@ class TestPublishDistro(TestNativePublishingBase):
         ]
         mock_subprocess_check_call.assert_called_once_with(call_args)
         expected_log_line = (
-            "ERROR Failed to rsync OVAL data from "
-            "'oval.internal::oval/' to '%s/'" % self.oval_data_root
+            "ERROR Failed to rsync OVAL data: "
+            "['/usr/bin/rsync', '-a', '-q', '--timeout=90', '--delete', "
+            "'--delete-after', 'oval.internal::oval/', "
+            f"'{self.oval_data_root}/']"
         )
         self.assertTrue(expected_log_line in self.logger.getLogBuffer())
+
+    def testPublishDistroOVALDataRsyncForExcludedArchives(self):
+        """
+        Test publisher skips excluded archives specified via --exclude
+        during OVALData rsync.
+        """
+        self.setUpOVALDataRsync()
+        ppa1 = self.factory.makeArchive(private=True)
+        ppa2 = self.factory.makeArchive()
+        self.factory.makeArchive()
+
+        mock_subprocess_check_call = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        ).mock
+
+        call_args = [
+            "/usr/bin/rsync",
+            "-a",
+            "-q",
+            "--timeout=90",
+            "--delete",
+            "--delete-after",
+            "--exclude",
+            ppa1.reference,
+            "--exclude",
+            ppa2.reference,
+            "oval.internal::oval/",
+            self.oval_data_root + "/",
+        ]
+        self.runPublishDistro(
+            extra_args=[
+                "--exclude",
+                ppa1.reference,
+                "--exclude",
+                ppa2.reference,
+            ]
+        )
+        mock_subprocess_check_call.assert_called_once_with(call_args)
+
+    def testPublishDistroOVALDataRsyncForSpecificArchives(self):
+        """
+        Test publisher only runs for archives specified via --archive
+        during OVALData rsync.
+        """
+        self.setUpOVALDataRsync()
+        ppa1 = self.factory.makeArchive(private=True)
+        ppa2 = self.factory.makeArchive()
+        self.factory.makeArchive()
+
+        mock_subprocess_check_call = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        ).mock
+
+        call_args = [
+            call(
+                [
+                    "/usr/bin/rsync",
+                    "-a",
+                    "-q",
+                    "--timeout=90",
+                    "--delete",
+                    "--delete-after",
+                    "-R",
+                    "--ignore-missing-args",
+                    os.path.join("oval.internal::oval/", ppa.reference, ""),
+                    self.oval_data_root + "/",
+                ]
+            )
+            for ppa in [ppa1, ppa2]
+        ]
+
+        self.runPublishDistro(
+            extra_args=[
+                "--archive",
+                ppa1.reference,
+                "--archive",
+                ppa2.reference,
+            ]
+        )
+
+        assert mock_subprocess_check_call.call_args_list == call_args
 
     def test_checkForUpdatedOVALData_new(self):
         self.setUpOVALDataRsync()
@@ -486,6 +569,95 @@ class TestPublishDistro(TestNativePublishingBase):
             self.logger.getLogBuffer(),
         )
         self.assertIsNone(archive.dirty_suites)
+
+    def test_checkForUpdatedOVALData_skips_excluded_ppas(self):
+        """
+        Skip excluded PPAs in checkForUpdatedOVALData
+        """
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        ppa1 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ppa2 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ppa3 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # Disable normal publication so that dirty_suites isn't cleared.
+        ppa1.publish = False
+        ppa2.publish = False
+        ppa3.publish = False
+
+        for archive in [ppa1, ppa2, ppa3]:
+            incoming_dir = (
+                Path(self.oval_data_root)
+                / archive.reference
+                / "breezy-autotest"
+                / "main"
+            )
+            write_file(str(incoming_dir), b"test")
+
+        self.runPublishDistro(
+            extra_args=[
+                "--ppa",
+                "--exclude",
+                ppa2.reference,
+                "--exclude",
+                ppa3.reference,
+            ],
+            distribution="ubuntu",
+        )
+
+        self.assertEqual(["breezy-autotest"], ppa1.dirty_suites)
+        self.assertIsNone(ppa2.dirty_suites)
+        self.assertIsNone(ppa3.dirty_suites)
+
+    def test_checkForUpdatedOVALData_runs_for_specific_archive(self):
+        """
+        checkForUpdatedOVALData should only run for specific archives
+        if "archive" option is specified.
+        """
+
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+
+        ppa1 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ppa2 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ppa3 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # Disable normal publication so that dirty_suites isn't cleared.
+        ppa1.publish = False
+        ppa2.publish = False
+        ppa3.publish = False
+
+        for archive in [ppa1, ppa2, ppa3]:
+            incoming_dir = (
+                Path(self.oval_data_root)
+                / archive.reference
+                / "breezy-autotest"
+                / "main"
+            )
+            write_file(str(incoming_dir), b"test")
+
+        self.runPublishDistro(
+            extra_args=[
+                "--archive",
+                ppa1.reference,
+                "--archive",
+                ppa2.reference,
+            ],
+            distribution="ubuntu",
+        )
+
+        self.assertEqual(["breezy-autotest"], ppa1.dirty_suites)
+        self.assertEqual(["breezy-autotest"], ppa2.dirty_suites)
+        self.assertIsNone(ppa3.dirty_suites)
+
+        # Further logs should not have any reference to other PPAs
+        # as we skip them when --archive option is set.
+        self.assertNotIn(
+            ppa3.reference,
+            self.logger.getLogBuffer(),
+        )
 
     @defer.inlineCallbacks
     def testForPPA(self):
@@ -951,7 +1123,8 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         full_args = args + distro_args
         script = PublishDistro(test_args=full_args)
         script.distribution = distribution
-        script.logger = DevNullLogger()
+        self.logger = BufferLogger()
+        script.logger = self.logger
         return script
 
     def test_isCareful_is_false_if_option_not_set(self):
@@ -1014,6 +1187,12 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         # countExclusiveOptions includes the "copy-archive" option.
         self.assertEqual(
             1, self.makeScript(args=["--copy-archive"]).countExclusiveOptions()
+        )
+
+    def test_countExclusiveOptions_counts_archive(self):
+        # countExclusiveOptions includes the "archive" option.
+        self.assertEqual(
+            1, self.makeScript(args=["--archive"]).countExclusiveOptions()
         )
 
     def test_countExclusiveOptions_detects_conflict(self):
@@ -1110,6 +1289,84 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         self.makeDistro()
         self.assertContentEqual(
             [], self.makeScript(all_derived=True).findDistros()
+        )
+
+    def test_findArchives_without_distro_filter(self):
+        ppa1 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ppa2 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        non_existing_ppa_reference = "~foo/ubuntu/bar-ppa"
+
+        archive_references = [
+            ppa1.reference,
+            ppa2.reference,
+            non_existing_ppa_reference,
+        ]
+        self.assertContentEqual(
+            [ppa1, ppa2],
+            self.makeScript().findArchives(archive_references),
+        )
+
+        self.assertIn(
+            "WARNING Cannot find the archive with reference: "
+            f"'{non_existing_ppa_reference}'",
+            self.logger.getLogBuffer(),
+        )
+
+    def test_findArchives_with_distro_filter(self):
+        distro1 = self.makeDistro()
+        distro2 = self.makeDistro()
+        ppa1 = self.factory.makeArchive(distro1, purpose=ArchivePurpose.PPA)
+        ppa2 = self.factory.makeArchive(distro1, purpose=ArchivePurpose.PPA)
+        ppa3 = self.factory.makeArchive(distro2, purpose=ArchivePurpose.PPA)
+        non_existing_ppa_reference = "~foo/ubuntu/bar-ppa"
+
+        archive_references = [
+            ppa1.reference,
+            ppa2.reference,
+            ppa3.reference,
+            non_existing_ppa_reference,
+        ]
+        self.assertContentEqual(
+            [ppa1, ppa2],
+            self.makeScript().findArchives(archive_references, distro1),
+        )
+        self.assertContentEqual(
+            [ppa3], self.makeScript().findArchives(archive_references, distro2)
+        )
+
+        self.assertIn(
+            "WARNING Cannot find the archive with reference: "
+            f"'{non_existing_ppa_reference}'",
+            self.logger.getLogBuffer(),
+        )
+
+    def test_findArchives_warns_for_non_ppa_references(self):
+        partner = self.factory.makeArchive(purpose=ArchivePurpose.PARTNER)
+        copy = self.factory.makeArchive(purpose=ArchivePurpose.COPY)
+        primary = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
+        archive_references = [
+            partner.reference,
+            copy.reference,
+            primary.reference,
+        ]
+        self.assertContentEqual(
+            [],
+            self.makeScript().findArchives(archive_references),
+        )
+        self.assertIn(
+            f"WARNING Skipping '{partner.reference}'. Archive reference of "
+            "type 'PARTNER' specified. Only PPAs are allowed",
+            self.logger.getLogBuffer(),
+        )
+        self.assertIn(
+            f"WARNING Skipping '{copy.reference}'. Archive reference of type "
+            "'COPY' specified. Only PPAs are allowed",
+            self.logger.getLogBuffer(),
+        )
+        self.assertIn(
+            f"WARNING Skipping '{primary.reference}'. Archive reference of "
+            "type 'PRIMARY' specified. Only PPAs are allowed",
+            self.logger.getLogBuffer(),
         )
 
     def test_findSuite_finds_release_pocket(self):
@@ -1316,6 +1573,56 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         script = self.makeScript(distro, ["--ppa"])
         self.assertContentEqual([], script.getTargetArchives(distro))
 
+    def test_getTargetArchives_ignores_excluded_archives_for_ppa(self):
+        # If the selected exclusive option is "ppa," getTargetArchives
+        # leaves out excluded PPAs.
+        distro = self.makeDistro()
+        ppa = self.factory.makeArchive(distro, purpose=ArchivePurpose.PPA)
+        excluded_ppa_1 = self.factory.makeArchive(
+            distro, purpose=ArchivePurpose.PPA
+        )
+        excluded_ppa_2 = self.factory.makeArchive(
+            distro, purpose=ArchivePurpose.PPA
+        )
+        script = self.makeScript(
+            distro,
+            [
+                "--ppa",
+                "--careful",
+                "--exclude",
+                excluded_ppa_1.reference,
+                "--exclude",
+                excluded_ppa_2.reference,
+            ],
+        )
+        self.assertContentEqual([ppa], script.getTargetArchives(distro))
+
+    def test_getTargetArchives_ignores_excluded_archives_for_private_ppa(self):
+        # If the selected exclusive option is "private-ppa," getTargetArchives
+        # leaves out excluded PPAs.
+        distro = self.makeDistro()
+        ppa = self.factory.makeArchive(
+            distro, purpose=ArchivePurpose.PPA, private=True
+        )
+        excluded_ppa_1 = self.factory.makeArchive(
+            distro, purpose=ArchivePurpose.PPA, private=True
+        )
+        excluded_ppa_2 = self.factory.makeArchive(
+            distro, purpose=ArchivePurpose.PPA, private=True
+        )
+        script = self.makeScript(
+            distro,
+            [
+                "--private-ppa",
+                "--careful",
+                "--exclude",
+                excluded_ppa_1.reference,
+                "--exclude",
+                excluded_ppa_2.reference,
+            ],
+        )
+        self.assertContentEqual([ppa], script.getTargetArchives(distro))
+
     def test_getTargetArchives_gets_copy_archives(self):
         # If the selected exclusive option is "copy-archive,"
         # getTargetArchives looks for a copy archive.
@@ -1323,6 +1630,25 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         copy = self.factory.makeArchive(distro, purpose=ArchivePurpose.COPY)
         script = self.makeScript(distro, ["--copy-archive"])
         self.assertContentEqual([copy], script.getTargetArchives(distro))
+
+    def test_getTargetArchives_gets_specific_archives(self):
+        # If the selected exclusive option is "archive,"
+        # getTargetArchives looks for the specified archives.
+        distro = self.makeDistro()
+
+        ppa_1 = self.factory.makeArchive(distro, purpose=ArchivePurpose.PPA)
+        ppa_2 = self.factory.makeArchive(distro, purpose=ArchivePurpose.PPA)
+
+        # create another random archive in the same distro
+        self.factory.makeArchive(distro, purpose=ArchivePurpose.PPA)
+
+        script = self.makeScript(
+            distro,
+            ["--archive", ppa_1.reference, "--archive", ppa_2.reference],
+        )
+        self.assertContentEqual(
+            [ppa_1, ppa_2], script.getTargetArchives(distro)
+        )
 
     def test_getPublisher_returns_publisher(self):
         # getPublisher produces a Publisher instance.
@@ -1806,3 +2132,16 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         self.assertTrue(by_hash_dir.is_dir())
         # and still contains the two test files
         self.assertEqual(2, len(list(by_hash_dir.iterdir())))
+
+    def test_lockfilename_option_overrides_default_lock(self):
+        lockfilename = "foo.lock"
+        script = self.makeScript(args=["--lockfilename", lockfilename])
+        self.assertEqual(
+            script.lockfilepath, os.path.join(LOCK_PATH, lockfilename)
+        )
+
+    def test_default_lock(self):
+        script = self.makeScript()
+        self.assertEqual(
+            script.lockfilepath, os.path.join(LOCK_PATH, GLOBAL_PUBLISHER_LOCK)
+        )

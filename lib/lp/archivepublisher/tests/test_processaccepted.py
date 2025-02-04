@@ -3,16 +3,19 @@
 
 """Test process-accepted.py"""
 
+import os
 from optparse import OptionValueError
 
 import transaction
 from testtools.matchers import EndsWith, LessThan, MatchesListwise
 
+from lp.archivepublisher.publishing import GLOBAL_PUBLISHER_LOCK
 from lp.archivepublisher.scripts.processaccepted import ProcessAccepted
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger
+from lp.services.scripts.base import LOCK_PATH
 from lp.soyuz.enums import (
     ArchivePurpose,
     PackagePublishingStatus,
@@ -268,4 +271,110 @@ class TestProcessAccepted(TestCaseWithFactory):
                     EndsWith("LIMIT 2"),
                 ]
             ),
+        )
+
+    def test_countExclusiveOptions_is_zero_if_none_set(self):
+        # If none of the exclusive options is set, countExclusiveOptions
+        # counts zero.
+        self.assertEqual(0, self.getScript().countExclusiveOptions())
+
+    def test_countExclusiveOptions_counts_ppa(self):
+        # countExclusiveOptions includes the "ppa" option.
+        self.assertEqual(
+            1, self.getScript(test_args=["--ppa"]).countExclusiveOptions()
+        )
+
+    def test_countExclusiveOptions_counts_copy_archives(self):
+        # countExclusiveOptions includes the "copy-archive" option.
+        self.assertEqual(
+            1,
+            self.getScript(
+                test_args=["--copy-archives"]
+            ).countExclusiveOptions(),
+        )
+
+    def test_countExclusiveOptions_counts_archive(self):
+        # countExclusiveOptions includes the "archive" option.
+        self.assertEqual(
+            1, self.getScript(test_args=["--archive"]).countExclusiveOptions()
+        )
+
+    def test_lockfilename_option_overrides_default_lock(self):
+        lockfilename = "foo.lock"
+        script = self.getScript(test_args=["--lockfilename", lockfilename])
+        self.assertEqual(
+            script.lockfilepath, os.path.join(LOCK_PATH, lockfilename)
+        )
+
+    def test_default_lock(self):
+        script = self.getScript()
+        self.assertEqual(
+            script.lockfilepath, os.path.join(LOCK_PATH, GLOBAL_PUBLISHER_LOCK)
+        )
+
+    def test_getTargetArchives_ignores_excluded_archives_for_ppa(self):
+        # If the selected exclusive option is "ppa," getTargetArchives
+        # leaves out excluded PPAs.
+        distroseries = self.factory.makeDistroSeries(distribution=self.distro)
+
+        ppa = self.factory.makeArchive(self.distro, purpose=ArchivePurpose.PPA)
+        excluded_ppa_1 = self.factory.makeArchive(
+            self.distro, purpose=ArchivePurpose.PPA
+        )
+        excluded_ppa_2 = self.factory.makeArchive(
+            self.distro, purpose=ArchivePurpose.PPA, private=True
+        )
+
+        for archive in [ppa, excluded_ppa_1, excluded_ppa_2]:
+            self.createWaitingAcceptancePackage(
+                archive=archive, distroseries=distroseries
+            )
+        script = self.getScript(
+            test_args=[
+                "--ppa",
+                "--exclude",
+                excluded_ppa_1.reference,
+                "--exclude",
+                excluded_ppa_2.reference,
+            ],
+        )
+        self.assertContentEqual([ppa], script.getTargetArchives(self.distro))
+
+    def test_getTargetArchives_gets_specific_archives(self):
+        # If the selected exclusive option is "archive,"
+        # getTargetArchives looks for the specified archives.
+
+        distroseries = self.factory.makeDistroSeries(distribution=self.distro)
+
+        ppa1 = self.factory.makeArchive(
+            self.distro, purpose=ArchivePurpose.PPA
+        )
+        ppa2 = self.factory.makeArchive(
+            self.distro, purpose=ArchivePurpose.PPA, private=True
+        )
+        ppa3 = self.factory.makeArchive(
+            self.distro, purpose=ArchivePurpose.PPA
+        )
+        ppa4 = self.factory.makeArchive(
+            self.distro, purpose=ArchivePurpose.PPA, private=True
+        )
+
+        # create another random archive in the same distro
+        self.factory.makeArchive(self.distro, purpose=ArchivePurpose.PPA)
+
+        for archive in [ppa1, ppa2, ppa3, ppa4]:
+            self.createWaitingAcceptancePackage(
+                archive=archive, distroseries=distroseries
+            )
+
+        script = self.getScript(
+            test_args=[
+                "--archive",
+                ppa1.reference,
+                "--archive",
+                ppa2.reference,
+            ],
+        )
+        self.assertContentEqual(
+            [ppa1, ppa2], script.getTargetArchives(self.distro)
         )

@@ -71,10 +71,13 @@ def has_oval_data_changed(incoming_dir, published_dir):
 class PublishDistro(PublisherScript):
     """Distro publisher."""
 
-    lockfilename = GLOBAL_PUBLISHER_LOCK
+    @property
+    def lockfilename(self):
+        return self.options.lockfilename or GLOBAL_PUBLISHER_LOCK
 
     def add_my_options(self):
         self.addDistroOptions()
+        self.addBasePublisherOptions()
 
         self.parser.add_option(
             "-C",
@@ -227,13 +230,6 @@ class PublishDistro(PublisherScript):
             help="Only run over the copy archives.",
         )
 
-        self.parser.add_option(
-            "--archive",
-            dest="archive",
-            metavar="REFERENCE",
-            help="Only run over the archive identified by this reference.",
-        )
-
     def isCareful(self, option):
         """Is the given "carefulness" option enabled?
 
@@ -275,7 +271,7 @@ class PublishDistro(PublisherScript):
             self.options.ppa,
             self.options.private_ppa,
             self.options.copy_archive,
-            self.options.archive,
+            self.options.archives,
         ]
         return len(list(filter(None, exclusive_options)))
 
@@ -375,20 +371,22 @@ class PublishDistro(PublisherScript):
 
     def getTargetArchives(self, distribution):
         """Find the archive(s) selected by the script's options."""
-        if self.options.archive:
-            archive = getUtility(IArchiveSet).getByReference(
-                self.options.archive
-            )
-            if archive.distribution == distribution:
-                return [archive]
-            else:
-                return []
+        if self.options.archives:
+            return self.findArchives(self.options.archives, distribution)
         elif self.options.partner:
             return [distribution.getArchiveByComponent("partner")]
         elif self.options.ppa:
-            return filter(is_ppa_public, self.getPPAs(distribution))
+            archives = set(filter(is_ppa_public, self.getPPAs(distribution)))
+            excluded_archives = set(
+                self.findArchives(self.options.excluded_archives, distribution)
+            )
+            return archives - excluded_archives
         elif self.options.private_ppa:
-            return filter(is_ppa_private, self.getPPAs(distribution))
+            archives = set(filter(is_ppa_private, self.getPPAs(distribution)))
+            excluded_archives = set(
+                self.findArchives(self.options.excluded_archives, distribution)
+            )
+            return archives - excluded_archives
         elif self.options.copy_archive:
             return self.getCopyArchives(distribution)
         else:
@@ -570,6 +568,7 @@ class PublishDistro(PublisherScript):
         )
         try:
             archive = getUtility(IArchiveSet).get(archive_id)
+            self.logger.info("Processing archive: %s", archive.reference)
             distribution = archive.distribution
             allowed_suites = self.findAllowedSuites(distribution)
             if archive.status == ArchiveStatus.DELETING:
@@ -597,12 +596,14 @@ class PublishDistro(PublisherScript):
                 # store and cause performance problems.
                 Store.of(archive).reset()
 
-    def rsyncOVALData(self):
+    def _buildRsyncCommand(self, src, dest, extra_options=None):
+        if extra_options is None:
+            extra_options = []
+
         # Ensure that the rsync paths have a trailing slash.
-        rsync_src = os.path.join(
-            config.archivepublisher.oval_data_rsync_endpoint, ""
-        )
-        rsync_dest = os.path.join(config.archivepublisher.oval_data_root, "")
+        rsync_src = os.path.join(src, "")
+        rsync_dest = os.path.join(dest, "")
+
         rsync_command = [
             "/usr/bin/rsync",
             "-a",
@@ -612,23 +613,65 @@ class PublishDistro(PublisherScript):
             ),
             "--delete",
             "--delete-after",
-            rsync_src,
-            rsync_dest,
         ]
-        try:
-            self.logger.info(
-                "Attempting to rsync the OVAL data from '%s' to '%s'",
-                rsync_src,
-                rsync_dest,
+        rsync_command.extend(extra_options)
+        rsync_command.extend([rsync_src, rsync_dest])
+        return rsync_command
+
+    def _generateOVALDataRsyncCommands(self):
+        if self.options.archives:
+            return [
+                self._buildRsyncCommand(
+                    # -R: copies the OVALData and preserves the src path in
+                    # dest directory. This effectively means if you specify
+                    # src as ::oval/~person/distro/ppa-name, -R will create
+                    # the whole tree `person/distro/ppa-name` in dest.
+                    #
+                    # --ignore-missing-args: If the source directory is not
+                    # present, don't throw an error. rsync defaults to
+                    # throwing an error when the src path is not found.
+                    #
+                    # `man rsync` can provide detailed explanation of these
+                    # options with ellaborated examples.
+                    extra_options=["-R", "--ignore-missing-args"],
+                    src=os.path.join(
+                        config.archivepublisher.oval_data_rsync_endpoint,
+                        reference,
+                    ),
+                    dest=os.path.join(config.archivepublisher.oval_data_root),
+                )
+                for reference in self.options.archives
+            ]
+
+        exclude_options = []
+        # If there are any archives specified to be excluded, exclude rsync
+        # for them in the rsync command
+        for excluded_archive in self.findArchives(
+            self.options.excluded_archives
+        ):
+            exclude_options.extend(["--exclude", excluded_archive.reference])
+        return [
+            self._buildRsyncCommand(
+                extra_options=exclude_options,
+                src=config.archivepublisher.oval_data_rsync_endpoint,
+                dest=config.archivepublisher.oval_data_root,
             )
-            check_call(rsync_command)
-        except CalledProcessError:
-            self.logger.exception(
-                "Failed to rsync OVAL data from '%s' to '%s'",
-                rsync_src,
-                rsync_dest,
-            )
-            raise
+        ]
+
+    def rsyncOVALData(self):
+        for rsync_command in self._generateOVALDataRsyncCommands():
+            try:
+                self.logger.info(
+                    "Attempting to rsync the OVAL data: %s",
+                    rsync_command,
+                )
+                check_call(rsync_command)
+            except CalledProcessError:
+                self.logger.exception(
+                    "Failed to rsync OVAL data: %s",
+                    rsync_command,
+                )
+                raise
 
     def checkForUpdatedOVALData(self, distribution):
         """Compare the published OVAL files with the incoming one."""
@@ -644,6 +687,14 @@ class PublishDistro(PublisherScript):
                 archive = archive_set.getPPAByDistributionAndOwnerName(
                     distribution, owner_path.name[1:], archive_path.name
                 )
+
+                # If --archive is set, run only for the specified archives
+                # and skip others.
+                if (
+                    self.options.archives
+                    and archive.reference not in self.options.archives
+                ):
+                    continue
                 if archive is None:
                     self.logger.info(
                         "Skipping OVAL data for '~%s/%s/%s' "
@@ -652,6 +703,11 @@ class PublishDistro(PublisherScript):
                         distribution.name,
                         archive_path.name,
                     )
+                    continue
+                # skip any archive excluded by --exclude
+                if archive in self.findArchives(
+                    self.options.excluded_archives, distribution
+                ):
                     continue
                 for suite_path in archive_path.iterdir():
                     try:
