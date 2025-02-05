@@ -14,6 +14,8 @@ from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.scripts.base import LaunchpadCronScript
+from lp.soyuz.enums import ArchivePurpose
+from lp.soyuz.interfaces.archive import IArchiveSet
 
 
 class PublisherScript(LaunchpadCronScript):
@@ -34,6 +36,35 @@ class PublisherScript(LaunchpadCronScript):
             dest="all_derived",
             default=False,
             help="Publish all Ubuntu-derived distributions.",
+        )
+
+    def addBasePublisherOptions(self):
+        self.parser.add_option(
+            "--archive",
+            action="append",
+            dest="archives",
+            metavar="REFERENCE",
+            default=[],
+            help="Only run over the archives identified by this reference. "
+            "You can specify multiple archives by repeating the option",
+        )
+
+        self.parser.add_option(
+            "--exclude",
+            action="append",
+            dest="excluded_archives",
+            metavar="REFERENCE",
+            default=[],
+            help="Skip the archives identified by this reference in the "
+            "publisher run. You can specify multiple archives by repeating "
+            "the option",
+        )
+
+        self.parser.add_option(
+            "--lockfilename",
+            dest="lockfilename",
+            help="Specify a custom lock filename to be used by the script, "
+            "overriding the default.",
         )
 
     def findSelectedDistro(self):
@@ -62,3 +93,44 @@ class PublisherScript(LaunchpadCronScript):
             return self.findDerivedDistros()
         else:
             return [self.findSelectedDistro()]
+
+    def findArchives(self, archive_references, distribution=None):
+        """
+        Retrieve a list of archives based on the provided references and
+        optional distribution.
+
+        Args:
+            archive_references (list): A list of archive references to
+            retrieve.
+            distribution (IDistributionSet, optional): The distribution
+            to filter archives by. Defaults to None.
+
+        Returns:
+            list: A list of archives that match the provided references and
+            distribution.
+        """
+        if not archive_references:
+            return []
+
+        # XXX tushar5526 2025-02-04: Instead of iterating over each reference,
+        # it will be better to use bulk queries to reduce the number of SQL
+        # calls.
+        archives = []
+        for reference in archive_references:
+            archive = getUtility(IArchiveSet).getByReference(reference)
+            if not archive:
+                self.logger.warning(
+                    "Cannot find the archive with reference: '%s'" % reference
+                )
+                continue
+            if archive.purpose != ArchivePurpose.PPA:
+                self.logger.warning(
+                    "Skipping '%s'. Archive reference of type '%s' specified. "
+                    "Only PPAs are allowed."
+                    % (reference, archive.purpose.name)
+                )
+                continue
+            if distribution and archive.distribution != distribution:
+                continue
+            archives.append(archive)
+        return archives

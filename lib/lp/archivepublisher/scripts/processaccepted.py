@@ -40,11 +40,12 @@ class ProcessAccepted(PublisherScript):
     @property
     def lockfilename(self):
         """See `LaunchpadScript`."""
-        return GLOBAL_PUBLISHER_LOCK
+        return self.options.lockfilename or GLOBAL_PUBLISHER_LOCK
 
     def add_my_options(self):
         """Command line options for this script."""
         self.addDistroOptions()
+        self.addBasePublisherOptions()
 
         self.parser.add_option(
             "--ppa",
@@ -62,6 +63,18 @@ class ProcessAccepted(PublisherScript):
             help="Run only over COPY archives.",
         )
 
+    def countExclusiveOptions(self):
+        """Return the number of exclusive "mode" options that were set.
+
+        In valid use, at most one of them should be set.
+        """
+        exclusive_options = [
+            self.options.ppa,
+            self.options.copy_archives,
+            self.options.archives,
+        ]
+        return len(list(filter(None, exclusive_options)))
+
     def validateArguments(self):
         """Validate command-line arguments."""
         if self.options.ppa and self.options.copy_archives:
@@ -72,11 +85,21 @@ class ProcessAccepted(PublisherScript):
             raise OptionValueError(
                 "Can't combine --derived with a distribution name."
             )
+        if self.countExclusiveOptions() > 1:
+            raise OptionValueError(
+                "Can only specify one of ppa, copy-archive, archive"
+            )
 
     def getTargetArchives(self, distribution):
         """Find archives to target based on given options."""
+        if self.options.archives:
+            return self.findArchives(self.options.archives, distribution)
         if self.options.ppa:
-            return distribution.getPendingAcceptancePPAs()
+            archives = set(distribution.getPendingAcceptancePPAs())
+            excluded_archives = set(
+                self.findArchives(self.options.excluded_archives, distribution)
+            )
+            return archives - excluded_archives
         elif self.options.copy_archives:
             return getUtility(IArchiveSet).getArchivesForDistribution(
                 distribution, purposes=[ArchivePurpose.COPY]
