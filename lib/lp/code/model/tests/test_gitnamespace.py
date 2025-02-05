@@ -20,6 +20,7 @@ from lp.app.validators import LaunchpadValidationError
 from lp.code.enums import GitRepositoryType
 from lp.code.errors import (
     GitDefaultConflict,
+    GitRepositoryCreationForbidden,
     GitRepositoryCreatorNotMemberOfOwnerTeam,
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
@@ -1338,6 +1339,19 @@ class TestProjectGitNamespaceCanCreateBranches(
         person = self.factory.makePerson()
         namespace = self._getNamespace(person, BranchSharingPolicy.PROPRIETARY)
         self.assertFalse(namespace.canCreateRepositories(person))
+
+    def test_any_person_with_proprietary_repositories_raises_exception(self):
+        # If the sharing policy defaults to PROPRIETARY, then non-privileged
+        # users cannot create a repository - this raises an exception.
+        person = self.factory.makePerson()
+        namespace = self._getNamespace(person, BranchSharingPolicy.PROPRIETARY)
+        self.assertRaisesWithContent(
+            GitRepositoryCreationForbidden,
+            'You cannot create Git repositories in "%s" (context: %s)'
+            % (namespace.name, namespace.__class__.__name__),
+            namespace.validateRegistrant,
+            person,
+        )
 
     def test_grantee_with_proprietary_repositories(self):
         # If the sharing policy defaults to PROPRIETARY, then non-privileged
