@@ -190,7 +190,8 @@ class _BaseGitNamespace:
 
         if not self.getAllowedInformationTypes(registrant):
             raise GitRepositoryCreationForbidden(
-                'You cannot create Git repositories in "%s"' % self.name
+                'You cannot create Git repositories in "%s" (context: %s)'
+                % (self.name, self.__class__.__name__)
             )
 
     def validateRepositoryName(self, name):
