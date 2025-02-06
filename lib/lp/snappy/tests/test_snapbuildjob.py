@@ -374,7 +374,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertIn(
-            "[SnapStoreUploadJob] Pushing build snap-name-100030 with id 1.",
+            "[SnapStoreUploadJob] Pushing build %s with id %s."
+            % (snapbuild.snap.name, snapbuild.id),
             logger.output,
         )
         self.assertIn(
