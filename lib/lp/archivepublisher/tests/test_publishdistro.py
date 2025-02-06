@@ -345,12 +345,21 @@ class TestPublishDistro(TestNativePublishingBase):
         self.setUpOVALDataRsync()
         ppa1 = self.factory.makeArchive(private=True)
         ppa2 = self.factory.makeArchive()
+        non_existing_ppa_reference = "~foo/bar/ppa"
         self.factory.makeArchive()
 
         mock_subprocess_check_call = self.useFixture(
             MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
         ).mock
 
+        exclude_options = [
+            "--exclude",
+            ppa1.reference,
+            "--exclude",
+            ppa2.reference,
+            "--exclude",
+            non_existing_ppa_reference,
+        ]
         call_args = [
             "/usr/bin/rsync",
             "-a",
@@ -358,20 +367,17 @@ class TestPublishDistro(TestNativePublishingBase):
             "--timeout=90",
             "--delete",
             "--delete-after",
-            "--exclude",
-            ppa1.reference,
-            "--exclude",
-            ppa2.reference,
-            "oval.internal::oval/",
-            self.oval_data_root + "/",
         ]
-        self.runPublishDistro(
-            extra_args=[
-                "--exclude",
-                ppa1.reference,
-                "--exclude",
-                ppa2.reference,
+        call_args.extend(exclude_options)
+
+        call_args.extend(
+            [
+                "oval.internal::oval/",
+                self.oval_data_root + "/",
             ]
+        )
+        self.runPublishDistro(
+            extra_args=exclude_options,
         )
         mock_subprocess_check_call.assert_called_once_with(call_args)
 
@@ -610,12 +616,13 @@ class TestPublishDistro(TestNativePublishingBase):
         self.assertIsNone(ppa2.dirty_suites)
         self.assertIsNone(ppa3.dirty_suites)
 
-    def test_checkForUpdatedOVALData_runs_for_specific_archive(self):
+    def test_checkForUpdatedOVALData_for_specific_archive(self):
         """
         checkForUpdatedOVALData should only run for specific archives
         if "archive" option is specified.
         """
 
+        distribution = "ubuntu"
         self.setUpOVALDataRsync()
         self.useFixture(
             MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
@@ -624,12 +631,21 @@ class TestPublishDistro(TestNativePublishingBase):
         ppa1 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         ppa2 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         ppa3 = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # another ppa with different distribution
+        ppa4 = self.factory.makeArchive(
+            purpose=ArchivePurpose.PPA,
+            distribution=getUtility(IDistributionSet)["ubuntutest"],
+        )
+
+        non_existing_ppa_reference = "~foo/bar/ppa"
+
         # Disable normal publication so that dirty_suites isn't cleared.
         ppa1.publish = False
         ppa2.publish = False
         ppa3.publish = False
 
-        for archive in [ppa1, ppa2, ppa3]:
+        for archive in [ppa1, ppa2, ppa3, ppa4]:
             incoming_dir = (
                 Path(self.oval_data_root)
                 / archive.reference
@@ -638,19 +654,48 @@ class TestPublishDistro(TestNativePublishingBase):
             )
             write_file(str(incoming_dir), b"test")
 
+        # test for code paths when there is an non-existent archive dir
+        # present in oval_data_root
+        nonexistent_archive_dir = (
+            Path(self.oval_data_root)
+            / "~nonexistent"
+            / distribution
+            / "archive"
+            / "breezy-autotest"
+            / "main"
+        )
+        write_file(str(nonexistent_archive_dir / "foo.oval.xml.bz2"), b"test")
+
+        # test for code paths when there is an non-existent suite dir
+        # present in oval_data_root
+        nonexistent_suite_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "nonexistent"
+            / "main"
+        )
+
+        write_file(str(nonexistent_suite_dir / "foo.oval.xml.bz2"), b"test")
         self.runPublishDistro(
             extra_args=[
                 "--archive",
                 ppa1.reference,
                 "--archive",
                 ppa2.reference,
+                "--archive",
+                ppa4.reference,
+                "--archive",
+                non_existing_ppa_reference,
             ],
-            distribution="ubuntu",
+            distribution=distribution,
         )
 
         self.assertEqual(["breezy-autotest"], ppa1.dirty_suites)
         self.assertEqual(["breezy-autotest"], ppa2.dirty_suites)
         self.assertIsNone(ppa3.dirty_suites)
+        # ppa4 has different distribution than the target distribution so
+        # it should be skipped.
+        self.assertIsNone(ppa4.dirty_suites)
 
         # Further logs should not have any reference to other PPAs
         # as we skip them when --archive option is set.

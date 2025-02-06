@@ -291,6 +291,16 @@ class PublishDistro(PublisherScript):
         for name, option in log_items:
             self.logOption(name, self.describeCare(option))
 
+        if self.options.excluded_archives:
+            self.logger.debug(
+                "Excluded archive references: %s",
+                self.options.excluded_archives,
+            )
+        if self.options.archives:
+            self.logger.debug(
+                "Specified archive references: %s", self.options.archives
+            )
+
     def validateOptions(self):
         """Check given options for user interface violations."""
         if len(self.args) > 0:
@@ -646,10 +656,8 @@ class PublishDistro(PublisherScript):
         exclude_options = []
         # If there are any archives specified to be excluded, exclude rsync
         # for them in the rsync command
-        for excluded_archive in self.findArchives(
-            self.options.excluded_archives
-        ):
-            exclude_options.extend(["--exclude", excluded_archive.reference])
+        for excluded_archive_reference in self.options.excluded_archives:
+            exclude_options.extend(["--exclude", excluded_archive_reference])
         return [
             self._buildRsyncCommand(
                 extra_options=exclude_options,
@@ -687,14 +695,6 @@ class PublishDistro(PublisherScript):
                 archive = archive_set.getPPAByDistributionAndOwnerName(
                     distribution, owner_path.name[1:], archive_path.name
                 )
-
-                # If --archive is set, run only for the specified archives
-                # and skip others.
-                if (
-                    self.options.archives
-                    and archive.reference not in self.options.archives
-                ):
-                    continue
                 if archive is None:
                     self.logger.info(
                         "Skipping OVAL data for '~%s/%s/%s' "
@@ -704,10 +704,15 @@ class PublishDistro(PublisherScript):
                         archive_path.name,
                     )
                     continue
-                # skip any archive excluded by --exclude
-                if archive in self.findArchives(
-                    self.options.excluded_archives, distribution
+                # If --archive is set, run only for the specified archives
+                # and skip others.
+                if (
+                    self.options.archives
+                    and archive.reference not in self.options.archives
                 ):
+                    continue
+                # skip any archive excluded by --exclude
+                if archive.reference in self.options.excluded_archives:
                     continue
                 for suite_path in archive_path.iterdir():
                     try:
