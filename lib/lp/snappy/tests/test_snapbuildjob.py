@@ -373,6 +373,16 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertEqual(1, snapbuild.store_upload_revision)
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
+        self.assertIn(
+            "[SnapStoreUploadJob] Pushing build snap-name-100030 with id 1.",
+            logger.output,
+        )
+        self.assertIn(
+            "[SnapStoreUploadJob] "
+            "Components: {'somecomponent0': 1, 'somecomponent1': 1}",
+            logger.output,
+        )
+
         self.assertWebhookDeliveries(
             snapbuild, ["Pending", "Uploaded"], logger
         )
