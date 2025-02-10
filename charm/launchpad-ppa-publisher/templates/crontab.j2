@@ -9,7 +9,7 @@ PPAROOT={{ ppa_archive_root }}
 P3AROOT={{ ppa_archive_private_root }}
 
 {% if active -%}
-* * * * * umask 022; nice -n 5 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/publishing/cron.publish-ppa "-d ubuntu" "--all-derived" "-d debian" >> {{ logs_dir }}/cron.ppa.log 2>&1
+* * * * * umask 022; nice -n 5 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/publishing/cron.publish-ppa "-d ubuntu{{ excluded_ppas_options }}" "--all-derived{{ excluded_ppas_options }}" "-d debian{{ excluded_ppas_options }}" >> {{ logs_dir }}/cron.ppa.log 2>&1
 
 17,47 * * * * nice -n 15 {{ code_dir }}/cronscripts/parse-ppa-apache-access-logs.py -q --log-file=INFO:{{ logs_dir }}/parse-ppa-apache-access-logs.log
 
