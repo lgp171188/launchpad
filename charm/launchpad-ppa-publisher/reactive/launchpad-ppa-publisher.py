@@ -3,6 +3,7 @@
 
 import os
 
+import yaml
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
 from charms.launchpad.payload import configure_cron, configure_lazr
@@ -46,6 +47,12 @@ def ppa_archive_private():
     return os.path.join(get_data_dir(), "private-ppa-archive")
 
 
+def generate_exclude_ppas_options(excluded_ppas):
+    if not excluded_ppas:
+        return ""
+    return f" --exclude {' --exclude '.join(excluded_ppas)}"
+
+
 @when(
     "launchpad.db.configured",
     "memcache.available",
@@ -64,6 +71,11 @@ def configure():
     config["ppa_archive_private_root"] = ppa_archive_private()
     config["ppa_signing_keys_root"] = ppa_keys_root
     config["oval_data_root"] = oval_data_root
+
+    excluded_ppas = yaml.safe_load(config["excluded_ppas"])
+    config["excluded_ppas_options"] = generate_exclude_ppas_options(
+        excluded_ppas
+    )
 
     host.mkdir(data_dir, owner=base.user(), group=base.user(), perms=0o775)
     host.mkdir(
