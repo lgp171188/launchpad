@@ -402,7 +402,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
 
                 # Process components
                 for component in components:
-                    # if the id is None, we need to upload the component
+                    # If the id is None, we need to upload the component
                     # because it means that that component was never uploaded.
                     # Note that the id is returned directly from SnapStore API.
                     comp_name = self._extract_component_name(
