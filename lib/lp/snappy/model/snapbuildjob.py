@@ -10,6 +10,7 @@ __all__ = [
     "SnapStoreUploadJob",
 ]
 
+import re
 from datetime import timedelta
 
 import transaction
@@ -351,16 +352,19 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         """Extract component name from built component filename
 
         The built filename has the following pattern:
-        <snap_name>+<component_name>_<component_revision>.comp.
+        <snap_name>+<component_name>_<component_version>.comp.
         <snap_name> and <component_name> cannot contain `+` nor `_`
-        by desing.
+        by design.
+        <component_version> is not mandatory.
         """
-        start = filename.find("+")
-        end = filename.find("_")
-        if start == -1 or end == -1:
-            return filename
+
+        pattern = r"^[^+]+[+](?P<component_name>[^_]+)(?:_\d+)?\.comp$"
+
+        match = re.match(pattern, filename)
+        if match:
+            return match.group("component_name")
         else:
-            return filename[start + 1 : end]
+            return filename
 
     def run(self):
         """See `IRunnableJob`."""
@@ -398,7 +402,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
 
                 # Process components
                 for component in components:
-                    # if the id is None, we need to upload the component
+                    # If the id is None, we need to upload the component
                     # because it means that that component was never uploaded.
                     # Note that the id is returned directly from SnapStore API.
                     comp_name = self._extract_component_name(

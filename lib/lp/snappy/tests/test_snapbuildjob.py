@@ -165,27 +165,36 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         )
         return snapbuild
 
-    def makeSnapBuildWithComponents(self, num_components):
+    def makeSnapBuildWithComponents(self, num_components, use_revision=True):
         # Make a build with a builder, components, and a webhook.
-        snapcraft_yaml = """
-        name : test-snap,
+        snap_name = "test-snap"
+        snapcraft_yaml = (
+            """
+        name : %s,
         components:
         """
+            % snap_name
+        )
+
         branch = self.factory.makeBranch()
-        snap = self.factory.makeSnap(store_name="test-snap", branch=branch)
+        snap = self.factory.makeSnap(store_name=snap_name, branch=branch)
         snapbuild = self.factory.makeSnapBuild(
             snap=snap, builder=self.factory.makeBuilder()
         )
         snapbuild.updateStatus(BuildStatus.FULLYBUILT)
         snap_lfa = self.factory.makeLibraryFileAlias(
-            filename="test-snap_0_all.snap", content=b"dummy snap content"
+            filename="%s_0_all.snap" % snap_name, content=b"dummy snap content"
         )
         for i in range(num_components):
             self.factory.makeSnapFile(
                 snapbuild=snapbuild, libraryfile=snap_lfa
             )
+            filename = "%s+somecomponent%s" % (snap_name, i)
+            if use_revision:
+                filename += "_0"
+            filename += ".comp"
             component_lfa = self.factory.makeLibraryFileAlias(
-                filename="test-snap+somecomponent%s_0.comp" % i,
+                filename=filename,
                 content=b"component",
             )
             self.factory.makeSnapFile(
@@ -306,6 +315,45 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             [client.uploadFile.calls[1]],
             FileUploaded("test-snap+somecomponent0_0.comp"),
+        )
+        self.assertEqual(
+            [((snapbuild, 1, {"somecomponent0": 1}), {})],
+            client.push.calls,
+        )
+        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertContentEqual([job], snapbuild.store_upload_jobs)
+        self.assertEqual(self.store_url, job.store_url)
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual(1, snapbuild.store_upload_revision)
+        self.assertIsNone(job.error_message)
+        self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
+
+    def test_run_with_component_without_revision(self):
+        # The job uploads the build to the storage with its component
+        # and then pushes it to the store and records the store URL
+        # and revision.
+        logger = self.useFixture(FakeLogger())
+        snapbuild = self.makeSnapBuildWithComponents(1, use_revision=False)
+        self.assertContentEqual([], snapbuild.store_upload_jobs)
+        job = SnapStoreUploadJob.create(snapbuild)
+        client = FakeSnapStoreClient()
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
+        client.checkStatus.result = (self.store_url, 1)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # Check if uploadFile is called for snap and its component.
+        self.assertThat(
+            [client.uploadFile.calls[0]], FileUploaded("test-snap_0_all.snap")
+        )
+        self.assertThat(
+            [client.uploadFile.calls[1]],
+            FileUploaded("test-snap+somecomponent0.comp"),
         )
         self.assertEqual(
             [((snapbuild, 1, {"somecomponent0": 1}), {})],
