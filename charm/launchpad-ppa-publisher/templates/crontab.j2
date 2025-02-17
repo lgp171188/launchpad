@@ -11,6 +11,10 @@ P3AROOT={{ ppa_archive_private_root }}
 {% if active -%}
 * * * * * umask 022; nice -n 5 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/publishing/cron.publish-ppa "-d ubuntu{{ excluded_ppas_options }}" "--all-derived{{ excluded_ppas_options }}" "-d debian{{ excluded_ppas_options }}" >> {{ logs_dir }}/cron.ppa.log 2>&1
 
+{% for config in parallel_publisher_cron_configs %}
+* * * * * umask 022; nice -n 5 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/publishing/cron.publish-parallel-ppa "{{ config.distro_option }} {{ config.archive_options }} {{ config.lockfilename_option }}" >> {{ logs_dir }}/{{ config.logfilename }} 2>&1
+{% endfor %}
+
 17,47 * * * * nice -n 15 {{ code_dir }}/cronscripts/parse-ppa-apache-access-logs.py -q --log-file=INFO:{{ logs_dir }}/parse-ppa-apache-access-logs.log
 
 59 05  * * 0 {{ code_dir }}/cronscripts/publishing/cron.daily-ppa >> {{ logs_dir }}/cron.ppa.log 2>&1

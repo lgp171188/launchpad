@@ -47,10 +47,126 @@ def ppa_archive_private():
     return os.path.join(get_data_dir(), "private-ppa-archive")
 
 
-def generate_exclude_ppas_options(excluded_ppas):
+def generate_exclude_ppas_options(parallel_publisher_config):
+    if not parallel_publisher_config:
+        return ""
+    excluded_ppas = parallel_publisher_config.get("excluded_ppas")
     if not excluded_ppas:
         return ""
     return f" --exclude {' --exclude '.join(excluded_ppas)}"
+
+
+def validate_parallel_publisher_config(parallel_publisher_config):
+    """
+    Validates whether the parallel publisher config follows the following
+    rules:
+    1. parallel run IDs are unique.
+    2. only excluded ppas are used in parallel runs
+    3. all required config values are present
+    """
+    runs = parallel_publisher_config.get("runs")
+    if not runs:
+        return True
+    excluded_ppas = set(parallel_publisher_config.get("excluded_ppas"))
+
+    # runs are configured but there are no excluded PPAs
+    if not excluded_ppas:
+        hookenv.log(
+            'Invalid "parallel_publisher_config"! Parallel publisher runs '
+            "are configured but there are no PPAs excluded."
+        )
+        return False
+
+    run_ids = set()
+    for run in runs:
+        distro = run.get("distro")
+        run_id = run.get("id")
+        ppas = run.get("ppas")
+
+        if not run_id:
+            hookenv.log(
+                'Invalid "parallel_publisher_config"! No run ID specified for '
+                "the run."
+            )
+            return False
+
+        if run_id in run_ids:
+            hookenv.log(
+                'Invalid "parallel_publisher_config"! Duplicate run ID found. '
+                f"Ensure run_id: {run_id} is unique"
+            )
+            return False
+
+        if not ppas:
+            hookenv.log(
+                'Invalid "parallel_publisher_config"! No PPAs specified for '
+                f"the run with ID: {run_id}."
+            )
+            return False
+
+        if not distro:
+            hookenv.log(
+                'Invalid "parallel_publisher_config"! No distribution '
+                f"specified for the run with ID: {run_id}."
+            )
+            return False
+
+        run_ids.add(run_id)
+
+        for ppa in ppas:
+            if ppa not in excluded_ppas:
+                hookenv.log(
+                    f'Invalid "parallel_publisher_config"! PPA {ppa} is not '
+                    "in the excluded PPAs list."
+                )
+                return False
+    return True
+
+
+def generate_parallel_publisher_cron_configs(parallel_publisher_config):
+    if not parallel_publisher_config:
+        return []
+    runs = parallel_publisher_config.get("runs")
+
+    if not runs:
+        hookenv.log("No paralell publisher runs are configured.")
+        return []
+
+    if not validate_parallel_publisher_config(parallel_publisher_config):
+        hookenv.log(
+            'Invalid "parallel_publisher_config"! Skipping creating all '
+            "cron jobs for parallel publisher runs"
+        )
+        return []
+
+    cron_configs = []
+    for run in runs:
+        distro = run.get("distro")
+        run_id = run.get("id")
+        ppas = run.get("ppas")
+
+        # ensure we have all the required config
+        if not distro or not run_id or not ppas:
+            hookenv.log(
+                'Invalid "parallel_publisher_config"! '
+                "Please specify each of distro, id, and ppas for parallel run."
+                f" Got distro: {distro}, id: {run_id}, ppas: {ppas}"
+            )
+            continue
+
+        config = {}
+        config["distro_option"] = (
+            "--all-derived" if distro == "all_derived" else f"-d {distro}"
+        )
+        config["archive_options"] = " ".join(
+            f"--archive {ppa}" for ppa in ppas
+        )
+        config["lockfilename_option"] = f"--lockfilename {run_id}.lock"
+        config["logfilename"] = f"cron.ppa.{run_id}.log"
+
+        cron_configs.append(config)
+
+    return cron_configs
 
 
 @when(
@@ -72,9 +188,15 @@ def configure():
     config["ppa_signing_keys_root"] = ppa_keys_root
     config["oval_data_root"] = oval_data_root
 
-    excluded_ppas = yaml.safe_load(config["excluded_ppas"])
+    parallel_publisher_config = yaml.safe_load(
+        config.get("parallel_publisher_config")
+    )
     config["excluded_ppas_options"] = generate_exclude_ppas_options(
-        excluded_ppas
+        parallel_publisher_config
+    )
+
+    config["parallel_publisher_cron_configs"] = (
+        generate_parallel_publisher_cron_configs(parallel_publisher_config)
     )
 
     host.mkdir(data_dir, owner=base.user(), group=base.user(), perms=0o775)
