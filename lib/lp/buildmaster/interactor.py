@@ -230,7 +230,7 @@ class BuilderWorker:
             self._server.callRemote(
                 "ensurepresent", sha1sum, url, username, password
             ),
-            self.timeout * 5,
+            self.timeout * 20,
         )
 
     def getURL(self, sha1):
