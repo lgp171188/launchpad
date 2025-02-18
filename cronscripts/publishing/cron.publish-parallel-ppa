@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# Copyright 2025 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+set -x
+
+RUN_LOCKFILENAME=$(echo "$*" | awk '{print $NF}')
+ 
+# we take another lock here to make sure other invocations
+# of this script from the crontab do not race with each other. 
+LOCKFILENAME="master-$RUN_LOCKFILENAME"
+LOCKFILE="/var/lock/$LOCKFILENAME"
+
+if [ "$LOCKFILEOPTIONS" == "" ]; then
+   LOCKFILEOPTIONS="-r1"
+fi
+
+# Claim the lockfile.  ($LOCKFILEOPTIONS is deliberately unquoted, since it
+# may expand to either zero words or one word.)
+# shellcheck disable=SC2086
+if ! lockfile $LOCKFILEOPTIONS "$LOCKFILE"; then
+  echo "Could not claim lock file: $LOCKFILE"
+  exit 1
+fi
+
+# Cleanup the lockfile on exit.
+cleanup () {
+  echo "Cleaning up lockfile: $LOCKFILE"
+  rm -f "$LOCKFILE"
+}
+
+trap cleanup EXIT
+
+LPCURRENT="$(dirname "$0")/../.."
+# shellcheck disable=SC2086 disable=2068
+"$LPCURRENT/scripts/process-accepted.py" -v $@
+# shellcheck disable=SC2086 disable=2068
+"$LPCURRENT/scripts/publish-distro.py" -v $@
