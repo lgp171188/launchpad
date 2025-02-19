@@ -125,7 +125,7 @@ pgbouncer==0.0.9
 pickleshare==0.7.5
 pkginfo==1.11.2
 prettytable==0.7.2
-psutil==6.1.0
+psutil==7.0.0
 psycopg2==2.8.6
 ptyprocess==0.7.0
 pyasn1==0.6.1
@@ -180,7 +180,11 @@ transaction==3.0.1
 treq==18.6.0
 # lp:~launchpad/twisted:lp-backport
 Twisted==20.3.0+lp9
+# Python 3.8 and twisted 20.3.0+lp9
 txfixtures==0.4.3
+# Python 3.10+ and twisted 24.11
+# XXX jugmac00 2025-02-18: the twisted update still needs to be done
+txfixtures==0.5.2; python_version >= "3.10"
 txpkgupload==0.5
 urllib3==1.26.20
 van.testing==3.0.0
