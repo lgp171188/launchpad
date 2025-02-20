@@ -34,7 +34,7 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
-    FREE_INFORMATION_TYPES,
+    PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
     InformationType,
 )
@@ -95,6 +95,7 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.product import Product
 from lp.registry.model.series import ACTIVE_STATUSES
+from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -324,9 +325,15 @@ class CraftRecipe(StormBase):
 
     def getAllowedInformationTypes(self, user):
         """See `ICraftRecipe`."""
-        # XXX ruinedyourlife 2024-09-24: Only allow free information types
-        # until we have more privacy infrastructure in place.
-        return FREE_INFORMATION_TYPES
+        # Allow both public and private information types
+        if user is None:
+            return PUBLIC_INFORMATION_TYPES
+
+        # If the user is the owner or in the owning team, allow private types
+        if user.inTeam(self.owner) or user == self.owner:
+            return PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES
+
+        return PUBLIC_INFORMATION_TYPES
 
     def visibleByUser(self, user):
         """See `ICraftRecipe`."""
@@ -1088,10 +1095,49 @@ class CraftRecipeBuildRequest:
 
 def get_craft_recipe_privacy_filter(user):
     """Return a Storm query filter to find craft recipes visible to `user`."""
+    from storm.expr import And, Exists, Or, Select
+
     public_filter = CraftRecipe.information_type.is_in(
         PUBLIC_INFORMATION_TYPES
     )
 
-    # XXX ruinedyourlife 2024-10-02: Flesh this out once we have more privacy
-    # infrastructure.
-    return [public_filter]
+    if user is None:
+        return [public_filter]
+
+    # Users can see private recipes if:
+    # 1. They have direct recipe access (owner/registrant/team member) OR
+    # 2. They have access to the underlying git reference
+    private_filter = And(
+        CraftRecipe.information_type.is_in(PRIVATE_INFORMATION_TYPES),
+        Or(
+            # Direct recipe access
+            CraftRecipe.owner == user,
+            CraftRecipe.registrant == user,
+            # Team membership for recipe
+            Exists(
+                Select(
+                    (TeamParticipation.team_id,),
+                    And(
+                        TeamParticipation.person == user.id,
+                        TeamParticipation.team == CraftRecipe.owner_id,
+                    ),
+                )
+            ),
+            # Git reference access
+            # XXX ruinedyourlife 2025-02-20: we might need to come back to this
+            # and re-implement this like we can see it inside
+            # lib/lp/snappy/model/snap.py
+            Exists(
+                Select(
+                    (TeamParticipation.team_id,),
+                    And(
+                        TeamParticipation.person == user.id,
+                        TeamParticipation.team == GitRepository.owner_id,
+                        GitRepository.id == CraftRecipe.git_repository_id,
+                    ),
+                )
+            ),
+        ),
+    )
+
+    return [Or(public_filter, private_filter)]

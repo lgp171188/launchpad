@@ -26,7 +26,11 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.enums import InformationType
+from lp.app.enums import (
+    PRIVATE_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
+    InformationType,
+)
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import (
@@ -573,6 +577,116 @@ class TestCraftRecipe(TestCaseWithFactory):
         self.assertEqual(
             FetchServicePolicy.STRICT, build.recipe.fetch_service_policy
         )
+
+    def test_getAllowedInformationTypes(self):
+        """Test that getAllowedInformationTypes returns correct types based
+        on user."""
+        [ref] = self.factory.makeGitRefs()
+        owner = self.factory.makePerson()
+        member = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=owner, members=[member])
+        non_member = self.factory.makePerson()
+        recipe = self.factory.makeCraftRecipe(
+            registrant=owner,
+            owner=team,
+            git_ref=ref,
+            information_type=InformationType.PUBLIC,
+        )
+
+        # Anonymous users can only see public types
+        self.assertEqual(
+            PUBLIC_INFORMATION_TYPES, recipe.getAllowedInformationTypes(None)
+        )
+
+        # Team owner can see both public and private types
+        self.assertEqual(
+            list(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES),
+            list(recipe.getAllowedInformationTypes(owner)),
+        )
+
+        # Team member can see both public and private types
+        self.assertEqual(
+            list(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES),
+            list(recipe.getAllowedInformationTypes(member)),
+        )
+
+        # Non-members can only see public types
+        self.assertEqual(
+            PUBLIC_INFORMATION_TYPES,
+            recipe.getAllowedInformationTypes(non_member),
+        )
+
+    def test_visibleByUser(self):
+        """Test visibility based on git reference permissions."""
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CRAFT_RECIPE_ALLOW_CREATE: "on",
+                    CRAFT_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+                }
+            )
+        )
+
+        # Create a team for the git repo
+        repo_owner = self.factory.makePerson()
+        repo_member = self.factory.makePerson()
+        repo_team = self.factory.makeTeam(
+            owner=repo_owner, members=[repo_member]
+        )
+
+        # Create git ref owned by repo_team
+        repo = self.factory.makeGitRepository(owner=repo_team)
+        ref_path = "refs/heads/main"
+        [ref] = self.factory.makeGitRefs(repository=repo, paths=[ref_path])
+        ref = removeSecurityProxy(ref)  # Add this line
+
+        # Create recipe owned by different team
+        recipe_owner = self.factory.makePerson()
+        recipe_team = self.factory.makeTeam(owner=recipe_owner)
+
+        private_recipe = removeSecurityProxy(
+            self.factory.makeCraftRecipe(
+                registrant=recipe_owner,
+                owner=recipe_team,
+                git_ref=ref,
+                information_type=InformationType.PROPRIETARY,
+            )
+        )
+
+        # Verify the git reference details
+        self.assertEqual(ref.repository_id, private_recipe.git_repository_id)
+        self.assertEqual(ref.path, private_recipe.git_path)
+
+        # Git repo team members should have access
+        self.assertTrue(private_recipe.visibleByUser(repo_owner))
+        self.assertTrue(private_recipe.visibleByUser(repo_member))
+
+        # Recipe team members should have access
+        self.assertTrue(private_recipe.visibleByUser(recipe_owner))
+
+        # Non-members should not have access
+        non_member = self.factory.makePerson()
+        self.assertFalse(private_recipe.visibleByUser(non_member))
+
+        # Create another ref in same repo but different path
+        [other_ref] = self.factory.makeGitRefs(
+            repository=repo, paths=["refs/heads/other"]
+        )
+        other_ref = removeSecurityProxy(other_ref)  # Add this line
+
+        other_recipe = removeSecurityProxy(
+            self.factory.makeCraftRecipe(
+                registrant=recipe_owner,
+                owner=recipe_team,
+                git_ref=other_ref,
+                information_type=InformationType.PROPRIETARY,
+            )
+        )
+
+        # Same permissions should apply to recipe using different ref
+        self.assertTrue(other_recipe.visibleByUser(repo_owner))
+        self.assertTrue(other_recipe.visibleByUser(repo_member))
+        self.assertFalse(other_recipe.visibleByUser(non_member))
 
 
 class TestCraftRecipeSet(TestCaseWithFactory):
