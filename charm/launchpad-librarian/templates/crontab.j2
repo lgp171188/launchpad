@@ -8,7 +8,7 @@ LPCONFIG=launchpad-librarian1
 
 # Garbage collector.  Ensure it doesn't run during a backup, or clash with a
 # fastdowntime.
-15 10 * * * {{ code_dir }}/cronscripts/librarian-gc.py -q --log-file=INFO:{{ logs_dir }}/librarian-gc.log
+15 10 * * * {{ code_dir }}/cronscripts/librarian-gc.py -q --log-file=DEBUG:{{ logs_dir }}/librarian-gc.log
 
 {% endif -%}
 {% if os_password and not upstream_host -%}
