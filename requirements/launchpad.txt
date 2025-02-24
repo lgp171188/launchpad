@@ -147,6 +147,9 @@ python-dateutil==2.9.0.post0
 python-debian==0.1.49
 python-keystoneclient==3.21.0
 python3-openid==3.2
+# ztk-versions.cfg uses 1.4.0 on Python 3, but that does not support 3.12.
+# Pin to 1.4.4 to override it.
+python-subunit==1.4.4
 python-swiftclient==4.6.0
 PyYAML==6.0.2
 rabbitfixture==0.5.3
@@ -208,7 +211,7 @@ zope.app.publication==4.3.1
 zope.app.publisher==4.2.0
 zope.publisher==6.0.2+lp1
 zope.testbrowser==5.5.1
-# lp:~launchpad-committers/zope.testrunner:launchpad
-zope.testrunner==5.3.0+lp1
+# lp:~launchpad-committers/zope.testrunner:launchpad-6.6.1+lp1
+zope.testrunner==6.6.1+lp1
 zope.vocabularyregistry==1.1.1
 zstandard==0.15.2
