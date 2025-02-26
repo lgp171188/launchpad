@@ -71,13 +71,11 @@ repos:
     hooks:
     -   id: blackdoc
         args: ["-l", "78"]
-        exclude: ^doc/.*
 -   repo: https://git.launchpad.net/lp-lint-doctest
     rev: '0.5'
     hooks:
     -   id: lp-lint-doctest
         args: [--allow-option-flag, IGNORE_EXCEPTION_MODULE_IN_PYTHON2]
-        exclude: ^doc/.*
 -   repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
@@ -97,8 +95,3 @@ repos:
             # Word truncated by stemming.
             |lib/lp/services/database/doc/textsearching\.rst
           )$
--   repo: https://github.com/get-woke/woke
-    rev: v0.19.0
-    hooks:
-    -   id: woke-from-source
-        files: ^doc/.*\.rst$
