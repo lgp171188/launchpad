@@ -176,7 +176,7 @@ subprocess32==3.2.6
 tenacity==9.0.0
 testresources==0.2.7
 testscenarios==0.4
-testtools==2.5.0
+testtools==2.7.2
 timeline==0.0.7
 toml==0.10.2
 transaction==3.0.1
