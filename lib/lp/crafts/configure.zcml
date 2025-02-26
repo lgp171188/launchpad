@@ -102,4 +102,12 @@
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJob" />
     </class>
     <webservice:register module="lp.crafts.interfaces.webservice" />
+
+    <!-- CraftRecipeBuildMacaroonIssuer -->
+    <lp:securedutility
+        class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildMacaroonIssuer"
+        provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
+        name="craft-recipe-build">
+        <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
+    </lp:securedutility>
 </configure>
