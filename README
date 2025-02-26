@@ -17,7 +17,7 @@ If you want help using Launchpad, then please visit our help wiki at:
 
 If you'd like to contribute to Launchpad, have a look at:
 
-    https://launchpad.readthedocs.io/
+    https://documentation.ubuntu.com/launchpad/
     https://dev.launchpad.net/
 
 Alternatively, have a poke around in the code, which you probably already know
@@ -29,7 +29,7 @@ Getting started
 
 There's a full guide for getting up-and-running with a development Launchpad
 environment at
-<https://launchpad.readthedocs.io/en/latest/how-to/running.html>.  When you are
+<https://documentation.ubuntu.com/launchpad/en/latest/how-to/running/>.  When you are
 ready to submit a patch, please consult
 <https://dev.launchpad.net/PatchSubmission>.
 
@@ -38,5 +38,5 @@ the source code any time by doing:
 
   $ git clone https://git.launchpad.net/launchpad
 
-See <https://launchpad.readthedocs.io/en/latest/explanation/navigating.html>
+See <https://documentation.ubuntu.com/launchpad/en/latest/explanation/navigating/>
 for advice on navigating the code.
