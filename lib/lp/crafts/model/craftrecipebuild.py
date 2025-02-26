@@ -16,6 +16,7 @@ from storm.locals import Bool, DateTime, Desc, Int, Reference, Store, Unicode
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.builderproxy import BUILD_METADATA_FILENAME_FORMAT
@@ -27,6 +28,7 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.crafts.interfaces.craftrecipebuild import (
     ICraftFile,
     ICraftRecipeBuild,
@@ -47,6 +49,12 @@ from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
+from lp.services.macaroons.interfaces import (
+    NO_USER,
+    BadMacaroonContext,
+    IMacaroonIssuer,
+)
+from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -458,6 +466,71 @@ class CraftRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             ),
         )
         return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
+
+
+@implementer(IMacaroonIssuer)
+class CraftRecipeBuildMacaroonIssuer(MacaroonIssuerBase):
+    identifier = "craft-recipe-build"
+    issuable_via_authserver = True
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For issuing, the context is an `ICraftRecipeBuild`.
+        """
+        if not ICraftRecipeBuild.providedBy(context):
+            raise BadMacaroonContext(context)
+        if not removeSecurityProxy(context).is_private:
+            raise BadMacaroonContext(
+                context, "Refusing to issue macaroon for public build."
+            )
+        return removeSecurityProxy(context).id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if not IGitRepository.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context
+
+    def verifyPrimaryCaveat(
+        self, verified, caveat_value, context, user=None, **kwargs
+    ):
+        """See `MacaroonIssuerBase`.
+
+        For verification, the context is an `IGitRepository`. We check that
+        the repository is needed to build the `ICraftRecipeBuild` that is the
+        context of the macaroon, and that the context build is currently
+        building.
+        """
+        # Circular import.
+        from lp.crafts.model.craftrecipe import CraftRecipe
+
+        # CraftRecipeBuild builds only support free-floating macaroons for Git
+        # authentication, not ones bound to a user.
+        if user:
+            return False
+        verified.user = NO_USER
+
+        if context is None:
+            # We're only verifying that the macaroon could be valid for some
+            # context.
+            return True
+
+        try:
+            build_id = int(caveat_value)
+        except ValueError:
+            return False
+        return (
+            not IStore(CraftRecipeBuild)
+            .find(
+                CraftRecipeBuild,
+                CraftRecipeBuild.id == build_id,
+                CraftRecipeBuild.recipe_id == CraftRecipe.id,
+                CraftRecipe.git_repository == context,
+                CraftRecipeBuild.status == BuildStatus.BUILDING,
+            )
+            .is_empty()
+        )
 
 
 @implementer(ICraftFile)
