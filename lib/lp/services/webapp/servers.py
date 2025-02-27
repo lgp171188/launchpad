@@ -1202,8 +1202,8 @@ class WebServicePublication(
     def constructPageID(self, view, context):
         """Add the web service named operation (if any) to the page ID.
 
-        See https://dev.launchpad.net/Foundations/Webservice for more
-        information about WebService page IDs.
+        See https://web.archive.org/web/20210618184623/https://dev.launchpad.net/Foundations/Webservice  # noqa: E501
+        for more information about WebService page IDs.
         """
         pageid = super().constructPageID(view, context)
         if ICollectionResource.providedBy(view):

@@ -1098,7 +1098,7 @@ class POTMsgSet(StormBase):
     ):
         """Set the current translation.
 
-        https://dev.launchpad.net/Translations/Specs/setCurrentTranslation
+        https://web.archive.org/web/20130205044603/https://dev.launchpad.net/Translations/Specs//UpstreamImportIntoUbuntu/FixingIsImported/setCurrentTranslation
 
         :param pofile: The `POFile` to set the translation in.
         :param submitter: The `Person` who produced this translation.

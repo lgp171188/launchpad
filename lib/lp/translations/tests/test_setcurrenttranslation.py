@@ -15,9 +15,7 @@ from lp.translations.tests.helpers import (
 )
 
 # This test is based on the matrix described on:
-#  https://dev.launchpad.net/Translations/Specs
-#     /UpstreamImportIntoUbuntu/FixingIsImported
-#     /setCurrentTranslation#Execution%20matrix
+# https://web.archive.org/web/20130205044603/https://dev.launchpad.net/Translations/Specs//UpstreamImportIntoUbuntu/FixingIsImported/setCurrentTranslation#Execution_matrix
 
 
 class SetCurrentTranslationTestMixin:

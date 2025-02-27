@@ -17,8 +17,9 @@ else
 fi
 
 # This attempts to automate instructions provided on
-# https://dev.launchpad.net/DatabaseSetup which are intended for
-# initial Launchpad setup on an otherwise unconfigured postgresql instance
+# https://documentation.ubuntu.com/launchpad/en/latest/how-to/database-setup/
+# which are intended for initial Launchpad setup on an otherwise unconfigured
+# postgresql instance
 
 pgversion=
 # This loop contains multiple versions when we are in the process of

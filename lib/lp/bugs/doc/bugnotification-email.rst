@@ -9,7 +9,9 @@ themselves; for that, see bugnotifications.rst.
 The reference spec associated with this document is available on the
 Launchpad development wiki:
 
-    https://dev.launchpad.net/Bugs/Specs/FormattingBugNotifications
+    https://web.archive.org/ \
+        web/20130205083045/https://dev.launchpad.net \
+        /Bugs/Specs/FormattingBugNotifications
 
 You need to be logged in to edit bugs in Malone, so let's get started:
 

@@ -8,8 +8,7 @@ isn't something you install and run yourself (although you are welcome to do
 so), instead, contributors help make <https://launchpad.net> better.
 
 Launchpad is a project of Canonical <http://www.canonical.com> and has
-received many contributions from many wonderful people
-<https://dev.launchpad.net/Contributions>.
+received many contributions from many wonderful people.
 
 If you want help using Launchpad, then please visit our help wiki at:
 
@@ -18,7 +17,6 @@ If you want help using Launchpad, then please visit our help wiki at:
 If you'd like to contribute to Launchpad, have a look at:
 
     https://documentation.ubuntu.com/launchpad/
-    https://dev.launchpad.net/
 
 Alternatively, have a poke around in the code, which you probably already know
 how to get if you are reading this file.
@@ -31,7 +29,7 @@ There's a full guide for getting up-and-running with a development Launchpad
 environment at
 <https://documentation.ubuntu.com/launchpad/en/latest/how-to/running/>.  When you are
 ready to submit a patch, please consult
-<https://dev.launchpad.net/PatchSubmission>.
+<https://documentation.ubuntu.com/launchpad/en/latest/how-to/contributing-changes/>.
 
 Our bug tracker is at <https://bugs.launchpad.net/launchpad/> and you can get
 the source code any time by doing:

@@ -10,8 +10,8 @@ The point of feature flags is to let us turn some features of Launchpad on
 and off without changing the code or restarting the application, and to
 expose different features to different subsets of users.
 
-See U{https://dev.launchpad.net/LEP/FeatureFlags} for more discussion and
-rationale.
+See U{https://documentation.ubuntu.com/launchpad/en/latest/explanation/feature-flags/}  # noqa: E501
+for information.
 
 The typical use for feature flags is within web page requests but they can
 also be used in asynchronous jobs or apis or other parts of Launchpad.
