@@ -333,6 +333,29 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
         self._assertFileBugDataMatchesDict(filebug_data, processed_data)
 
 
+class ProcessApportBlobJobWithCRLFTestCase(ProcessApportBlobJobTestCase):
+    """
+    Test case for the ProcessApportBlobJob class when the input blob is using
+    CRLF as its line-break.
+
+    It is especially important to test this here as the CRLF line-breaks break
+    the FileBugDataParser which is only run inside the ProcessApportBlobJob's
+    "run()" method.
+    """
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super().setUp()
+
+        # Create a BLOB using existing testing data.
+
+        self.blob = self.factory.makeBlob(
+            blob_file="extra_filebug_data_with_crlf.msg"
+        )
+        transaction.commit()  # We need the blob available from the Librarian.
+
+
 class TestViaCelery(TestCaseWithFactory):
     layer = CeleryJobLayer
 

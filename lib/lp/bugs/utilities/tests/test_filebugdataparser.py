@@ -18,16 +18,60 @@ from lp.bugs.utilities.filebugdataparser import FileBugDataParser
 from lp.testing import TestCase
 
 
+# XXX: ilkeremrekoc 2025-02-26:
+# This class is for mocking the open() method of librarian-file-alias that
+# doesn't exist in BytesIO. BytesIO is only used for testing purposes as
+# production only uses LibrarianFileAlias. Thus, this additional functionality
+# won't affect production. Once the Apport package upgrades are done, we can
+# delete this class along with the "_findLineBreakType()"" method as we
+# wouldn't need the ".open()" functionality anymore.
+class MockBytesIO(io.BytesIO):
+
+    # Added a storage variable since the close() method used in
+    # FileBugDataParser flushes the BytesIO completely from memory making it
+    # impossible to re-open. Thus, "self.initial_bytes" let's us re-open the
+    # same input later.
+    def __init__(self, initial_bytes=b""):
+        self.initial_bytes = initial_bytes
+        super().__init__(initial_bytes)
+
+    # open() method doesn't exist in BytesIO originally, we add it to make
+    # sure tests act closer to a file/file-alias input into FileBugDataParser.
+    def open(self):
+        super().__init__(self.initial_bytes)
+
+
 class TestFileBugDataParser(TestCase):
+    def setUp(self):
+        super().setUp()
+
+        # The message used in every test for _findLineBreakType
+        self.msg_for_linebreak_type = dedent(
+            """\
+            MIME-Version: 1.0
+            Content-type: multipart/mixed; boundary=boundary
+
+            --boundary
+            Content-disposition: inline
+            Content-type: text/plain; charset=utf-8
+
+            This should be added to the description.
+
+            Another line.
+
+            --boundary--
+            """
+        )
+
     def test_initial_buffer(self):
         # The parser's buffer starts out empty.
-        parser = FileBugDataParser(io.BytesIO(b"123456789"))
+        parser = FileBugDataParser(MockBytesIO(b"123456789"))
         self.assertEqual(b"", parser._buffer)
 
     def test__consumeBytes(self):
         # _consumeBytes reads from the file until a delimiter is
         # encountered.
-        parser = FileBugDataParser(io.BytesIO(b"123456789"))
+        parser = FileBugDataParser(MockBytesIO(b"123456789"))
         parser.BUFFER_SIZE = 3
         self.assertEqual(b"1234", parser._consumeBytes(b"4"))
         # In order to find the delimiter string, it had to read b"123456"
@@ -44,17 +88,77 @@ class TestFileBugDataParser(TestCase):
         self.assertEqual(b"", parser._consumeBytes(b"0"))
         self.assertEqual(b"", parser._consumeBytes(b"0"))
 
+    def test__findLineBreakType_with_LF(self):
+        # _findLineBreakType reads the whole message until either an LF or
+        # a CRLF is found, returns that type in bytes string format and exits.
+
+        # Test the message with LF endings
+        msg_with_lf = self.msg_for_linebreak_type.encode("ASCII")
+        lf_parser = FileBugDataParser(MockBytesIO(msg_with_lf))
+        lf_linebreak = lf_parser._findLineBreakType()
+
+        self.assertEqual(lf_linebreak, b"\n")
+
+    def test__findLineBreakType_with_CRLF(self):
+        # _findLineBreakType returns a byte-string CRLF if it finds one in
+        # the message.
+
+        msg_with_crlf = self.msg_for_linebreak_type.replace(
+            "\n", "\r\n"
+        ).encode("ASCII")
+        crlf_parser = FileBugDataParser(MockBytesIO(msg_with_crlf))
+        crlf_linebreak = crlf_parser._findLineBreakType()
+
+        self.assertEqual(crlf_linebreak, b"\r\n")
+
+    def test__findLineBreakType_with_no_linebreaks(self):
+        # _findLineBreakType does not accept a message with no linebreaks.
+        # and should return an error code.
+
+        msg_without_linebreak = self.msg_for_linebreak_type.replace(
+            "\n", ""
+        ).encode("ASCII")
+        without_linebreak_parser = FileBugDataParser(
+            MockBytesIO(msg_without_linebreak)
+        )
+
+        self.assertRaisesWithContent(
+            AssertionError,
+            "There are no linebreaks in the blob.",
+            without_linebreak_parser._findLineBreakType,
+        )
+
+    def test__findLineBreakType_with_CR(self):
+        # _findLineBreakType does not accept CR ("\r") type linebreaks
+        # and should return an error.
+
+        msg_with_cr = self.msg_for_linebreak_type.replace("\n", "\r").encode(
+            "ASCII"
+        )
+        cr_parser = FileBugDataParser(MockBytesIO(msg_with_cr))
+
+        self.assertRaisesWithContent(
+            AssertionError,
+            "The wrong linebreak is used. CR isn't accepted.",
+            cr_parser._findLineBreakType,
+        )
+
     def test_readLine(self):
         # readLine reads a single line of the file.
-        parser = FileBugDataParser(io.BytesIO(b"123\n456\n789"))
-        self.assertEqual(b"123\n", parser.readLine())
-        self.assertEqual(b"456\n", parser.readLine())
-        self.assertEqual(b"789", parser.readLine())
+        parser = FileBugDataParser(MockBytesIO(b"123\n456\n789"))
+
+        linebreak = b"\n"
+        self.assertEqual(b"123\n", parser.readLine(linebreak))
+        self.assertEqual(b"456\n", parser.readLine(linebreak))
+        self.assertEqual(b"789", parser.readLine(linebreak))
         # If we try to read past the end of the file, an AssertionError is
         # raised.  This ensures that invalid messages don't cause an
         # infinite loop or similar.
         self.assertRaisesWithContent(
-            AssertionError, "End of file reached.", parser.readLine
+            AssertionError,
+            "End of file reached.",
+            parser.readLine,
+            blob_linebreak=linebreak,
         )
 
     def test_readHeaders(self):
@@ -72,8 +176,10 @@ class TestFileBugDataParser(TestCase):
             Not-A-Header: not-a-value
             """
         ).encode("ASCII")
-        parser = FileBugDataParser(io.BytesIO(msg))
-        headers = parser.readHeaders()
+        parser = FileBugDataParser(MockBytesIO(msg))
+
+        linebreak = b"\n"
+        headers = parser.readHeaders(linebreak)
         self.assertEqual("value", headers["Header"])
         self.assertEqual(
             "this header\n is folded with a space.",
@@ -147,7 +253,7 @@ class TestFileBugDataParser(TestCase):
             --boundary--
             """
         ).encode("ASCII")
-        parser = FileBugDataParser(io.BytesIO(message))
+        parser = FileBugDataParser(MockBytesIO(message))
         data = parser.parse()
         self.assertEqual(
             "This should be added to the description.\n\nAnother line.",
@@ -175,7 +281,7 @@ class TestFileBugDataParser(TestCase):
             """
             % encoded_text
         ).encode("ASCII")
-        parser = FileBugDataParser(io.BytesIO(message))
+        parser = FileBugDataParser(MockBytesIO(message))
         data = parser.parse()
         self.assertEqual(
             "This should be added to the description.\n\nAnother line.",
@@ -214,7 +320,7 @@ class TestFileBugDataParser(TestCase):
             --boundary--
             """
         ).encode("ASCII")
-        parser = FileBugDataParser(io.BytesIO(message))
+        parser = FileBugDataParser(MockBytesIO(message))
         data = parser.parse()
         self.assertEqual(
             [
@@ -251,7 +357,7 @@ class TestFileBugDataParser(TestCase):
             --boundary--
             """
         ).encode("ASCII")
-        parser = FileBugDataParser(io.BytesIO(message))
+        parser = FileBugDataParser(MockBytesIO(message))
         data = parser.parse()
         self.assertEqual(2, len(data.attachments))
         # The filename is copied into the "filename" item.
@@ -303,7 +409,7 @@ class TestFileBugDataParser(TestCase):
             """
             % encoded_data
         ).encode("ASCII")
-        parser = FileBugDataParser(io.BytesIO(message))
+        parser = FileBugDataParser(MockBytesIO(message))
         data = parser.parse()
         self.assertEqual(1, len(data.attachments))
         self.assertEqual(
@@ -330,7 +436,7 @@ class TestFileBugDataParser(TestCase):
 
             Another line."""
         ).encode("ASCII")
-        parser = FileBugDataParser(io.BytesIO(message))
+        parser = FileBugDataParser(MockBytesIO(message))
         self.assertRaisesWithContent(
             AssertionError, "End of file reached.", parser.parse
         )
