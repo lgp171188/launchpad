@@ -137,7 +137,7 @@ with profiling():
     <p tal:condition="callgrind">You should be able to use this
     simply by entering <code>kcachegrind <tal:block replace="callgrind_path"
     /></code> in the console for a great visualization of the profile.  The <a
-    href="https://dev.launchpad.net/Debugging#Profiling%%20page%%20requests"
+    href="https://documentation.ubuntu.com/launchpad/en/latest/how-to/debugging/#profiling-page-requests"
     >dev wiki</a> may have more information on how to use this.</p>
     <p tal:condition="pstats">You should be able to use this
     simply by entering <code>python -m pstats <tal:block replace="pstats_path"

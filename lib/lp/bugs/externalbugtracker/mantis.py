@@ -167,7 +167,7 @@ class Mantis(ExternalBugTracker):
     For a list of tested Mantis instances and their behaviour when
     exported from, see:
 
-        https://dev.launchpad.net/Bugs/ExternalBugTrackers/Mantis
+        https://web.archive.org/web/20130205061352/https://dev.launchpad.net/Bugs/ExternalBugTrackers/Mantis
     """
 
     def __init__(self, baseurl):

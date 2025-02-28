@@ -163,7 +163,7 @@ Page Footers
     Blog http://blog.launchpad.net/
     Careers https://canonical.com/careers
     System status https://ubuntu.social/@launchpadstatus
-    Get the code! https://dev.launchpad.net/
+    Get the code! https://documentation.ubuntu.com/launchpad/
 
 
 Public and private presentation
