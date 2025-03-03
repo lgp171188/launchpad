@@ -1,0 +1,5 @@
+#!/bin/sh
+
+{{ code_dir }}/cronscripts/publishing/cron.publish-ppa "-d ubuntu{{ excluded_ppas_options }}" "--all-derived{{ excluded_ppas_options }}" "-d debian{{ excluded_ppas_options }}" >> {{ logs_dir }}/cron.ppa.log 2>&1
+
+
