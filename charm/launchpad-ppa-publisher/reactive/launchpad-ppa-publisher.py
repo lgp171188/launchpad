@@ -6,7 +6,7 @@ import os
 import yaml
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
-from charms.launchpad.payload import configure_cron, configure_lazr
+from charms.launchpad.payload import configure_cron, configure_lazr, home_dir
 from charms.reactive import (
     clear_flag,
     endpoint_from_flag,
@@ -76,8 +76,9 @@ def validate_parallel_publisher_config(parallel_publisher_config):
             "are configured but there are no PPAs excluded."
         )
         return False
-
-    run_ids = set()
+    # exclude "main-publisher-run", as its used by the global publisher
+    # run bash script
+    excluded_ids = {"main-publisher-run"}
     for run in runs:
         distro = run.get("distro")
         run_id = run.get("id")
@@ -90,7 +91,7 @@ def validate_parallel_publisher_config(parallel_publisher_config):
             )
             return False
 
-        if run_id in run_ids:
+        if run_id in excluded_ids:
             hookenv.log(
                 'Invalid "parallel_publisher_config"! Duplicate run ID found. '
                 f"Ensure run_id: {run_id} is unique"
@@ -111,7 +112,7 @@ def validate_parallel_publisher_config(parallel_publisher_config):
             )
             return False
 
-        run_ids.add(run_id)
+        excluded_ids.add(run_id)
 
         for ppa in ppas:
             if ppa not in excluded_ppas:
@@ -123,13 +124,13 @@ def validate_parallel_publisher_config(parallel_publisher_config):
     return True
 
 
-def generate_parallel_publisher_cron_configs(parallel_publisher_config):
+def generate_parallel_publisher_configs(parallel_publisher_config):
     if not parallel_publisher_config:
         return []
     runs = parallel_publisher_config.get("runs")
 
     if not runs:
-        hookenv.log("No paralell publisher runs are configured.")
+        hookenv.log("No parallel publisher runs are configured.")
         return []
 
     if not validate_parallel_publisher_config(parallel_publisher_config):
@@ -155,6 +156,7 @@ def generate_parallel_publisher_cron_configs(parallel_publisher_config):
             continue
 
         config = {}
+        config["run_id"] = run_id
         config["distro_option"] = (
             "--all-derived" if distro == "all_derived" else f"-d {distro}"
         )
@@ -167,6 +169,44 @@ def generate_parallel_publisher_cron_configs(parallel_publisher_config):
         cron_configs.append(config)
 
     return cron_configs
+
+
+def configure_main_publisher_run_script(config):
+    hookenv.log("Creating the main publisher script.")
+    host.mkdir(
+        config["publisher_scripts_dir"],
+        owner=base.user(),
+        group=base.user(),
+        perms=0o755,
+        force=True,
+    )
+    templating.render(
+        "main-publisher-run.j2",
+        f"{config['publisher_scripts_dir']}/main-publisher-run",
+        config,
+        owner=base.user(),
+        group=base.user(),
+        perms=0o755,
+    )
+
+
+def configure_parallel_publisher_run_script(config):
+    for parallel_run_config in config["parallel_publisher_configs"]:
+        run_id = parallel_run_config["run_id"]
+        hookenv.log(f'Creating the parallel publisher scripts for "{run_id}".')
+        template_config = {
+            "code_dir": config["code_dir"],
+            "logs_dir": config["logs_dir"],
+            **parallel_run_config,
+        }
+        templating.render(
+            "parallel-publisher-run.j2",
+            f"{config['publisher_scripts_dir']}/{run_id}",
+            template_config,
+            owner=base.user(),
+            group=base.user(),
+            perms=0o755,
+        )
 
 
 @when(
@@ -195,8 +235,8 @@ def configure():
         parallel_publisher_config
     )
 
-    config["parallel_publisher_cron_configs"] = (
-        generate_parallel_publisher_cron_configs(parallel_publisher_config)
+    config["parallel_publisher_configs"] = generate_parallel_publisher_configs(
+        parallel_publisher_config
     )
 
     host.mkdir(data_dir, owner=base.user(), group=base.user(), perms=0o775)
@@ -246,6 +286,9 @@ def configure():
     )
     configure_email(config, "launchpad-ppa-publisher")
     configure_logrotate(config)
+    config["publisher_scripts_dir"] = f"{home_dir()}/publisher-scripts"
+    configure_parallel_publisher_run_script(config)
+    configure_main_publisher_run_script(config)
     configure_cron(config, "crontab.j2")
     set_flag("service.configured")
 
