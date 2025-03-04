@@ -1,0 +1,5 @@
+#!/bin/sh
+
+{{ code_dir }}/cronscripts/publishing/cron.publish-parallel-ppa "{{ distro_option }} {{ archive_options }} {{ lockfilename_option }}" >> {{ logs_dir }}/{{ logfilename }} 2>&1
+
+
