@@ -139,11 +139,6 @@ else
 apidoc: compile $(API_INDEX)
 endif
 
-# Used to generate HTML developer documentation for Launchpad.
-.PHONY: doc
-doc:
-	$(MAKE) -C doc/ html
-
 # Run by PQM.
 .PHONY: check_config
 check_config: build

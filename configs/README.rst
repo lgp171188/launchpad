@@ -128,7 +128,7 @@ the config.
 
 Please note that TestCase.pushConfig is the preferred way of modifying
 the configuration for testing, also see
-https://launchpad.readthedocs.io/en/latest/.
+https://documentation.ubuntu.com/launchpad/en/latest/.
 
 lazr.conf schema and confs
 --------------------------

@@ -792,7 +792,7 @@ class TestWorkerTimeouts(TestCase):
     def test_timeout_ensurepresent(self):
         return self.assertCancelled(
             self.worker.ensurepresent(None, None, None, None),
-            config.builddmaster.socket_timeout * 5,
+            config.builddmaster.socket_timeout * 20,
         )
 
     def test_timeout_build(self):

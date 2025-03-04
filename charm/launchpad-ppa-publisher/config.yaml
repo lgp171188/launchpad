@@ -56,6 +56,37 @@ options:
     description: |
       The number of affected PPAs that the ppa-update-keys.py cron script should
       process in a single run.
+  parallel_publisher_config:
+    type: string
+    description: |
+      YAML-encoded config that lists the excluded PPAs and configurations
+      for parallel publisher runs. Example:
+      parallel_publisher_config:
+        excluded_ppas:
+          - foo/ubuntu/ppa1
+          - foo/ubuntu/ppa2
+          - foo/ubuntu/ppa5
+          - foo/debian/ppa3
+          - foo/soss/ppa4
+        runs:
+          - distro: ubuntu
+            id: parallel-run-1
+            ppas:
+              - foo/ubuntu/ppa1
+          - distro: ubuntu
+            id: parallel-run-2
+            ppas:
+              - foo/ubuntu/ppa2
+              - foo/ubuntu/ppa5
+          - distro: debian
+            id: parallel-run-3
+            ppas:
+              - foo/debian/ppa3
+          - distro: all_derived
+            id: parallel-run-4
+            ppas:
+              - foo/soss/ppa4
+    default: ""
   require_signing_keys:
     type: boolean
     description: > 

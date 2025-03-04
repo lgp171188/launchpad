@@ -118,7 +118,7 @@ flag_info = sorted(
             "Names of Job classes that should be run via celery",
             "No jobs run via celery",
             "Celery-enabled job classes",
-            "https://dev.launchpad.net/CeleryJobRunner",
+            "https://web.archive.org/web/20130205105151/https://dev.launchpad.net/CeleryJobRunner",  # noqa: E501
         ),
         (
             "js.yui_version",
@@ -387,7 +387,7 @@ class FeatureController:
     The controller is then supposed to be held in a thread-local and reused
     for the duration of the request.
 
-    @see: U{https://dev.launchpad.net/LEP/FeatureFlags}
+    @see: U{https://documentation.ubuntu.com/launchpad/en/latest/explanation/feature-flags/}  # noqa: E501
     """
 
     def __init__(self, scope_check_callback, rule_source=None):

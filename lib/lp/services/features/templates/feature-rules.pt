@@ -23,7 +23,7 @@
       For more information about the available feature flags and scopes see
       the <a tal:attributes="href context/fmt:url/info">feature flag info</a>. For other
       documentation on feature flags, see the
-      <a href="https://dev.launchpad.net/FeatureFlags">development wiki</a>.
+      <a href="https://documentation.ubuntu.com/launchpad/en/latest/explanation/feature-flags/">development wiki</a>.
       You can review the
       <a class="sprite info" tal:attributes="href context/fmt:url/changelog">changelog</a> to see
         previous rule changes.

@@ -1,15 +1,8 @@
 pipeline:
-  - docs
   - lint
   - mypy
 
 jobs:
-  docs:
-    architectures: amd64
-    packages:
-      - tox
-    run: tox -e docs
-    series: focal
   lint:
     architectures: amd64
     packages:

@@ -53,8 +53,7 @@
 
     XXX mars 2010-04-08
     We can revisit this IE-only optimization if we remove SSL.  Any changes that
-    affect IE should be tested using webpagetest.org. (See the dev.launchpad.net
-    wiki for details.)
+    affect IE should be tested using webpagetest.org.
   </tal:comment>
   <script type="text/javascript">
     var LP = {
@@ -199,8 +198,7 @@
 
     XXX mars 2010-04-08
     We can revisit this IE-only optimization if we remove SSL.  Any changes that
-    affect IE should be tested using webpagetest.org. (See the dev.launchpad.net
-    wiki for details.)
+    affect IE should be tested using webpagetest.org.
     </tal:comment>
   <link
         type="text/css"
@@ -311,7 +309,7 @@
         <tal:display_revision replace="display_revision" />
         <tal:devmode condition="devmode">devmode</tal:devmode>
         <tal:demo condition="is_demo">demo site</tal:demo>
-        (<a href="https://dev.launchpad.net/"
+        (<a href="https://documentation.ubuntu.com/launchpad/"
              >Get the code!</a>)
       </span>
     </div>

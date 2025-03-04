@@ -27,8 +27,11 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
 )
+from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
+from lp.services.twistedsupport import cancel_on_timeout
 from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
 
 
@@ -72,6 +75,18 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 "Missing chroot for %s" % build.distro_arch_series.displayname
             )
 
+    def issueMacaroon(self):
+        """See `IBuildFarmJobBehaviour`."""
+        return cancel_on_timeout(
+            self._authserver.callRemote(
+                "issueMacaroon",
+                "craft-recipe-build",
+                "CraftRecipeBuild",
+                self.build.id,
+            ),
+            config.builddmaster.authentication_timeout,
+        )
+
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """
@@ -79,6 +94,28 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         """
         build = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
+
+        if logger is not None:
+            logger.debug("Build recipe: %r", build.recipe)
+            logger.debug("Git ref: %r", build.recipe.git_ref)
+            if build.recipe.git_ref is not None:
+                logger.debug(
+                    "Git ref repository URL: %r",
+                    build.recipe.git_ref.repository_url,
+                )
+                logger.debug("Git repository: %r", build.recipe.git_repository)
+                logger.debug(
+                    "Git repository HTTPS URL: %r",
+                    build.recipe.git_repository.git_https_url,
+                )
+                logger.debug("Git path: %r", build.recipe.git_path)
+                logger.debug("Git ref name: %r", build.recipe.git_ref.name)
+                logger.debug(
+                    "Recipe information type: %r",
+                    build.recipe.information_type,
+                )
+                logger.debug("Is private: %r", build.is_private)
+
         yield self.startProxySession(
             args,
             use_fetch_service=build.recipe.use_fetch_service,
@@ -101,12 +138,16 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             if build.recipe.git_ref.repository_url is not None:
                 args["git_repository"] = build.recipe.git_ref.repository_url
             else:
-                args["git_repository"] = (
-                    build.recipe.git_repository.git_https_url
-                )
-            # "git clone -b" doesn't accept full ref names.  If this becomes
-            # a problem then we could change launchpad-buildd to do "git
-            # clone" followed by "git checkout" instead.
+                repo = build.recipe.git_repository
+                if repo.private:
+                    macaroon_raw = yield self.issueMacaroon()
+                    url = repo.getCodebrowseUrl(
+                        username=LAUNCHPAD_SERVICES, password=macaroon_raw
+                    )
+                    args["git_repository"] = url
+                else:
+                    args["git_repository"] = repo.git_https_url
+
             if build.recipe.git_path != "HEAD":
                 args["git_path"] = build.recipe.git_ref.name
         else:

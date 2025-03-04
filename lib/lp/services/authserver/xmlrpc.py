@@ -16,6 +16,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.code.interfaces.cibuild import ICIBuildSet
+from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuildSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.authserver.interfaces import (
@@ -60,8 +61,8 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
 
         :param context_type: A string identifying the type of context.
             Currently only 'LibraryFileAlias', 'BinaryPackageBuild',
-            'LiveFSBuild', 'SnapBuild', 'OCIRecipeBuild', and 'CIBuild' are
-            supported.
+            'LiveFSBuild', 'SnapBuild', 'OCIRecipeBuild', 'CIBuild', and
+            'CraftRecipeBuild' are supported.
         :param context: The context as plain data (e.g. an ID).
         :return: The resolved context, or None.
         """
@@ -86,6 +87,9 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         elif context_type == "CIBuild":
             # The context is a `CIBuild` ID.
             return getUtility(ICIBuildSet).getByID(context)
+        elif context_type == "CraftRecipeBuild":
+            # The context is a `CraftRecipeBuild` ID.
+            return getUtility(ICraftRecipeBuildSet).getByID(context)
         else:
             return None
 

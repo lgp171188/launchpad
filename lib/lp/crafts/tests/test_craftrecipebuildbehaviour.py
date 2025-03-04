@@ -16,12 +16,14 @@ from fixtures import MockPatch, TempDir
 from pymacaroons import Macaroon
 from testtools import ExpectedException
 from testtools.matchers import (
+    AfterPreprocessing,
     ContainsDict,
     Equals,
     Is,
     IsInstance,
     MatchesDict,
     MatchesListwise,
+    MatchesStructure,
     StartsWith,
 )
 from testtools.twistedsupport import (
@@ -68,6 +70,7 @@ from lp.crafts.interfaces.craftrecipe import (
 )
 from lp.crafts.model.craftrecipebuildbehaviour import CraftRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import BufferLogger, DevNullLogger
@@ -196,6 +199,25 @@ class TestAsyncCraftRecipeBuildBehaviour(
         self.useFixture(MockPatch("time.time", return_value=self.now))
         self.addCleanup(shut_down_default_process_pool)
         self.setUpStats()
+
+    def assertHasNoZopeSecurityProxy(self, data):
+        """Makes sure that data doesn't contain a security proxy.
+
+        `data` can be a list, a tuple, a dict or an ordinary value. This
+        method checks `data` itself, and if it's a collection, it checks
+        each item in it.
+        """
+        self.assertFalse(
+            isProxy(data), "%s should not be a security proxy." % data
+        )
+        # If it's a collection, keep searching for proxies.
+        if isinstance(data, (list, tuple)):
+            for i in data:
+                self.assertHasNoZopeSecurityProxy(i)
+        elif isinstance(data, dict):
+            for k, v in data.items():
+                self.assertHasNoZopeSecurityProxy(k)
+                self.assertHasNoZopeSecurityProxy(v)
 
     def makeJob(self, **kwargs):
         # We need a builder in these tests, in order that requesting a proxy
@@ -588,6 +610,88 @@ class TestAsyncCraftRecipeBuildBehaviour(
         yield job.dispatchBuildToWorker(DevNullLogger())
         self.assertEqual(
             ("ensurepresent", chroot_lfa.http_url, "", ""), worker.call_log[0]
+        )
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_private_git_ref(self):
+        """Test extraBuildArgs for private recipe with git reference."""
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret"
+        )
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CRAFT_RECIPE_ALLOW_CREATE: "on",
+                    CRAFT_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+                }
+            )
+        )
+
+        # Create public ref first, then transition to private
+        [ref] = self.factory.makeGitRefs()
+        ref.repository.transitionToInformationType(
+            InformationType.USERDATA, ref.repository.owner
+        )
+
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeCraftRecipe(
+            owner=owner,
+            registrant=owner,
+            git_ref=ref,
+            information_type=InformationType.PROPRIETARY,
+        )
+        job = self.makeJob(git_ref=ref, recipe=recipe)
+
+        logger = BufferLogger()
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs(logger=logger)
+
+        # Debug prints
+        print("\nDebug logs:")
+        print(logger.getLogBuffer())
+        print("\nArgs:", args)
+        if "git_repository" in args:
+            print("\nGit URL:", args["git_repository"])
+            parts = urlsplit(args["git_repository"])
+            print("URL parts:", parts)
+
+        # Asserts that nothing here is a zope proxy, to avoid errors when
+        # serializing it for XML-RPC call.
+        self.assertHasNoZopeSecurityProxy(args)
+
+        # Print the log buffer for debugging
+        print("\nDebug logs:")
+        print(logger.getLogBuffer())
+
+        # Add assertions similar to snap build test
+        split_browse_root = urlsplit(config.codehosting.git_browse_root)
+        self.assertThat(
+            args["git_repository"],
+            AfterPreprocessing(
+                urlsplit,
+                MatchesStructure(
+                    scheme=Equals(split_browse_root.scheme),
+                    username=Equals("+launchpad-services"),
+                    password=AfterPreprocessing(
+                        Macaroon.deserialize,
+                        MatchesStructure(
+                            location=Equals(config.vhost.mainsite.hostname),
+                            identifier=Equals("craft-recipe-build"),
+                            caveats=MatchesListwise(
+                                [
+                                    MatchesStructure.byEquality(
+                                        caveat_id="lp.craft-recipe-build %s"
+                                        % job.build.id
+                                    ),
+                                ]
+                            ),
+                        ),
+                    ),
+                    hostname=Equals(split_browse_root.hostname),
+                    port=Equals(split_browse_root.port),
+                ),
+            ),
         )
 
 

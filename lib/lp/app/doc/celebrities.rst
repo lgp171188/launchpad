@@ -1,7 +1,8 @@
 Launchpad Celebrities
 =====================
 
-https://dev.launchpad.net/LaunchpadCelebrities
+https://web.archive.org/web/20220627104653/https://dev.launchpad.net \
+    /LaunchpadCelebrities
 
 There are a number of special objects, some of which exist in the
 database, which we want to give easy access to in the code. To this end,

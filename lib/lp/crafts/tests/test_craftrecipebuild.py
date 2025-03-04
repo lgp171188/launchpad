@@ -7,8 +7,16 @@ from datetime import datetime, timedelta, timezone
 from urllib.request import urlopen
 
 import six
-from testtools.matchers import ContainsDict, Equals, Is
+from pymacaroons import Macaroon
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    Is,
+    MatchesListwise,
+    MatchesStructure,
+)
 from zope.component import getUtility
+from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -29,11 +37,17 @@ from lp.crafts.interfaces.craftrecipebuild import (
 from lp.crafts.model.craftrecipebuild import CraftRecipeBuild
 from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+)
+from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
@@ -49,6 +63,7 @@ from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import webservice_for_person
+from lp.xmlrpc.interfaces import IPrivateApplication
 
 expected_body = """\
  * Craft Recipe: craft-1
@@ -715,3 +730,227 @@ class TestCraftRecipeBuildWebservice(TestCaseWithFactory):
         logout()
         build = self.webservice.get(build_url).jsonBody()
         self.assertIsNone(build["build_metadata_url"])
+
+
+class TestCraftRecipeBuildMacaroonIssuer(
+    MacaroonTestMixin, TestCaseWithFactory
+):
+    """Test CraftRecipeBuild macaroon issuing and verification."""
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super().setUp()
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CRAFT_RECIPE_ALLOW_CREATE: "on",
+                    CRAFT_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+                }
+            )
+        )
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret"
+        )
+
+    def getPrivateBuild(self):
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeCraftRecipe(
+            owner=owner,
+            registrant=owner,
+            information_type=InformationType.PROPRIETARY,
+        )
+        build = self.factory.makeCraftRecipeBuild(
+            recipe=recipe, requester=owner
+        )
+        build.recipe.git_ref.repository.transitionToInformationType(
+            InformationType.PRIVATESECURITY, build.recipe.registrant
+        )
+        return build
+
+    def test_issueMacaroon_refuses_public_craftrecipebuild(self):
+        build = self.factory.makeCraftRecipeBuild()
+        issuer = getUtility(IMacaroonIssuer, "craft-recipe-build")
+        self.assertRaises(
+            BadMacaroonContext,
+            removeSecurityProxy(issuer).issueMacaroon,
+            build,
+        )
+
+    def test_issueMacaroon_good(self):
+        build = self.getPrivateBuild()
+        issuer = getUtility(IMacaroonIssuer, "craft-recipe-build")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
+        self.assertThat(
+            macaroon,
+            MatchesStructure(
+                location=Equals("launchpad.test"),
+                identifier=Equals("craft-recipe-build"),
+                caveats=MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            caveat_id="lp.craft-recipe-build %s" % build.id
+                        ),
+                    ]
+                ),
+            ),
+        )
+
+    def test_issueMacaroon_via_authserver(self):
+        build = self.getPrivateBuild()
+        private_root = getUtility(IPrivateApplication)
+        authserver = AuthServerAPIView(private_root.authserver, TestRequest())
+        macaroon = Macaroon.deserialize(
+            authserver.issueMacaroon(
+                "craft-recipe-build", "CraftRecipeBuild", build.id
+            )
+        )
+        self.assertThat(
+            macaroon,
+            MatchesStructure(
+                location=Equals("launchpad.test"),
+                identifier=Equals("craft-recipe-build"),
+                caveats=MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            caveat_id="lp.craft-recipe-build %s" % build.id
+                        ),
+                    ]
+                ),
+            ),
+        )
+
+    def test_verifyMacaroon_good(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, build.recipe.git_ref.repository
+        )
+
+    def test_verifyMacaroon_good_no_context(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, None, require_context=False
+        )
+        self.assertMacaroonVerifies(
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+            require_context=False,
+        )
+
+    def test_verifyMacaroon_no_context_but_require_context(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Expected macaroon verification context but got None."],
+            issuer,
+            macaroon,
+            None,
+        )
+
+    def test_verifyMacaroon_wrong_location(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = Macaroon(
+            location="another-location", key=issuer._root_secret
+        )
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+            require_context=False,
+        )
+
+    def test_verifyMacaroon_wrong_key(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = Macaroon(
+            location=config.vhost.mainsite.hostname, key="another-secret"
+        )
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+            require_context=False,
+        )
+
+    def test_verifyMacaroon_not_building(self):
+        build = self.getPrivateBuild()
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.craft-recipe-build %s' failed." % build.id],
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
+
+    def test_verifyMacaroon_wrong_build(self):
+        build = self.getPrivateBuild()
+        build.updateStatus(BuildStatus.BUILDING)
+        other_build = self.getPrivateBuild()
+        other_build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = issuer.issueMacaroon(other_build)
+        self.assertMacaroonDoesNotVerify(
+            [
+                "Caveat check for 'lp.craft-recipe-build %s' failed."
+                % other_build.id
+            ],
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
+
+    def test_verifyMacaroon_wrong_repository(self):
+        build = self.getPrivateBuild()
+        other_repository = self.factory.makeGitRepository()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "craft-recipe-build")
+        )
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.craft-recipe-build %s' failed." % build.id],
+            issuer,
+            macaroon,
+            other_repository,
+        )
