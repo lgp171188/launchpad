@@ -10,6 +10,8 @@ __all__ = [
     "CraftRecipeBuildBehaviour",
 ]
 
+import json
+from configparser import NoSectionError
 from typing import Any, Generator
 
 from twisted.internet import defer
@@ -87,6 +89,28 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             config.builddmaster.authentication_timeout,
         )
 
+    def replace_auth_placeholder(self, s: str) -> str:
+        """Replace %(read_auth)s with the actual credentials."""
+        return s % {"read_auth": config.artifactory.read_credentials}
+
+    def build_environment_variables(self, distribution_name: str) -> dict:
+        try:
+            pairs = config["craftbuild." + distribution_name][
+                "environment_variables"
+            ]
+        except NoSectionError:
+            return {}
+        if pairs is None:
+            return {}
+
+        # Parse JSON and replace auth placeholders
+        env_vars = json.loads(pairs)
+        for key, value in env_vars.items():
+            if isinstance(value, str):
+                env_vars[key] = self.replace_auth_placeholder(value)
+
+        return env_vars
+
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """
@@ -160,6 +184,10 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 )
             )
         args["private"] = build.is_private
+        distribution_name = build.distro_series.distribution.name
+        args["environment_variables"] = self.build_environment_variables(
+            distribution_name
+        )
         return args
 
     def verifySuccessfulBuild(self):

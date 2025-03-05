@@ -348,6 +348,7 @@ class TestAsyncCraftRecipeBuildBehaviour(
                     "use_fetch_service": Is(False),
                     "launchpad_instance": Equals("devel"),
                     "launchpad_server_url": Equals("launchpad.test"),
+                    "environment_variables": Equals({}),
                 }
             ),
         )
@@ -393,6 +394,7 @@ class TestAsyncCraftRecipeBuildBehaviour(
                     "use_fetch_service": Is(False),
                     "launchpad_instance": Equals("devel"),
                     "launchpad_server_url": Equals("launchpad.test"),
+                    "environment_variables": Equals({}),
                 }
             ),
         )
@@ -528,6 +530,7 @@ class TestAsyncCraftRecipeBuildBehaviour(
                     "use_fetch_service": Is(False),
                     "launchpad_instance": Equals("devel"),
                     "launchpad_server_url": Equals("launchpad.test"),
+                    "environment_variables": Equals({}),
                 }
             ),
         )
@@ -693,6 +696,86 @@ class TestAsyncCraftRecipeBuildBehaviour(
                 ),
             ),
         )
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_for_non_soss_distribution(self):
+        """For a distribution other than "soss", no Artifactory environment
+        variables should be included."""
+        # Set up config with SOSS-specific variables that should not be used
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps(
+                {
+                    "CARGO_ARTIFACTORY1_READ_AUTH": "%(read_auth)s",
+                    "MAVEN_ARTIFACTORY1_READ_AUTH": "%(read_auth)s",
+                }
+            ),
+        )
+
+        # Create build for a different distribution
+        distribution = self.factory.makeDistribution(name="distribution-123")
+        job = self.makeJob(distribution=distribution)
+
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+
+        # Verify no environment variables were included
+        self.assertEqual({}, args.get("environment_variables", {}))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_include_artifactory_configuration(self):
+        """For the SOSS distribution, Artifactory credentials should be
+        properly included in environment variables."""
+        # Set up config with SOSS-specific variables
+        self.pushConfig(
+            "artifactory",
+            read_credentials="user:pass",
+        )
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps(
+                {
+                    "CARGO_ARTIFACTORY1_READ_AUTH": "%(read_auth)s",
+                    "MAVEN_ARTIFACTORY1_READ_AUTH": "%(read_auth)s",
+                }
+            ),
+        )
+
+        # Create build for SOSS distribution
+        distribution = self.factory.makeDistribution(name="soss")
+        job = self.makeJob(distribution=distribution)
+
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+
+        # Verify environment variables were properly populated
+        self.assertThat(
+            args,
+            ContainsDict(
+                {
+                    "environment_variables": Equals(
+                        {
+                            "CARGO_ARTIFACTORY1_READ_AUTH": "user:pass",
+                            "MAVEN_ARTIFACTORY1_READ_AUTH": "user:pass",
+                        }
+                    )
+                }
+            ),
+        )
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_no_artifactory_configuration(self):
+        """If no Artifactory configuration exists for SOSS, no environment
+        variables should be included."""
+        # Create build for SOSS distribution but don't configure any variables
+        distribution = self.factory.makeDistribution(name="soss")
+        job = self.makeJob(distribution=distribution)
+
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+
+        # Verify no environment variables were included
+        self.assertEqual({}, args.get("environment_variables", {}))
 
 
 class TestAsyncCraftRecipeBuildBehaviourFetchService(
