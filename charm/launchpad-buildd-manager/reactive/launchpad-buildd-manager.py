@@ -99,6 +99,7 @@ def configure():
         base.base_dir(), "buildd-manager"
     )
     config["cibuild_config"] = yaml.safe_load(config["cibuild_config"])
+    config["craftbuild_config"] = yaml.safe_load(config["craftbuild_config"])
     config["json"] = json
     host.mkdir(
         config["buildd_manager_dir"],
