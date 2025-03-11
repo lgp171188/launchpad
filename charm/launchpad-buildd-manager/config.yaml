@@ -52,6 +52,12 @@ options:
       YAML-encoded dictionary mapping pillars to dictionaries of
       configuration items to set for CI builds of those pillars.
     default: ""
+  craftbuild_config:
+    type: string
+    description: >
+      YAML-encoded dictionary mapping pillars to dictionaries of
+      configuration items to set for Craft builds of those pillars.
+    default: ""
   fetch_service_control_admin_secret:
     type: string
     description: >
