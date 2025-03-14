@@ -32,6 +32,7 @@ from zope.formlib.itemswidgets import MultiDataHelper
 from zope.formlib.widget import SimpleInputWidget
 from zope.interface import alsoProvides, implementer
 from zope.publisher.browser import BrowserRequest, BrowserResponse, TestRequest
+from zope.publisher.http import HTTPInputStream
 from zope.publisher.interfaces import NotFound
 from zope.publisher.xmlrpc import XMLRPCRequest, XMLRPCResponse
 from zope.security.interfaces import IParticipation, Unauthorized
@@ -707,6 +708,7 @@ class LaunchpadBrowserRequest(
     """
 
     retry_max_count = 5  # How many times we're willing to retry
+    buffer_size = 64 * 1024  # buffer size for the processInputs
 
     def __init__(self, body_instream, environ, response=None):
         BasicLaunchpadRequest.__init__(self, body_instream, environ, response)
@@ -764,6 +766,136 @@ class LaunchpadBrowserRequest(
     def newTransaction(self, transaction):
         """See `ISynchronizer`."""
         pass
+
+    def _skipParseProcess(self):
+        """Skips the parsing process inside processInputs by re-creating and
+        re-inserting the input stream"""
+
+        # The cache stream stores all the previous read operation results.
+        # getCacheStream() reads the remaining body as well and adds it to the
+        # cache stream. A complete re-creation is necessary since these stream
+        # classes don't have any "seek()" method we can use to reset.
+        self._body_instream = HTTPInputStream(
+            self._body_instream.getCacheStream(), self._environ
+        )
+
+    # XXX: ilkeremrekoc 2025-03-12
+    # processInputs is a part of Zope's request class, which we override.
+    # This addition is because we are about to upgrade multipart package,
+    # which in its newer versions is strict in its parsing of requests, only
+    # accepting CRLF line-breaks throughout. And since the old versions of
+    # apport package, which is the main bug-filing tool in Ubuntu, uses LF
+    # line-breaks in its requests, we need backwards compatibility until the
+    # older Ubuntu versions' apport packages can implement CRLF SRUs (Stable
+    # Release Update). Once they do, and a sufficient section of users and
+    # Ubuntu versions make the update, we can get rid of this method here.
+    def processInputs(self):
+        """See IPublisherRequest'
+
+        Processes inputs before traversal
+
+        This method overrides `BrowserRequest.processInputs()` to parse LF or
+        CR line-breaks inside requests if they exist into CRLF line-breaks.
+        Calls the parent method afterwards for further processing.
+        """
+
+        # Trigger the parsing only when the arriving request is pointed
+        # towards apport package's entry point.
+        # Note: Aside from apport, the browsers' UI can also reach this
+        # page. This shouldn't affect our current process but should be kept
+        # in mind for any large scale changes in the future.
+        # Note: The third condition is redundant but was added as an extra
+        # security since we really don't wish to enter this block if we are
+        # not in the jurisdiction of the apport package.
+        if (
+            self._environ.get("PATH_INFO") == "/+storeblob"
+            and self._environ.get("REQUEST_METHOD") == "POST"
+            and self._environ.get("CONTENT_TYPE", "").startswith(
+                "multipart/form-data"
+            )
+        ):
+
+            # The request's body is put into a cache stream in the
+            # HTTPInputStream constructor, typed dynamically according to the
+            # size of the body. We wish to use the same type since the use of
+            # the cache is almost identical to ours.
+            parsing_body_stream = type(self._body_instream.cacheStream)()
+
+            buffer = self._body_instream.read(self.buffer_size)
+
+            # If the parsing happens, the content length will change with the
+            # new line-breaks so we store the new one.
+            newContentLength = 0
+
+            log_linebreak_type = ""  # Store the linebreak type for logging
+
+            while buffer != b"":
+
+                if b"\r\n" in buffer:
+
+                    # Since we assume there is a single line-break type in the
+                    # request, we can skip the rest of the parsing when the
+                    # CRLF is found.
+                    self._skipParseProcess()
+
+                    logging_context.push(linebreak_type="CRLF")
+                    super().processInputs()
+                    return
+
+                # The only CRLF in the buffer might have been split between
+                # the next buffer and the current one
+                elif buffer.endswith(b"\r"):
+                    nextChar = self._body_instream.read(1)
+                    buffer += nextChar
+
+                    if nextChar == b"\n":
+                        self._skipParseProcess()
+
+                        logging_context.push(linebreak_type="CRLF")
+                        super().processInputs()
+                        return
+
+                if b"\n" in buffer:
+                    buffer = buffer.replace(b"\n", b"\r\n")
+                    newContentLength += len(buffer)
+
+                    log_linebreak_type = "LF"
+                elif b"\r" in buffer:
+                    # Technically, we don't need CR functionality in our
+                    # codebase, but in this case, not having it would make
+                    # things harder to understand as the question of "what
+                    # happens" would be left unknowable since the downstream
+                    # doesn't raise errors.
+
+                    buffer = buffer.replace(b"\r", b"\r\n")
+                    newContentLength += len(buffer)
+
+                    log_linebreak_type = "CR"
+                else:
+                    # If there are neither CRLF, LF or CR in a buffer, we
+                    # cannot be sure if the Content-Length will change later,
+                    # so, we store the buffer length just in case.
+                    newContentLength += len(buffer)
+
+                parsing_body_stream.write(buffer)
+                buffer = self._body_instream.read(self.buffer_size)
+
+            # Note that we can reach this part only if we parsed the whole
+            # request.
+
+            # Updating the content length by anticipating change.
+            self._environ["CONTENT_LENGTH"] = newContentLength
+
+            logging_context.push(linebreak_type=log_linebreak_type)
+
+            # Reset the stream before we re-create the original one.
+            parsing_body_stream.seek(0)
+            self._body_instream = HTTPInputStream(
+                parsing_body_stream, self._environ
+            )
+
+        super().processInputs()
+        return
 
 
 @implementer(IBrowserFormNG)

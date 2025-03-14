@@ -5,6 +5,7 @@ import io
 import unittest
 from datetime import datetime, timedelta, timezone
 from doctest import ELLIPSIS, NORMALIZE_WHITESPACE, DocTestSuite
+from textwrap import dedent
 
 import transaction
 from lazr.restful.interfaces import (
@@ -22,6 +23,7 @@ from talisker.logs import logging_context
 from testtools.matchers import ContainsDict, Equals
 from zope.component import getGlobalSiteManager, getUtility
 from zope.interface import Interface, implementer
+from zope.publisher.http import HTTPInputStream
 from zope.security.interfaces import Unauthorized
 from zope.security.management import newInteraction
 from zope.security.proxy import removeSecurityProxy
@@ -751,6 +753,212 @@ class TestLaunchpadBrowserRequest(TestCase):
             "The query_string_params dict correctly interprets encoded "
             "parameters.",
         )
+
+
+# XXX: ilkeremrekoc 2025-03-12
+# This test case is for the overridden processInputs inside
+# LaunchpadBrowserRequest. The reason for the overriding is connected to
+# the changes in multipart package (which now only accepts CRLF endings) and
+# the original state of apport package (which only sent LF endings)
+# (see https://bugs.launchpad.net/ubuntu/+source/apport/+bug/2096327). Thus,
+# we add the overridden method and this test case temporarily until the apport
+# package can be SRU'd in a sufficient percantage of Ubuntu users. Both of
+# these can be removed once the prerequisite is fulfilled.
+class TestLaunchpadBrowserRequestProcessInputs(TestCase):
+    layer = FunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+
+        self.body_bytes = dedent(
+            """\
+            Content-Type: multipart/mixed; \
+                boundary="===============4913381966751462219=="
+            MIME-Version: 1.0
+            \n\
+            --===============4913381966751462219==
+            Content-Type: text/plain; charset="us-ascii"
+            MIME-Version: 1.0
+            Content-Transfer-Encoding: 7bit
+            Content-Disposition: form-data; name="FORM_SUBMIT"
+            \n\
+            1
+            --===============4913381966751462219==
+            Content-Type: application/octet-stream
+            MIME-Version: 1.0
+            Content-Disposition: form-data; name="field.blob"; \
+                filename="x"
+            \n\
+            This is for a test....
+            \n\
+            The second line of test
+            \n\
+            The third
+            \n\
+            --===============4913381966751462219==--
+            \n\
+            """
+        ).encode("ASCII")
+
+        self.environ = {
+            "PATH_INFO": "/+storeblob",
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": "multipart/form-data; \
+                boundary================4913381966751462219==",
+        }
+
+    def prepareRequest_lineBreakTest(self, body_bytes, environ):
+        """Return a `LaunchpadBrowserRequest` with the given form.
+
+        Also set the accepted charset to 'utf-8'.
+        """
+
+        body_stream = io.BytesIO(body_bytes)
+        input_stream = HTTPInputStream(body_stream, environ)
+
+        request = LaunchpadBrowserRequest(input_stream, environ)
+        request.charsets = ["utf-8"]
+        return request
+
+    def _assessProcessInputsResult(self, request):
+        """
+        Assesses whether the request has correctly parsed the blob field.
+
+        Passing in this case means the request's form is correctly parsed
+        and it only includes CRLF endings.
+        """
+
+        self.assertIn("field.blob", request.form)
+
+        result = request.form["field.blob"].read()
+
+        self.assertIn(b"\r\n", result)
+        self.assertNotRegex(result, b"[^\r]\n")
+
+    def test_processInputs_with_LF(self):
+        """
+        processInputs parses request bodies with LF line-breaks into CRLF.
+        """
+
+        request = self.prepareRequest_lineBreakTest(
+            self.body_bytes, self.environ
+        )
+        request.processInputs()
+
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_with_CR(self):
+        """
+        processInputs parses request bodies with CR line-breaks into CRLF.
+        """
+
+        body_bytes_with_CR = self.body_bytes.replace(b"\n", b"\r")
+
+        request = self.prepareRequest_lineBreakTest(
+            body_bytes_with_CR, self.environ
+        )
+        request.processInputs()
+
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_with_CRLF(self):
+        """
+        processInputs passes request bodies with CRLF line-breaks.
+        """
+
+        body_bytes_with_CRLF = self.body_bytes.replace(b"\n", b"\r\n")
+
+        request = self.prepareRequest_lineBreakTest(
+            body_bytes_with_CRLF, self.environ
+        )
+        request.processInputs()
+
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_with_multiple_buffer_runs(self):
+        """
+        processInputs should work even when the message overflows the buffer
+        """
+
+        request = self.prepareRequest_lineBreakTest(
+            self.body_bytes, self.environ
+        )
+        request.buffer_size = 4
+
+        request.processInputs()
+
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_with_cut_CRLF(self):
+        """
+        processInputs should work even when a CRLF is cut in the middle
+        """
+
+        body_bytes_with_CRLF = self.body_bytes.replace(b"\n", b"\r\n")
+        CR_index = body_bytes_with_CRLF.index(b"\r")
+
+        request = self.prepareRequest_lineBreakTest(
+            body_bytes_with_CRLF, self.environ
+        )
+        request.buffer_size = len(body_bytes_with_CRLF[: CR_index + 1])
+
+        request.processInputs()
+
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_different_environ_with_LF(self):
+        """
+        processInputs shouldn't work outside its domain. If LF line-breaks are
+        present outside of the apport package domain, the parsing should fail.
+        """
+
+        different_environ = self.environ.copy()
+        different_environ["PATH_INFO"] = ""
+
+        request = self.prepareRequest_lineBreakTest(
+            self.body_bytes, different_environ
+        )
+
+        request.processInputs()
+
+        self.assertNotIn("field.blob", request.form)
+
+    def test_processInputs_different_environ_with_CR(self):
+        """
+        processInputs shouldn't work outside its domain. If CR line-breaks are
+        present outside of the apport package domain, the parsing should fail.
+        """
+
+        body_bytes_with_CR = self.body_bytes.replace(b"\n", b"\r")
+
+        different_environ = self.environ.copy()
+        different_environ["PATH_INFO"] = ""
+
+        request = self.prepareRequest_lineBreakTest(
+            body_bytes_with_CR, different_environ
+        )
+
+        request.processInputs()
+
+        self.assertNotIn("field.blob", request.form)
+
+    def test_processInputs_different_environ_with_CRLF(self):
+        """
+        processInputs should work with CRLF everytime, regardless of domain.
+        """
+
+        body_bytes_with_CRLF = self.body_bytes.replace(b"\n", b"\r\n")
+
+        different_environ = self.environ.copy()
+        different_environ["PATH_INFO"] = ""
+
+        request = self.prepareRequest_lineBreakTest(
+            body_bytes_with_CRLF, different_environ
+        )
+
+        request.processInputs()
+
+        self._assessProcessInputsResult(request)
 
 
 class TestWebServiceRequestToBrowserRequest(WebServiceTestCase):
