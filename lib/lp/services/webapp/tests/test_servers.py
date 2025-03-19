@@ -770,7 +770,7 @@ class TestLaunchpadBrowserRequestProcessInputs(TestCase):
     def setUp(self):
         super().setUp()
 
-        self.body_bytes = dedent(
+        self.body_template_str = dedent(
             """\
             Content-Type: multipart/mixed; \
                 boundary="===============4913381966751462219=="
@@ -789,16 +789,25 @@ class TestLaunchpadBrowserRequestProcessInputs(TestCase):
             Content-Disposition: form-data; name="field.blob"; \
                 filename="x"
             \n\
+            %s
+            \n\
+            --===============4913381966751462219==--
+            \n\
+            """
+        )
+
+        self.standard_blob = dedent(
+            """
             This is for a test....
             \n\
             The second line of test
             \n\
             The third
-            \n\
-            --===============4913381966751462219==--
-            \n\
             """
-        ).encode("ASCII")
+        )
+
+        self.body_str = self.body_template_str % self.standard_blob
+        self.body_bytes = self.body_str.encode("ASCII")
 
         self.environ = {
             "PATH_INFO": "/+storeblob",
@@ -958,6 +967,129 @@ class TestLaunchpadBrowserRequestProcessInputs(TestCase):
 
         request.processInputs()
 
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_content_length(self):
+        """
+        processInputs should change the content length in proportion to the
+        number of LFs.
+        """
+
+        original_body_length = len(self.body_str)
+        lf_count = self.body_str.count("\n")
+
+        environ = self.environ.copy()
+        environ["CONTENT_LENGTH"] = original_body_length
+
+        body_bytes = self.body_str.encode("ASCII")
+
+        request = self.prepareRequest_lineBreakTest(body_bytes, environ)
+
+        request.processInputs()
+
+        # Note that processInputs change the values within "_environ"
+        # internally.
+        self.assertEqual(
+            original_body_length + lf_count, request._environ["CONTENT_LENGTH"]
+        )
+
+    def test_processInputs_above_buffer_size_limit(self):
+        """
+        processInputs should work even when the initial message overflows the
+        buffer.
+        """
+
+        template_size = len(self.body_template_str) - 2  # Subtracting "%s"
+        buffer_size = LaunchpadBrowserRequest.buffer_size
+
+        space_to_fill = buffer_size - template_size
+        blob_size = len(self.standard_blob)
+
+        # Make the whole request above the buffer size limit
+        multiply_blob = (space_to_fill // blob_size) + 1
+        large_blob = self.standard_blob * multiply_blob
+
+        large_body_str = self.body_template_str % large_blob
+        large_body_bytes = large_body_str.encode("ASCII")
+
+        lf_count = large_body_str.count("\n")
+
+        environ = self.environ.copy()
+        environ["CONTENT_LENGTH"] = len(large_body_str)
+
+        request = self.prepareRequest_lineBreakTest(large_body_bytes, environ)
+
+        old_content_length = request._environ["CONTENT_LENGTH"]
+
+        request.processInputs()
+
+        self.assertEqual(
+            old_content_length + lf_count, request._environ["CONTENT_LENGTH"]
+        )
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_just_below_buffer_size_limit(self):
+        """
+        processInputs should work even when the message gets overflowed after
+        initiation.
+        """
+
+        template_size = len(self.body_template_str) - 2  # Subtracting "%s"
+        buffer_size = LaunchpadBrowserRequest.buffer_size
+
+        space_to_fill = buffer_size - template_size
+        blob_size = len(self.standard_blob)
+
+        # Make the whole request above the buffer size limit
+        multiply_blob = space_to_fill // blob_size
+        large_blob = self.standard_blob * multiply_blob
+
+        large_body_str = self.body_template_str % large_blob
+        large_body_bytes = large_body_str.encode("ASCII")
+
+        lf_count = large_body_str.count("\n")
+
+        environ = self.environ.copy()
+        environ["CONTENT_LENGTH"] = len(large_body_str)
+
+        request = self.prepareRequest_lineBreakTest(large_body_bytes, environ)
+
+        old_content_length = request._environ["CONTENT_LENGTH"]
+
+        request.processInputs()
+
+        self.assertEqual(
+            old_content_length + lf_count, request._environ["CONTENT_LENGTH"]
+        )
+        self._assessProcessInputsResult(request)
+
+    def test_processInputs_blob_only_LF(self):
+        """
+        processInputs should work even when the whole blob within the message
+        is gibberish, or made up of entirely LFs and is extremely large.
+        """
+
+        buffer_size = LaunchpadBrowserRequest.buffer_size
+
+        lf_blob = "\n" * buffer_size * 2
+
+        lf_body_str = self.body_template_str % lf_blob
+        lf_body_bytes = lf_body_str.encode("ASCII")
+
+        lf_count = lf_body_str.count("\n")
+
+        environ = self.environ.copy()
+        environ["CONTENT_LENGTH"] = len(lf_body_str)
+
+        request = self.prepareRequest_lineBreakTest(lf_body_bytes, environ)
+
+        old_content_length = request._environ["CONTENT_LENGTH"]
+
+        request.processInputs()
+
+        self.assertEqual(
+            old_content_length + lf_count, request._environ["CONTENT_LENGTH"]
+        )
         self._assessProcessInputsResult(request)
 
 

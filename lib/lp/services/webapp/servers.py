@@ -3,8 +3,10 @@
 
 """Definition of the internet servers that Launchpad uses."""
 
+import tempfile
 import threading
 import xmlrpc.client
+from io import BytesIO
 from urllib.parse import parse_qs
 
 import six
@@ -779,6 +781,28 @@ class LaunchpadBrowserRequest(
             self._body_instream.getCacheStream(), self._environ
         )
 
+    def createResetableStream(self, environment):
+        """Creates a stream to be resetted at the end of the parsing process.
+
+        This method is a copy of the __init__ method of HTTPInputStream class
+        in zope.publisher since we use the returned value of this method in
+        the same request instances in the same way while being unable to
+        properly use that method here.
+        """
+
+        size = environment.get("CONTENT_LENGTH")
+        # There can be no size in the environment (None) or the size
+        # can be an empty string, in which case we treat it as absent.
+        if not size:
+            size = environment.get("HTTP_CONTENT_LENGTH")
+
+        if not size or int(size) < 65536:
+            resetable_stream = BytesIO()
+        else:
+            resetable_stream = tempfile.TemporaryFile()
+
+        return resetable_stream
+
     # XXX: ilkeremrekoc 2025-03-12
     # processInputs is a part of Zope's request class, which we override.
     # This addition is because we are about to upgrade multipart package,
@@ -815,11 +839,13 @@ class LaunchpadBrowserRequest(
             )
         ):
 
-            # The request's body is put into a cache stream in the
-            # HTTPInputStream constructor, typed dynamically according to the
-            # size of the body. We wish to use the same type since the use of
-            # the cache is almost identical to ours.
-            parsing_body_stream = type(self._body_instream.cacheStream)()
+            # The request's body can rise to enourmous sizes since this part
+            # of the code is for filing of bug reports, which require
+            # extensive auto generated information. As a result, we create
+            # the instance dynamically for different request sizes in the
+            # same way the zope.publisher framework's HTTPInputStream's
+            # cacheStream is created.
+            parsing_body_stream = self.createResetableStream(self._environ)
 
             buffer = self._body_instream.read(self.buffer_size)
 
