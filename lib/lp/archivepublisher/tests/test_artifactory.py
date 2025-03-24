@@ -32,6 +32,7 @@ from lp.soyuz.enums import (
     BinaryPackageFormat,
 )
 from lp.soyuz.interfaces.publishing import (
+    IgnorableArtifactoryPoolFileOverwriteError,
     IPublishingSet,
     PoolFileOverwriteError,
 )
@@ -212,7 +213,9 @@ class TestArtifactoryPool(TestCase):
         self.assertEqual(pool.results.NONE, result)
         self.assertTrue(foo.checkIsFile())
 
-    def test_addFile_exists_overwrite(self):
+    def test_addFile_exists_overwrite_non_python_archives(self):
+        # PoolFileOverwriteErrors are raised only for non-Python
+        # Artifactory files.
         pool = self.makePool()
         foo = ArtifactoryPoolTestingFile(
             pool=pool,
@@ -226,6 +229,26 @@ class TestArtifactoryPool(TestCase):
         self.assertTrue(foo.checkIsFile())
         foo.pub_file.libraryfile.contents = b"different"
         self.assertRaises(PoolFileOverwriteError, foo.addToPool)
+
+    def test_addFile_exists_overwrite_ignored_for_python_archives(self):
+        # IgnorableArtifactoryPoolFileOverwriteErrors are raised only
+        # for Python Artifactory files. See XXX comments in the appropriate
+        # sources.
+        pool = self.makePool(repository_format=ArchiveRepositoryFormat.PYTHON)
+        foo = ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="foo",
+            source_version="1.0",
+            filename="foo-1.0.whl",
+            release_type=FakeReleaseType.BINARY,
+            release_id=1,
+        )
+        foo.addToPool()
+        self.assertTrue(foo.checkIsFile())
+        foo.pub_file.libraryfile.contents = b"different"
+        self.assertRaises(
+            IgnorableArtifactoryPoolFileOverwriteError, foo.addToPool
+        )
 
     def test_removeFile(self):
         pool = self.makePool()
