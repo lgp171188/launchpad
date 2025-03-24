@@ -93,6 +93,8 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
     recipe_id = Int(name="recipe", allow_none=False)
     recipe = Reference(recipe_id, "CharmRecipe.id")
 
+    craft_platform = Unicode(name="craft_platform", allow_none=True)
+
     distro_arch_series_id = Int(name="distro_arch_series", allow_none=False)
     distro_arch_series = Reference(
         distro_arch_series_id, "DistroArchSeries.id"
@@ -149,6 +151,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
         processor,
         virtualized,
         channels=None,
+        craft_platform=None,
         store_upload_metadata=None,
         date_created=DEFAULT,
     ):
@@ -163,6 +166,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
         self.processor = processor
         self.virtualized = virtualized
         self.channels = channels
+        self.craft_platform = craft_platform
         self.store_upload_metadata = store_upload_metadata
         self.date_created = date_created
         self.status = BuildStatus.NEEDSBUILD
@@ -475,6 +479,7 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         recipe,
         distro_arch_series,
         channels=None,
+        craft_platform=None,
         store_upload_metadata=None,
         date_created=DEFAULT,
     ):
@@ -495,6 +500,7 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             distro_arch_series.processor,
             virtualized,
             channels=channels,
+            craft_platform=craft_platform,
             store_upload_metadata=store_upload_metadata,
             date_created=date_created,
         )

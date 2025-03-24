@@ -540,7 +540,12 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             )
 
     def requestBuild(
-        self, build_request, distro_arch_series, charm_base=None, channels=None
+        self,
+        build_request,
+        distro_arch_series,
+        charm_base=None,
+        channels=None,
+        craft_platform=None,
     ):
         """Request a single build of this charm recipe.
 
@@ -552,6 +557,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         :param distro_arch_series: The architecture to build for.
         :param channels: A dictionary mapping snap names to channels to use
             for this build.
+        :param craft_platform: The platform to build for.
         :return: `ICharmRecipeBuild`.
         """
         self._checkRequestBuild(build_request.requester)
@@ -572,13 +578,18 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             CharmRecipeBuild.recipe == self,
             CharmRecipeBuild.distro_arch_series == distro_arch_series,
             channels_clause,
+            CharmRecipeBuild.craft_platform == craft_platform,
             CharmRecipeBuild.status == BuildStatus.NEEDSBUILD,
         )
         if pending.any() is not None:
             raise CharmRecipeBuildAlreadyPending
 
         build = getUtility(ICharmRecipeBuildSet).new(
-            build_request, self, distro_arch_series, channels=channels
+            build_request,
+            self,
+            distro_arch_series,
+            channels=channels,
+            craft_platform=craft_platform,
         )
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=build_request.requester))
@@ -645,7 +656,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
                 )
 
         builds = []
-        for das in instances_to_build:
+        for info, das in instances_to_build:
             try:
                 charm_base = getUtility(ICharmBaseSet).getByDistroSeries(
                     das.distroseries
@@ -662,18 +673,23 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             else:
                 arch_channels = channels
             try:
+                platform_name = info.platform if info is not None else None
                 build = self.requestBuild(
-                    build_request, das, channels=arch_channels
+                    build_request,
+                    das,
+                    channels=arch_channels,
+                    craft_platform=platform_name,
                 )
                 if logger is not None:
                     logger.debug(
-                        " - %s/%s/%s %s/%s/%s: Build requested.",
+                        " - %s/%s/%s %s/%s/%s/%s: Build requested.",
                         self.owner.name,
                         self.project.name,
                         self.name,
                         das.distroseries.distribution.name,
                         das.distroseries.name,
                         das.architecturetag,
+                        platform_name,
                     )
                 builds.append(build)
             except CharmRecipeBuildAlreadyPending:
@@ -683,13 +699,14 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
                     raise
                 elif logger is not None:
                     logger.exception(
-                        " - %s/%s/%s %s/%s/%s: %s",
+                        " - %s/%s/%s %s/%s/%s/%s: %s",
                         self.owner.name,
                         self.project.name,
                         self.name,
                         das.distroseries.distribution.name,
                         das.distroseries.name,
                         das.architecturetag,
+                        platform_name,
                         e,
                     )
         return builds

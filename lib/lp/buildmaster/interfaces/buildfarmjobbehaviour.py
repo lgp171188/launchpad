@@ -121,6 +121,8 @@ class BuildArgs(TypedDict, total=False):
     private: bool
     # The URL of the proxy for internet access [charm, ci, oci, snap].
     proxy_url: str
+    # The platform name to build for [charm, snap, sources, rocks].
+    craft_platform: str
     # The text of the recipe to build [required for
     # sourcepackagerecipe].
     recipe_text: str

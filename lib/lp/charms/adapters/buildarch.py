@@ -6,8 +6,9 @@ __all__ = [
 ]
 
 import json
-import re
-from collections import Counter, OrderedDict
+from collections import Counter
+
+from craft_platforms import CraftPlatformsError, get_build_plan
 
 from lp.services.helpers import english_list
 
@@ -40,6 +41,17 @@ class DuplicateRunOnError(CharmBasesParserError):
                 "is" if len(duplicates) == 1 else "are",
             )
         )
+
+
+class CraftPlatformsBuildPlanError(CharmBasesParserError):
+    """Error raised when craft-platforms fails while generating a build
+    plan.
+    """
+
+    def __init__(self, message, resolution=None):
+        if resolution:
+            message += f" Resolution: {resolution}"
+        super().__init__(message)
 
 
 class CharmBase:
@@ -126,90 +138,21 @@ class CharmBaseConfiguration:
         return cls(build_on, run_on=run_on)
 
 
-class UnifiedCharmBaseConfiguration:
-    """A unified base configuration in charmcraft.yaml"""
-
-    def __init__(self, build_on, run_on=None):
-        self.build_on = build_on
-        self.run_on = list(build_on) if run_on is None else run_on
-
-    @classmethod
-    def from_dict(cls, charmcraft_data, supported_arches):
-        base = charmcraft_data["base"]
-        if isinstance(base, str):
-            # Expected short-form value looks like 'ubuntu@24.04'
-            match = re.match(r"(.+)@(.+)", base)
-            if not match:
-                raise BadPropertyError(
-                    f"Invalid value for base '{base}'. Expected value should "
-                    "be like 'ubuntu@24.04'"
-                )
-            base_name, base_channel = match.groups()
-        else:
-            # Expected value looks like {"name": "ubuntu", "channel": "24.04"}
-            base_name = base["name"]
-            # If a value like 24.04 is unquoted in yaml, it will be
-            # interpreted as a float. So we convert it to a string.
-            base_channel = str(base["channel"])
-
-        # XXX lgp171188 2024-06-11: Find out if we need 'build-base' or not.
-        # There is no existing code that is using that.
-
-        platforms = charmcraft_data.get("platforms")
-        if not platforms:
-            raise MissingPropertyError(
-                "platforms", "The 'platforms' property is required"
-            )
-        configs = []
-        for platform, configuration in platforms.items():
-            # The 'platforms' property and its values look like
-            # platforms:
-            #   ubuntu-amd64:
-            #     build-on: [amd64]
-            #     build-for: [amd64]
-            # 'ubuntu-amd64' will be the value of 'platform' and its value dict
-            # containing the keys 'build-on', 'build-for' will be the value of
-            # 'configuration'.
-            name = base_name
-            channel = base_channel
-            if configuration:
-                build_on = configuration["build-on"]
-                if isinstance(build_on, str):
-                    build_on = [build_on]
-
-                build_on = [
-                    CharmBase(name, channel, architecture)
-                    for architecture in build_on
-                ]
-
-                build_for = configuration["build-for"]
-                if isinstance(build_for, str):
-                    build_for = [build_for]
-
-                build_for = [
-                    CharmBase(name, channel, architecture)
-                    for architecture in build_for
-                ]
-            else:
-                supported_arch_names = (
-                    das.architecturetag for das in supported_arches
-                )
-                if platform in supported_arch_names:
-                    build_on = [CharmBase(name, channel, platform)]
-                    build_for = [CharmBase(name, channel, platform)]
-                else:
-                    raise BadPropertyError(
-                        f"'{platform}' is not a supported architecture "
-                        f"for '{base_name}@{base_channel}'."
-                    )
-            configs.append(cls(build_on, build_for))
-        return configs
-
-
 def determine_instances_to_build(
     charmcraft_data, supported_arches, default_distro_series
 ):
     """Return a list of instances to build based on charmcraft.yaml.
+
+    Handles three cases:
+    1) 'bases' configuration
+       Legacy format. Deprecated in favor of the unified format and expected
+       to be removed in the future.
+    2) Unified format configuration
+       The recommended format using 'base', 'build-base', and 'platforms'.
+       Supported by craft-platforms and actively maintained.
+    3) With no bases specified configuration
+       Launchpad specific fallback behavior when no base/platform is declared.
+       To be removed once the unified format is fully adopted.
 
     :param charmcraft_data: A parsed charmcraft.yaml.
     :param supported_arches: An ordered list of all `DistroArchSeries` that
@@ -219,18 +162,143 @@ def determine_instances_to_build(
         charmcraft.yaml does not explicitly declare any bases.
     :return: A list of `DistroArchSeries`.
     """
+
+    def _check_duplicate_run_on(configs):
+        """Ensure that multiple `run-on` items don't overlap;
+        this is ambiguous and forbidden by charmcraft.
+
+        :param configs: List of CharmBaseConfiguration objects
+        :raises DuplicateRunOnError if any architecture appears in
+        multiple run-on configurations
+        """
+
+        run_ons = Counter()
+        for config in configs:
+            run_ons.update(config.run_on)
+        duplicates = {config for config, count in run_ons.items() if count > 1}
+        if duplicates:
+            raise DuplicateRunOnError(duplicates)
+
+    def _process_configs_to_instances(configs, supported_arches):
+        """Convert base configurations to buildable instances.
+
+        Filters configurations to only include supported architectures and
+        distro series.
+
+        :param configs: List of CharmBaseConfiguration objects
+        :param supported_arches: List of supported DistroArchSeries
+        :return: OrderedDict of filtered DistroArchSeries instances
+        """
+
+        _check_duplicate_run_on(configs)
+        instances = {}
+        for config in configs:
+            # Charms are allowed to declare that they build on architectures
+            # that Launchpad doesn't currently support (perhaps they're
+            # upcoming, or perhaps they used to be supported).  We just ignore
+            # those.
+            for build_on in config.build_on:
+                for das in supported_arches:
+                    if das.distroseries.distribution.name != build_on.name:
+                        continue
+                    if build_on.channel not in (
+                        das.distroseries.name,
+                        das.distroseries.version,
+                    ):
+                        continue
+                    if build_on.architectures is None:
+                        # Build on all supported architectures for the
+                        # requested series.
+                        instances[das] = None
+                    elif das.architecturetag in build_on.architectures:
+                        # Build on the first matching supported architecture
+                        # for the requested series.
+                        instances[das] = None
+                        break
+                else:
+                    continue
+                break
+        return instances
+
     from lp.charms.model.charmrecipe import is_unified_format
 
+    # 1) Charm with 'bases' format
     bases_list = charmcraft_data.get("bases")
-
     if bases_list:
         configs = [
             CharmBaseConfiguration.from_dict(item) for item in bases_list
         ]
+        instances = _process_configs_to_instances(configs, supported_arches)
+        instances_to_build = [(None, das) for das in instances.keys()]
+        return instances_to_build
+
+    # 2) Charm with unified format
     elif is_unified_format(charmcraft_data):
-        configs = UnifiedCharmBaseConfiguration.from_dict(
-            charmcraft_data, supported_arches
-        )
+
+        # Validate base format, dict not allowed
+        base = charmcraft_data.get("base")
+        if isinstance(base, dict):
+            raise BadPropertyError(
+                f"'base' must be a string, but got a dict: {base}"
+            )
+
+        # Generate exhaustive build plan
+        try:
+            exhaustive_build_plan = get_build_plan(
+                app="charmcraft",
+                project_data=charmcraft_data,
+            )
+        # XXX alvarocs 2025-04-04: craft-platforms currently raises
+        # 'ValueError' when it encounters malformed input such as an invalid
+        # base or platform name. These should instead raise
+        # 'CraftPlatformsError'. Bug tracked at:
+        # https://github.com/canonical/craft-platforms/issues/116
+        except (CraftPlatformsError, ValueError) as e:
+            message = getattr(e, "message", str(e))
+            resolution = getattr(e, "resolution", None)
+            raise CraftPlatformsBuildPlanError(
+                f"Failed to compute the build plan for base={base}, "
+                f"build base={charmcraft_data.get('build-base')}, "
+                f"platforms={charmcraft_data.get('platforms')}: {message}",
+                resolution=resolution,
+            )
+
+        # Filter exhaustive build plan
+        filtered_plan = []
+        for info in exhaustive_build_plan:
+            for das in supported_arches:
+                # Compare DAS-BuildInfo and append if match
+                if (
+                    das.distroseries.distribution.name
+                    == info.build_base.distribution
+                    and info.build_base.series == das.distroseries.version
+                    and das.architecturetag == info.build_on.value
+                ):
+                    filtered_plan.append((info, das))
+                    break
+        # Group by platform
+        platform_plans = {}
+        for info, das in filtered_plan:
+            platform_plans.setdefault(info.platform, []).append((info, das))
+        # Pick one BuildInfo per platform
+        instances_to_build = []
+        for _platform, pairs in platform_plans.items():
+            # One way of building for that platform, i.e one (info, das)
+            if len(pairs) == 1:
+                instances_to_build.append(pairs[0])
+                continue
+            # More than one way of building for that platform
+            for info, das in pairs:
+                # Pick the native build
+                if info.build_on == info.build_for:
+                    instances_to_build.append((info, das))
+                    break
+            # Pick first one if none are native
+            else:
+                instances_to_build.append(pairs[0])
+        return instances_to_build
+
+    # 3) Charms with no bases specified
     else:
         # If no bases are specified, build one for each supported
         # architecture for the default series.
@@ -247,41 +315,6 @@ def determine_instances_to_build(
             for das in supported_arches
             if das.distroseries == default_distro_series
         ]
-
-    # Ensure that multiple `run-on` items don't overlap; this is ambiguous
-    # and forbidden by charmcraft.
-    run_ons = Counter()
-    for config in configs:
-        run_ons.update(config.run_on)
-    duplicates = {config for config, count in run_ons.items() if count > 1}
-    if duplicates:
-        raise DuplicateRunOnError(duplicates)
-
-    instances = OrderedDict()
-    for config in configs:
-        # Charms are allowed to declare that they build on architectures
-        # that Launchpad doesn't currently support (perhaps they're
-        # upcoming, or perhaps they used to be supported).  We just ignore
-        # those.
-        for build_on in config.build_on:
-            for das in supported_arches:
-                if das.distroseries.distribution.name != build_on.name:
-                    continue
-                if build_on.channel not in (
-                    das.distroseries.name,
-                    das.distroseries.version,
-                ):
-                    continue
-                if build_on.architectures is None:
-                    # Build on all supported architectures for the requested
-                    # series.
-                    instances[das] = None
-                elif das.architecturetag in build_on.architectures:
-                    # Build on the first matching supported architecture for
-                    # the requested series.
-                    instances[das] = None
-                    break
-            else:
-                continue
-            break
-    return list(instances)
+        instances = _process_configs_to_instances(configs, supported_arches)
+        instances_to_build = [(None, das) for das in instances.keys()]
+        return instances_to_build
