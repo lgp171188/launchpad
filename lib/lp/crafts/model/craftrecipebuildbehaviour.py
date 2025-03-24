@@ -122,27 +122,6 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         build = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
 
-        if logger is not None:
-            logger.debug("Build recipe: %r", build.recipe)
-            logger.debug("Git ref: %r", build.recipe.git_ref)
-            if build.recipe.git_ref is not None:
-                logger.debug(
-                    "Git ref repository URL: %r",
-                    build.recipe.git_ref.repository_url,
-                )
-                logger.debug("Git repository: %r", build.recipe.git_repository)
-                logger.debug(
-                    "Git repository HTTPS URL: %r",
-                    build.recipe.git_repository.git_https_url,
-                )
-                logger.debug("Git path: %r", build.recipe.git_path)
-                logger.debug("Git ref name: %r", build.recipe.git_ref.name)
-                logger.debug(
-                    "Recipe information type: %r",
-                    build.recipe.information_type,
-                )
-                logger.debug("Is private: %r", build.is_private)
-
         yield self.startProxySession(
             args,
             use_fetch_service=build.recipe.use_fetch_service,
@@ -187,8 +166,14 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 )
             )
         args["private"] = build.is_private
-        if IDistributionSourcePackage.providedBy(
-            build.recipe.git_repository.target
+        args["environment_variables"] = {}
+        # If the git repository target is a DistributionSourcePackage,
+        # add the environment variables for that distribution
+        if (
+            build.recipe.git_repository is not None
+            and IDistributionSourcePackage.providedBy(
+                build.recipe.git_repository.target
+            )
         ):
             distribution_name = (
                 build.recipe.git_repository.target.distribution.name
@@ -196,6 +181,7 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             args["environment_variables"] = self.build_environment_variables(
                 distribution_name
             )
+
         return args
 
     def verifySuccessfulBuild(self):
