@@ -31,6 +31,9 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
 )
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+)
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.twistedsupport import cancel_on_timeout
@@ -184,10 +187,15 @@ class CraftRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 )
             )
         args["private"] = build.is_private
-        distribution_name = build.distro_series.distribution.name
-        args["environment_variables"] = self.build_environment_variables(
-            distribution_name
-        )
+        if IDistributionSourcePackage.providedBy(
+            build.recipe.git_repository.target
+        ):
+            distribution_name = (
+                build.recipe.git_repository.target.distribution.name
+            )
+            args["environment_variables"] = self.build_environment_variables(
+                distribution_name
+            )
         return args
 
     def verifySuccessfulBuild(self):

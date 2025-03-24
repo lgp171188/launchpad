@@ -777,6 +777,23 @@ class TestAsyncCraftRecipeBuildBehaviour(
         # Verify no environment variables were included
         self.assertEqual({}, args.get("environment_variables", {}))
 
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_no_distribution_target(self):
+        """Test that no environment variables are included when the target is
+        not a distribution."""
+        # Create a project (not a distribution)
+        project = self.factory.makeProduct()
+
+        # Create a job targeting that project
+        job = self.makeJob(git_repository_target=project)
+
+        # Get the build arguments
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+
+        # Verify no environment variables were included
+        self.assertNotIn("environment_variables", args)
+
 
 class TestAsyncCraftRecipeBuildBehaviourFetchService(
     StatsMixin, TestCraftRecipeBuildBehaviourBase
