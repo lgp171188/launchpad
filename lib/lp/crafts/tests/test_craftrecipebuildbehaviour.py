@@ -650,22 +650,9 @@ class TestAsyncCraftRecipeBuildBehaviour(
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs(logger=logger)
 
-        # Debug prints
-        print("\nDebug logs:")
-        print(logger.getLogBuffer())
-        print("\nArgs:", args)
-        if "git_repository" in args:
-            print("\nGit URL:", args["git_repository"])
-            parts = urlsplit(args["git_repository"])
-            print("URL parts:", parts)
-
         # Asserts that nothing here is a zope proxy, to avoid errors when
         # serializing it for XML-RPC call.
         self.assertHasNoZopeSecurityProxy(args)
-
-        # Print the log buffer for debugging
-        print("\nDebug logs:")
-        print(logger.getLogBuffer())
 
         # Add assertions similar to snap build test
         split_browse_root = urlsplit(config.codehosting.git_browse_root)
@@ -712,9 +699,20 @@ class TestAsyncCraftRecipeBuildBehaviour(
             ),
         )
 
-        # Create build for a different distribution
+        # Create a random distribution
         distribution = self.factory.makeDistribution(name="distribution-123")
-        job = self.makeJob(distribution=distribution)
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        # Create a git repository targeting that package
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        # Create a git ref for that repository
+        [git_ref] = self.factory.makeGitRefs(repository=git_repository)
+
+        # Create a job using that git ref
+        job = self.makeJob(git_ref=git_ref)
 
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
@@ -741,9 +739,20 @@ class TestAsyncCraftRecipeBuildBehaviour(
             ),
         )
 
-        # Create build for SOSS distribution
+        # Create a distribution source package for SOSS
         distribution = self.factory.makeDistribution(name="soss")
-        job = self.makeJob(distribution=distribution)
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        # Create a git repository targeting that package
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        # Create a git ref for that repository
+        [git_ref] = self.factory.makeGitRefs(repository=git_repository)
+
+        # Create a job using that git ref
+        job = self.makeJob(git_ref=git_ref)
 
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
@@ -769,7 +778,12 @@ class TestAsyncCraftRecipeBuildBehaviour(
         variables should be included."""
         # Create build for SOSS distribution but don't configure any variables
         distribution = self.factory.makeDistribution(name="soss")
-        job = self.makeJob(distribution=distribution)
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        [git_ref] = self.factory.makeGitRefs(repository=git_repository)
+        job = self.makeJob(git_ref=git_ref)
 
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
@@ -798,7 +812,7 @@ class TestAsyncCraftRecipeBuildBehaviour(
             args = yield job.extraBuildArgs()
 
         # Verify no environment variables were included
-        self.assertNotIn("environment_variables", args)
+        self.assertEqual({}, args.get("environment_variables", {}))
 
 
 class TestAsyncCraftRecipeBuildBehaviourFetchService(
