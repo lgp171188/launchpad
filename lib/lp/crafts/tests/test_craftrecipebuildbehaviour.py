@@ -784,8 +784,14 @@ class TestAsyncCraftRecipeBuildBehaviour(
         # Create a project (not a distribution)
         project = self.factory.makeProduct()
 
-        # Create a job targeting that project
-        job = self.makeJob(git_repository_target=project)
+        # Create a git repository targeting that project
+        git_repository = self.factory.makeGitRepository(target=project)
+
+        # Create a git ref for that repository
+        [git_ref] = self.factory.makeGitRefs(repository=git_repository)
+
+        # Create a job using that git ref
+        job = self.makeJob(git_ref=git_ref)
 
         # Get the build arguments
         with dbuser(config.builddmaster.dbuser):
