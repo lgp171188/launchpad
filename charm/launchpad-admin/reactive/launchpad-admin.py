@@ -22,6 +22,16 @@ from ols import base, postgres
 from psycopg2.extensions import make_dsn, parse_dsn
 
 
+def configure_logrotate(config):
+    hookenv.log("Writing logrotate configuration.")
+    templating.render(
+        "logrotate.conf.j2",
+        "/etc/logrotate.d/launchpad",
+        config,
+        perms=0o644,
+    )
+
+
 def any_dbname(dsn):
     parsed_dsn = parse_dsn(dsn)
     parsed_dsn["dbname"] = "*"
@@ -129,6 +139,7 @@ def configure():
         "launchpad-admin/launchpad-lazr.conf",
     )
     configure_email(config, "launchpad-admin")
+    configure_logrotate(config)
     configure_cron(config, "crontab.j2")
     templating.render(
         "bash_aliases.j2",
