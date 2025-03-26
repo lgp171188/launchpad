@@ -86,6 +86,7 @@ def main():
 
     handler.setFormatter(log_fmt)
     log.addHandler(handler)
+    log.setLevel(logging.INFO)
 
     user_match_sql = "AND (%s)" % " OR ".join(
         ["usename ~* %s"] * len(options.users)

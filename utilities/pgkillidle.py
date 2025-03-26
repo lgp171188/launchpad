@@ -81,6 +81,7 @@ def main():
 
     handler.setFormatter(log_fmt)
     log.addHandler(handler)
+    log.setLevel(logging.INFO)
 
     ignore_sql = " AND %s NOT IN (usename, application_name)" * len(
         options.ignore or []
