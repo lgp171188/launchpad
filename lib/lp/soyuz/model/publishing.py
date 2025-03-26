@@ -192,9 +192,9 @@ class ArchivePublisherBase:
         # XXX lgp171188 2025-03-24
         # There are some known PoolFileOverwriteError exceptions
         # in the Artifactory publishing process for non-deb (for example,
-        # Python) packages on multiple architectures that we need to
-        # ignore to avoid flooding the OOPS system. The following
-        # `except` clause is needed for that.
+        # Python, Conda, source) packages on multiple architectures
+        # that we need to ignore to avoid flooding the OOPS system.
+        # The following `except` clause is needed for that.
         except IgnorableArtifactoryPoolFileOverwriteError:
             pass
         else:
