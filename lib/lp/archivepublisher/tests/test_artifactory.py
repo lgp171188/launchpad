@@ -264,6 +264,7 @@ class TestArtifactoryPool(TestCase):
             filename="foo-1.0.tar.bz2",
             release_type=FakeReleaseType.BINARY,
             release_id=1,
+            user_defined_fields=[("subdir", "linux-64")],
         )
         foo.addToPool()
         self.assertTrue(foo.checkIsFile())
@@ -277,7 +278,7 @@ class TestArtifactoryPool(TestCase):
         # for Python, Conda, and source archive Artifactory files. See
         # XXX comments in the appropriate sources for more details.
 
-        pool = self.makePool(repository_format=ArchiveRepositoryFormat.SOURCE)
+        pool = self.makePool(repository_format=ArchiveRepositoryFormat.GENERIC)
         foo = ArtifactoryPoolTestingFile(
             pool=pool,
             source_name="foo",
