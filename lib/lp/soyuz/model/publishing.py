@@ -78,6 +78,7 @@ from lp.soyuz.interfaces.distributionjob import (
 from lp.soyuz.interfaces.publishing import (
     DeletionError,
     IBinaryPackagePublishingHistory,
+    IgnorableArtifactoryPoolFileOverwriteError,
     IPublishingSet,
     ISourcePackagePublishingHistory,
     OverrideError,
@@ -188,6 +189,14 @@ class ArchivePublisherBase:
             with temporary_request_timeline(request):
                 error_utility.raising(sys.exc_info(), request)
             log.error("%s (%s)" % (message, request.oopsid))
+        # XXX lgp171188 2025-03-24
+        # There are some known PoolFileOverwriteError exceptions
+        # in the Artifactory publishing process for non-deb (for example,
+        # Python, Conda, source) packages on multiple architectures
+        # that we need to ignore to avoid flooding the OOPS system.
+        # The following `except` clause is needed for that.
+        except IgnorableArtifactoryPoolFileOverwriteError:
+            pass
         else:
             self.setPublished()
 

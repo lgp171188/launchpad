@@ -9,6 +9,7 @@ __all__ = []
 
 import _pythonpath  # noqa: F401
 
+import logging
 import sys
 from optparse import OptionParser
 
@@ -60,11 +61,31 @@ def main():
         help="Kill connection of users matching REGEXP",
         metavar="REGEXP",
     )
+    parser.add_option(
+        "-f",
+        "--log-file",
+        type="string",
+        dest="log_file",
+        help="Set log output to FILE",
+        metavar="FILE",
+    )
     options, args = parser.parse_args()
     if len(args) > 0:
         parser.error("Too many arguments")
     if not options.users:
         parser.error("--user is required")
+
+    # Setup our log
+    log = logging.getLogger(__name__)
+    log_fmt = logging.Formatter(fmt="%(asctime)s %(levelname)s %(message)s")
+
+    if not options.log_file:
+        handler = logging.StreamHandler(stream=sys.stderr)
+    else:
+        handler = logging.FileHandler(options.log_file)
+
+    handler.setFormatter(log_fmt)
+    log.addHandler(handler)
 
     user_match_sql = "AND (%s)" % " OR ".join(
         ["usename ~* %s"] * len(options.users)
@@ -74,7 +95,7 @@ def main():
     cur = con.cursor()
     cur.execute(
         """
-        SELECT usename, pid, backend_start, xact_start
+        SELECT usename, pid, backend_start, xact_start, query
         FROM pg_stat_activity
         WHERE
             pid <> pg_backend_pid()
@@ -89,18 +110,19 @@ def main():
     rows = list(cur.fetchall())
 
     if len(rows) == 0:
-        if not options.quiet:
-            print("No transactions to kill")
+        log.info("No transactions to kill")
         return 0
 
-    for usename, pid, backend_start, transaction_start in rows:
-        print(
-            "Killing %s (%d), %s, %s"
+    for usename, pid, backend_start, transaction_start, query in rows:
+        log.info(
+            "Killing %s (%d), backend_start=(%s), transaction_start=(%s), "
+            "query=(%s)"
             % (
                 usename,
                 pid,
                 backend_start,
                 transaction_start,
+                query[:100],
             )
         )
         if not options.dry_run:

@@ -9,6 +9,7 @@ __all__ = [
     "IBinaryPackagePublishingHistory",
     "IBinaryPackagePublishingHistoryEdit",
     "IBinaryPackagePublishingHistoryPublic",
+    "IgnorableArtifactoryPoolFileOverwriteError",
     "IPublishingEdit",
     "IPublishingSet",
     "ISourcePackagePublishingHistory",
@@ -73,6 +74,19 @@ class PoolFileOverwriteError(Exception):
     This exception is unexpected and when it happens we keep the original
     file in pool and print a warning in the publisher log. It probably
     requires manual intervention in the archive.
+    """
+
+
+class IgnorableArtifactoryPoolFileOverwriteError(Exception):
+    """Raised for an ignorable attempt to overwrite a file in Artifactory.
+
+    Artifactory publishing model has known limitations in modelling the
+    relationship between a source and a binary package for non-deb
+    packages (for example, Python) published on multiple architectures. This
+    causes too many exceptions to be raised in each publisher run and often
+    floods the OOPS system. Due to this, we need to ignore some of these
+    overwrite attempts and not raise an exception. This exception class is
+    used solely for that purpose.
     """
 
 

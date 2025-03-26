@@ -32,6 +32,7 @@ from lp.soyuz.enums import (
     BinaryPackageFormat,
 )
 from lp.soyuz.interfaces.publishing import (
+    IgnorableArtifactoryPoolFileOverwriteError,
     IPublishingSet,
     PoolFileOverwriteError,
 )
@@ -212,7 +213,9 @@ class TestArtifactoryPool(TestCase):
         self.assertEqual(pool.results.NONE, result)
         self.assertTrue(foo.checkIsFile())
 
-    def test_addFile_exists_overwrite(self):
+    def test_addFile_exists_overwrite_non_ignored_archive_types(self):
+        # PoolFileOverwriteErrors are raised only for non-Python, non-Conda,
+        # non-source archives' Artifactory files.
         pool = self.makePool()
         foo = ArtifactoryPoolTestingFile(
             pool=pool,
@@ -226,6 +229,70 @@ class TestArtifactoryPool(TestCase):
         self.assertTrue(foo.checkIsFile())
         foo.pub_file.libraryfile.contents = b"different"
         self.assertRaises(PoolFileOverwriteError, foo.addToPool)
+
+    def test_addFile_exists_overwrite_ignored_for_python_archives(self):
+        # IgnorableArtifactoryPoolFileOverwriteErrors are raised only
+        # for Python, Conda, and source archive Artifactory files. See
+        # XXX comments in the appropriate sources for more details.
+
+        pool = self.makePool(repository_format=ArchiveRepositoryFormat.PYTHON)
+        foo = ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="foo",
+            source_version="1.0",
+            filename="foo-1.0.whl",
+            release_type=FakeReleaseType.BINARY,
+            release_id=1,
+        )
+        foo.addToPool()
+        self.assertTrue(foo.checkIsFile())
+        foo.pub_file.libraryfile.contents = b"different"
+        self.assertRaises(
+            IgnorableArtifactoryPoolFileOverwriteError, foo.addToPool
+        )
+
+    def test_addFile_exists_overwrite_ignored_for_conda_archives(self):
+        # IgnorableArtifactoryPoolFileOverwriteErrors are raised only
+        # for Python, Conda, and source archive Artifactory files. See
+        # XXX comments in the appropriate sources for more details.
+
+        pool = self.makePool(repository_format=ArchiveRepositoryFormat.CONDA)
+        foo = ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="foo",
+            source_version="1.0",
+            filename="foo-1.0.tar.bz2",
+            release_type=FakeReleaseType.BINARY,
+            release_id=1,
+            user_defined_fields=[("subdir", "linux-64")],
+        )
+        foo.addToPool()
+        self.assertTrue(foo.checkIsFile())
+        foo.pub_file.libraryfile.contents = b"different"
+        self.assertRaises(
+            IgnorableArtifactoryPoolFileOverwriteError, foo.addToPool
+        )
+
+    def test_addFile_exists_overwrite_ignored_for_source_archives(self):
+        # IgnorableArtifactoryPoolFileOverwriteErrors are raised only
+        # for Python, Conda, and source archive Artifactory files. See
+        # XXX comments in the appropriate sources for more details.
+
+        pool = self.makePool(repository_format=ArchiveRepositoryFormat.GENERIC)
+        foo = ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="foo",
+            source_version="1.0",
+            filename="foo-1.0.tar.gz",
+            release_type=FakeReleaseType.SOURCE,
+            release_id=1,
+        )
+        foo.addToPool()
+        self.assertTrue(foo.checkIsFile())
+        foo.pub_file.libraryfile.contents = b"different"
+        self.assertRaises(
+            IgnorableArtifactoryPoolFileOverwriteError, foo.addToPool
+        )
 
     def test_removeFile(self):
         pool = self.makePool()
