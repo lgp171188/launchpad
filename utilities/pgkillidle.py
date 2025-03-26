@@ -9,6 +9,7 @@ __all__ = []
 
 import _pythonpath  # noqa: F401
 
+import logging
 import sys
 from optparse import OptionParser
 
@@ -57,9 +58,29 @@ def main():
         help="Ignore connections by USER",
         metavar="USER",
     )
+    parser.add_option(
+        "-f",
+        "--log-file",
+        type="string",
+        dest="log_file",
+        help="Set log output to FILE",
+        metavar="FILE",
+    )
     options, args = parser.parse_args()
     if len(args) > 0:
         parser.error("Too many arguments")
+
+    # Setup our log
+    log = logging.getLogger(__name__)
+    log_fmt = logging.Formatter(fmt="%(asctime)s %(levelname)s %(message)s")
+
+    if not options.log_file:
+        handler = logging.StreamHandler(stream=sys.stderr)
+    else:
+        handler = logging.FileHandler(options.log_file)
+
+    handler.setFormatter(log_fmt)
+    log.addHandler(handler)
 
     ignore_sql = " AND %s NOT IN (usename, application_name)" * len(
         options.ignore or []
@@ -71,7 +92,7 @@ def main():
         """
         SELECT
             usename, application_name, datname, pid,
-            backend_start, state_change, AGE(NOW(), state_change) AS age
+            backend_start, state_change, AGE(NOW(), state_change) AS age, query
         FROM pg_stat_activity
         WHERE
             pid <> pg_backend_pid()
@@ -87,16 +108,18 @@ def main():
     rows = cur.fetchall()
 
     if len(rows) == 0:
-        if not options.quiet:
-            print("No IDLE transactions to kill")
+        log.info("No IDLE transactions to kill")
         return 0
 
-    for usename, appname, datname, pid, backend, state, age in rows:
-        print(80 * "=")
-        print("Killing %s(%d) %s from %s:" % (usename, pid, appname, datname))
-        print("    backend start: %s" % (backend,))
-        print("    idle start:    %s" % (state,))
-        print("    age:           %s" % (age,))
+    for usename, appname, datname, pid, backend, state, age, query in rows:
+        log.info(80 * "=")
+        log.info(
+            "Killing %s(%d) %s from %s:" % (usename, pid, appname, datname)
+        )
+        log.info("    backend start: %s" % (backend,))
+        log.info("    idle start:    %s" % (state,))
+        log.info("    age:           %s" % (age,))
+        log.info("    query:           %s" % (query[:100],))
         if not options.dryrun:
             cur.execute("SELECT pg_terminate_backend(%s)", (pid,))
     cur.close()
