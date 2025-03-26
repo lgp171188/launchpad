@@ -40,6 +40,14 @@ from lp.soyuz.interfaces.publishing import (
     PoolFileOverwriteError,
 )
 
+# The repository types in which PoolFileOverwriteError exceptions
+# are expected and can be ignored.
+IGNORE_PFOES_REPOSITORY_TYPES = (
+    ArchiveRepositoryFormat.CONDA,
+    ArchiveRepositoryFormat.GENERIC,
+    ArchiveRepositoryFormat.PYTHON,
+)
+
 
 def _path_for(
     archive: IArchive,
@@ -357,23 +365,24 @@ class ArtifactoryPoolEntry:
                 error_message = f"{sha1} != {file_hash} for {targetpath}"
                 # XXX 2025-03-24 lgp171188
                 # Due to issues in modelling the relationship between a source
-                # package and a binary package for Python packages getting
-                # built on multiple architectures, we ended up with a lot of
-                # these PoolFileOverwriteError exceptions getting raised for
-                # the same affected files in each run of the Artifactory
-                # publisher. This is unnecessary and is flooding the OOPS
-                # system with too many OOPSes for the same issue. So as a
-                # temporary, stop-gap solution, we are suppressing the
+                # package and a binary package for certain package types
+                # getting built on multiple architectures, we ended up with
+                # a lot of these PoolFileOverwriteError exceptions getting
+                # raised for the same affected files in each run of the
+                # Artifactory publisher. This is unnecessary and is flooding
+                # the OOPS system with too many OOPSes for the same issue.
+                # So as a temporary, stop-gap solution, we are suppressing the
                 # PoolFileOverwriteError exception here and instead raise
                 # IgnorableArtifactoryPoolFileOverwriteError which is getting
                 # ignored in the appropriate upper layers.
                 if (
                     self.archive.repository_format
-                    == ArchiveRepositoryFormat.PYTHON
+                    in IGNORE_PFOES_REPOSITORY_TYPES
                 ):
-                    self.logger.warning(
+                    self.logger.debug(
                         f"Ignoring PoolFileOverwriteError: {error_message} "
-                        "as it is a known limitation for Python packages."
+                        "as it is a known limitation for "
+                        f"{self.archive.repository_format.title} packages."
                     )
                     raise IgnorableArtifactoryPoolFileOverwriteError(
                         error_message
