@@ -379,7 +379,7 @@ class ArtifactoryPoolEntry:
                     self.archive.repository_format
                     in IGNORE_PFOES_REPOSITORY_TYPES
                 ):
-                    self.logger.debug(
+                    self.logger.info(
                         f"Ignoring PoolFileOverwriteError: {error_message} "
                         "as it is a known limitation for "
                         f"{self.archive.repository_format.title} packages."
