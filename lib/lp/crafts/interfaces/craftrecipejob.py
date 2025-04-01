@@ -136,3 +136,45 @@ class ICraftRecipeRequestBuildsJobSource(IJobSource):
             recipe and ID, or its `job_type` is not
             `CraftRecipeJobType.REQUEST_BUILDS`.
         """
+
+
+class IRustCrateUploadJob(Interface):
+    """A job that uploads a Rust crate to a registry."""
+
+    build_id = Attribute("The ID of the build to upload.")
+    build = Attribute("The build to upload.")
+    error_message = Attribute("The error message if the upload failed.")
+
+    def create(build):
+        """Create a new RustCrateUploadJob."""
+
+
+class IRustCrateUploadJobSource(IJobSource):
+    """A source for creating and finding RustCrateUploadJobs."""
+
+    def create(build):
+        """Upload a Rust crate build to a registry.
+
+        :param build: The build to upload.
+        """
+
+
+class IMavenArtifactUploadJob(Interface):
+    """A job that uploads a Maven artifact to a repository."""
+
+    build_id = Attribute("The ID of the build to upload.")
+    build = Attribute("The build to upload.")
+    error_message = Attribute("The error message if the upload failed.")
+
+    def create(build):
+        """Create a new MavenArtifactUploadJob."""
+
+
+class IMavenArtifactUploadJobSource(IJobSource):
+    """A source for creating and finding MavenArtifactUploadJobs."""
+
+    def create(build):
+        """Upload a Maven artifact build to a repository.
+
+        :param build: The build to upload.
+        """

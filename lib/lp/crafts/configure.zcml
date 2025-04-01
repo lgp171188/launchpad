@@ -63,6 +63,11 @@
             interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildAdmin" />
     </class>
 
+    <subscriber
+        for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild
+            lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildStatusChangedEvent"
+        handler="lp.crafts.subscribers.craftrecipebuild.craft_build_status_changed" />
+
     <!-- CraftRecipeBuildSet -->
     <lp:securedutility
         class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildSet"
