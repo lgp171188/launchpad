@@ -9,6 +9,12 @@ options:
       Space-separated list of hosts that should be allowed to rsync Bazaar
       repositories (both public and private).
     default: ""
+  bzr_repositories_sync_branches_source:
+    type: string
+    description: >
+      The rsync module to use in pre-production environmentsfor sync'ing some
+      bzr branches from production for testing. This is not used in production.
+    default: ""
   codehosting_private_ssh_key:
     type: string
     description: >

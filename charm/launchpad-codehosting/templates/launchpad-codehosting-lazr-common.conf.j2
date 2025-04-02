@@ -21,6 +21,7 @@ internal_branch_by_id_root: {{ internal_branch_by_id_root }}
 internal_codebrowse_root: {{ internal_codebrowse_root }}
 mirrored_branches_root: {{ bzr_repositories_root }}
 rewrite_script_log_file: {{ logs_dir }}/rewrite.log
+{{- opt("sync_branches_source", bzr_repositories_sync_branches_source) }}
 
 [error_reports]
 error_dir: {{ var_dir }}/local-oopses-codehost
