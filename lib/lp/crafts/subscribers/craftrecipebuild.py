@@ -63,7 +63,12 @@ def craft_build_status_changed(build, event):
                 config["craftbuild." + distribution_name]
                 should_publish = True
             except NoSectionError:
-                pass
+                # If no section is found, we shouldn't publish
+                should_publish = False
+                log.debug(
+                    "No configuration found for distribution %s, "
+                    "skipping upload" % distribution_name
+                )
 
         # Only schedule uploads for configured distribution builds
         if should_publish and build.recipe.store_upload:
