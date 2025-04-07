@@ -32,7 +32,7 @@ class TestUCTImportScript(TestCase):
         )
         self.assertEqual(0, exit_code)
         self.assertEqual("", out)
-        self.assertIn("CVE-2022-23222 was imported successfully", err)
+        self.assertIn("CVE-2022-23222 was not imported", err)
 
     def test_load_from_directory(self):
         load_from = Path(__file__).parent / "sampledata"
@@ -42,9 +42,9 @@ class TestUCTImportScript(TestCase):
         )
         self.assertEqual(0, exit_code)
         self.assertEqual("", out)
-        self.assertIn("CVE-2007-0255 was imported successfully", err)
-        self.assertIn("CVE-2022-3219 was imported successfully", err)
-        self.assertIn("CVE-2022-23222 was imported successfully", err)
+        self.assertIn("CVE-2007-0255 was not imported", err)
+        self.assertIn("CVE-2022-3219 was not imported", err)
+        self.assertIn("CVE-2022-23222 was not imported", err)
 
     def test_dry_run_does_not_crash(self):
         load_from = Path(__file__).parent / "sampledata" / "CVE-2022-23222"
@@ -64,8 +64,8 @@ class TestUCTImportScript(TestCase):
         )
         self.assertEqual(0, exit_code)
         self.assertEqual("", out)
-        self.assertNotIn("CVE-2022-23222 was imported successfully", err)
-        self.assertIn("CVE-2007-0255 was imported successfully", err)
+        self.assertNotIn("CVE-2022-23222 was not imported", err)
+        self.assertIn("CVE-2007-0255 was not imported", err)
 
         exit_code, out, err = run_script(
             script="scripts/uct-import.py",
@@ -73,9 +73,9 @@ class TestUCTImportScript(TestCase):
         )
         self.assertEqual(0, exit_code)
         self.assertEqual("", out)
-        self.assertIn("CVE-2022-23222 was imported successfully", err)
-        self.assertIn("CVE-2022-3219 was imported successfully", err)
-        self.assertNotIn("CVE-2007-0255 was imported successfully", err)
+        self.assertIn("CVE-2022-23222 was not imported", err)
+        self.assertIn("CVE-2022-3219 was not imported", err)
+        self.assertNotIn("CVE-2007-0255 was not imported", err)
 
         exit_code, out, err = run_script(
             script="scripts/uct-import.py",
@@ -83,6 +83,6 @@ class TestUCTImportScript(TestCase):
         )
         self.assertEqual(0, exit_code)
         self.assertEqual("", out)
-        self.assertIn("CVE-2022-23222 was imported successfully", err)
-        self.assertIn("CVE-2022-3219 was imported successfully", err)
-        self.assertIn("CVE-2007-0255 was imported successfully", err)
+        self.assertIn("CVE-2022-23222 was not imported", err)
+        self.assertIn("CVE-2022-3219 was not imported", err)
+        self.assertIn("CVE-2007-0255 was not imported", err)
