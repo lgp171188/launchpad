@@ -382,7 +382,8 @@ class UCTRecord:
         elif isinstance(value, list):
             output.write(f"{name}:\n")
             for line in value:
-                output.write(f" {line}\n")
+                if line != "":
+                    output.write(f" {line}\n")
         else:
             raise AssertionError()
 
