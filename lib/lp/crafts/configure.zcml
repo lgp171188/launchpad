@@ -115,4 +115,25 @@
         name="craft-recipe-build">
         <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
     </lp:securedutility>
+
+    <!-- Add these utility registrations to lib/lp/crafts/configure.zcml -->
+    <lp:securedutility
+        component="lp.crafts.model.craftrecipejob.RustCrateUploadJob"
+        provides="lp.crafts.interfaces.craftrecipejob.IRustCrateUploadJobSource">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.IRustCrateUploadJobSource" />
+    </lp:securedutility>
+    <class class="lp.crafts.model.craftrecipejob.RustCrateUploadJob">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
+        <allow interface="lp.crafts.interfaces.craftrecipejob.IRustCrateUploadJob" />
+    </class>
+
+    <lp:securedutility
+        component="lp.crafts.model.craftrecipejob.MavenArtifactUploadJob"
+        provides="lp.crafts.interfaces.craftrecipejob.IMavenArtifactUploadJobSource">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.IMavenArtifactUploadJobSource" />
+    </lp:securedutility>
+    <class class="lp.crafts.model.craftrecipejob.MavenArtifactUploadJob">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
+        <allow interface="lp.crafts.interfaces.craftrecipejob.IMavenArtifactUploadJob" />
+    </class>
 </configure>

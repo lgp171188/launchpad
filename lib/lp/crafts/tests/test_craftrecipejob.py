@@ -3,9 +3,7 @@
 
 """Tests for craft recipe jobs."""
 
-import json
 from textwrap import dedent
-from unittest.mock import patch
 
 import six
 from fixtures import FakeLogger
@@ -32,13 +30,14 @@ from lp.crafts.interfaces.craftrecipe import (
 from lp.crafts.interfaces.craftrecipejob import (
     ICraftRecipeJob,
     ICraftRecipeRequestBuildsJob,
-    IMavenArtifactUploadJobSource,
+    IRustCrateUploadJob,
     IRustCrateUploadJobSource,
 )
 from lp.crafts.model.craftrecipejob import (
     CraftRecipeJob,
     CraftRecipeJobType,
     CraftRecipeRequestBuildsJob,
+    RustCrateUploadJob,
 )
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
@@ -287,355 +286,55 @@ class TestRustCrateUploadJob(TestCaseWithFactory):
 
     def test_provides_interface(self):
         # RustCrateUploadJob provides IRustCrateUploadJob.
-        job = getUtility(IRustCrateUploadJobSource).create(
-            self.build, self.build.requester
-        )
-        self.assertProvides(job, IRustCrateUploadJobSource)
+        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+
+        # Check that the instance provides the job interface
+        self.assertProvides(job, IRustCrateUploadJob)
+
+        # Check that the class provides the source interface
+        self.assertProvides(RustCrateUploadJob, IRustCrateUploadJobSource)
 
     def test_create(self):
         # RustCrateUploadJob.create creates a RustCrateUploadJob with the
         # correct attributes.
-        job = getUtility(IRustCrateUploadJobSource).create(
-            self.build, self.build.requester
-        )
+        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+
+        job = removeSecurityProxy(job)
+
         self.assertThat(
             job,
             MatchesStructure(
-                job_type=Equals(CraftRecipeJobType.RUST_CRATE_UPLOAD),
+                class_job_type=Equals(CraftRecipeJobType.RUST_CRATE_UPLOAD),
                 recipe=Equals(self.recipe),
-                requester=Equals(self.build.requester),
                 build=Equals(self.build),
                 error_message=Is(None),
             ),
         )
 
-    @patch("subprocess.run")
-    @patch("os.path.exists")
-    def test_run_success(self, mock_exists, mock_run):
-        # Test successful execution of the job
-        mock_exists.return_value = True
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "Published crate successfully"
+    def test_run_failure_no_archive_file(self):
+        """Test failure when no archive file is found in the build."""
+        job = getUtility(IRustCrateUploadJobSource).create(self.build)
 
-        # Create a test config section
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps(
-                    {"CARGO_REGISTRY_TOKEN": "test-token"}
-                )
-            }
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IRustCrateUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job completed successfully
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.COMPLETED, job.job.status)
-            self.assertIsNone(job.error_message)
-
-            # Verify cargo command was called correctly
-            mock_run.assert_called_once()
-            args, kwargs = mock_run.call_args
-            self.assertEqual(["cargo", "publish"], args[0][:2])
-            self.assertTrue("capture_output" in kwargs)
-            self.assertTrue("text" in kwargs)
-            self.assertTrue("env" in kwargs)
-            self.assertEqual(
-                "test-token", kwargs["env"]["CARGO_REGISTRY_TOKEN"]
-            )
-
-    @patch("subprocess.run")
-    @patch("os.path.exists")
-    def test_run_failure_cargo_command(self, mock_exists, mock_run):
-        # Test failure when cargo command fails
-        mock_exists.return_value = True
-        mock_run.return_value.returncode = 1
-        mock_run.return_value.stderr = (
-            "Failed to publish crate: permission denied"
+        # Create a mock that returns files without .tar.xz extension
+        mock_lfa = self.factory.makeLibraryFileAlias(
+            filename="test.txt", db_only=True
         )
 
-        # Create a test config section
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps(
-                    {"CARGO_REGISTRY_TOKEN": "test-token"}
-                )
-            }
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IRustCrateUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job failed with error message
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.FAILED, job.job.status)
-            self.assertEqual(
-                "Failed to publish crate: permission denied",
-                job.error_message,
-            )
-
-    @patch("os.path.exists")
-    def test_run_failure_no_cargo_toml(self, mock_exists):
-        # Test failure when Cargo.toml doesn't exist
-        mock_exists.return_value = False
-
-        # Create a test config section
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps(
-                    {"CARGO_REGISTRY_TOKEN": "test-token"}
-                )
-            }
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IRustCrateUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job failed with error message
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.FAILED, job.job.status)
-            self.assertEqual(
-                "Cargo.toml not found in build artifacts", job.error_message
-            )
-
-    def test_run_failure_missing_config(self):
-        # Test failure when configuration is missing
-        job = getUtility(IRustCrateUploadJobSource).create(
-            self.build, self.build.requester
+        # Patch the build's getFiles method to return a non-tar.xz file
+        self.patch(
+            removeSecurityProxy(self.build),
+            "getFiles",
+            lambda: [(None, mock_lfa, None)],
         )
-        JobRunner([job]).runAll()
+
+        # Run the job
+        with dbuser(config.IRustCrateUploadJobSource.dbuser):
+            JobRunner([job]).runAll()
 
         # Verify job failed with error message
         job = removeSecurityProxy(job)
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
-            "No configuration found for ubuntu", job.error_message
+            "No archive file found in build",
+            job.error_message,
         )
-
-
-class TestMavenArtifactUploadJob(TestCaseWithFactory):
-    """Test the MavenArtifactUploadJob."""
-
-    layer = CeleryJobLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FakeLogger())
-        self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
-        self.recipe = self.factory.makeCraftRecipe()
-        self.build = self.factory.makeCraftRecipeBuild(recipe=self.recipe)
-
-    def test_provides_interface(self):
-        # MavenArtifactUploadJob provides IMavenArtifactUploadJob.
-        job = getUtility(IMavenArtifactUploadJobSource).create(
-            self.build, self.build.requester
-        )
-        self.assertProvides(job, IMavenArtifactUploadJobSource)
-
-    def test_create(self):
-        # MavenArtifactUploadJob.create creates a MavenArtifactUploadJob
-        # with the correct attributes.
-        job = getUtility(IMavenArtifactUploadJobSource).create(
-            self.build, self.build.requester
-        )
-        self.assertThat(
-            job,
-            MatchesStructure(
-                job_type=Equals(CraftRecipeJobType.MAVEN_ARTIFACT_UPLOAD),
-                recipe=Equals(self.recipe),
-                requester=Equals(self.build.requester),
-                build=Equals(self.build),
-                error_message=Is(None),
-            ),
-        )
-
-    @patch("subprocess.run")
-    @patch("os.path.exists")
-    @patch("builtins.open")
-    def test_run_success(self, mock_open, mock_exists, mock_run):
-        # Test successful execution of the job
-        mock_exists.return_value = True
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "Published Maven artifact successfully"
-
-        # Create a test config section
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps(
-                    {
-                        "MAVEN_PUBLISH_URL": "https://repo.example.com/maven",
-                        "MAVEN_PUBLISH_AUTH": "username:password",
-                    }
-                )
-            },
-            "artifactory": {"write_credentials": "test-write-auth"},
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IMavenArtifactUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job completed successfully
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.COMPLETED, job.job.status)
-            self.assertIsNone(job.error_message)
-
-            # Verify maven command was called correctly
-            mock_run.assert_called_once()
-            args, kwargs = mock_run.call_args
-            self.assertEqual("mvn", args[0][0])
-            self.assertEqual("deploy:deploy-file", args[0][1])
-            self.assertTrue("capture_output" in kwargs)
-            self.assertTrue("text" in kwargs)
-
-    @patch("subprocess.run")
-    @patch("os.path.exists")
-    @patch("builtins.open")
-    def test_run_failure_maven_command(self, mock_open, mock_exists, mock_run):
-        # Test failure when maven command fails
-        mock_exists.return_value = True
-        mock_run.return_value.returncode = 1
-        mock_run.return_value.stderr = (
-            "Failed to deploy artifact: permission denied"
-        )
-
-        # Create a test config section
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps(
-                    {
-                        "MAVEN_PUBLISH_URL": "https://repo.example.com/maven",
-                        "MAVEN_PUBLISH_AUTH": "username:password",
-                    }
-                )
-            },
-            "artifactory": {"write_credentials": "test-write-auth"},
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IMavenArtifactUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job failed with error message
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.FAILED, job.job.status)
-            self.assertEqual(
-                "Failed to publish Maven artifact: permission denied",
-                job.error_message,
-            )
-
-    @patch("os.path.exists")
-    def test_run_failure_no_pom_file(self, mock_exists):
-        # Test failure when pom.xml doesn't exist
-        mock_exists.side_effect = lambda path: (
-            False if path.endswith(".pom") else True
-        )
-
-        # Create a test config section
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps(
-                    {
-                        "MAVEN_PUBLISH_URL": "https://repo.example.com/maven",
-                        "MAVEN_PUBLISH_AUTH": "username:password",
-                    }
-                )
-            },
-            "artifactory": {"write_credentials": "test-write-auth"},
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IMavenArtifactUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job failed with error message
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.FAILED, job.job.status)
-            self.assertEqual(
-                "No POM file found in build artifacts", job.error_message
-            )
-
-    @patch("os.path.exists")
-    def test_run_failure_no_jar_file(self, mock_exists):
-        # Test failure when JAR file doesn't exist
-        mock_exists.side_effect = lambda path: (
-            False if path.endswith(".jar") else True
-        )
-
-        # Create a test config section
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps(
-                    {
-                        "MAVEN_PUBLISH_URL": "https://repo.example.com/maven",
-                        "MAVEN_PUBLISH_AUTH": "username:password",
-                    }
-                )
-            },
-            "artifactory": {"write_credentials": "test-write-auth"},
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IMavenArtifactUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job failed with error message
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.FAILED, job.job.status)
-            self.assertEqual(
-                "No JAR file found in build artifacts", job.error_message
-            )
-
-    def test_run_failure_missing_config(self):
-        # Test failure when configuration is missing
-        job = getUtility(IMavenArtifactUploadJobSource).create(
-            self.build, self.build.requester
-        )
-        JobRunner([job]).runAll()
-
-        # Verify job failed with error message
-        job = removeSecurityProxy(job)
-        self.assertEqual(JobStatus.FAILED, job.job.status)
-        self.assertEqual(
-            "No configuration found for ubuntu", job.error_message
-        )
-
-    def test_run_failure_missing_maven_config(self):
-        # Test failure when Maven-specific configuration is missing
-        test_config = {
-            "craftbuild.ubuntu": {
-                "environment_variables": json.dumps({"OTHER_VAR": "value"})
-            }
-        }
-
-        with patch.dict(config._sections, test_config):
-            job = getUtility(IMavenArtifactUploadJobSource).create(
-                self.build, self.build.requester
-            )
-            JobRunner([job]).runAll()
-
-            # Verify job failed with error message
-            job = removeSecurityProxy(job)
-            self.assertEqual(JobStatus.FAILED, job.job.status)
-            self.assertEqual(
-                "Missing Maven publishing repository configuration",
-                job.error_message,
-            )

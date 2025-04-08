@@ -7,6 +7,10 @@ __all__ = [
     "ICraftRecipeJob",
     "ICraftRecipeRequestBuildsJob",
     "ICraftRecipeRequestBuildsJobSource",
+    "IRustCrateUploadJob",
+    "IRustCrateUploadJobSource",
+    "IMavenArtifactUploadJob",
+    "IMavenArtifactUploadJobSource",
 ]
 
 from lazr.restful.fields import Reference
@@ -138,7 +142,7 @@ class ICraftRecipeRequestBuildsJobSource(IJobSource):
         """
 
 
-class IRustCrateUploadJob(Interface):
+class IRustCrateUploadJob(IRunnableJob):
     """A job that uploads a Rust crate to a registry."""
 
     build_id = Attribute("The ID of the build to upload.")
@@ -159,7 +163,7 @@ class IRustCrateUploadJobSource(IJobSource):
         """
 
 
-class IMavenArtifactUploadJob(Interface):
+class IMavenArtifactUploadJob(IRunnableJob):
     """A job that uploads a Maven artifact to a repository."""
 
     build_id = Attribute("The ID of the build to upload.")

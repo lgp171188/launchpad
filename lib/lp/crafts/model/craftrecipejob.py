@@ -434,7 +434,7 @@ class RustCrateUploadJob(CraftRecipeJobDerived):
             if archive_file is None:
                 # Nothing to do
                 self.error_message = "No archive file found in build"
-                return
+                raise Exception(self.error_message)
 
             # Get the distribution name to access the correct configuration
             distribution_name = None
@@ -452,7 +452,7 @@ class RustCrateUploadJob(CraftRecipeJobDerived):
                 self.error_message = (
                     "Could not determine distribution for build"
                 )
-                return
+                raise Exception(self.error_message)
 
             # Get environment variables from configuration
             try:
@@ -477,7 +477,7 @@ class RustCrateUploadJob(CraftRecipeJobDerived):
                 self.error_message = (
                     f"No configuration found for {distribution_name}"
                 )
-                return
+                raise Exception(self.error_message)
 
             # Look for specific Cargo publishing repository configuration
             cargo_publish_url = env_vars.get("CARGO_PUBLISH_URL")
@@ -487,7 +487,7 @@ class RustCrateUploadJob(CraftRecipeJobDerived):
                 self.error_message = (
                     "Missing Cargo publishing repository configuration"
                 )
-                return
+                raise Exception(self.error_message)
 
             # Download and extract the archive to a temporary location
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -515,7 +515,7 @@ class RustCrateUploadJob(CraftRecipeJobDerived):
 
                 if crate_file is None:
                     self.error_message = "No .crate file found in archive"
-                    return
+                    raise Exception(self.error_message)
 
                 # Set up cargo config
                 cargo_dir = os.path.join(tmpdir, ".cargo")
@@ -642,7 +642,7 @@ class MavenArtifactUploadJob(CraftRecipeJobDerived):
             if archive_file is None:
                 # Nothing to do
                 self.error_message = "No archive file found in build"
-                return
+                raise Exception(self.error_message)
 
             # Get the distribution name to access the correct configuration
             distribution_name = None
@@ -660,7 +660,7 @@ class MavenArtifactUploadJob(CraftRecipeJobDerived):
                 self.error_message = (
                     "Could not determine distribution for build"
                 )
-                return
+                raise Exception(self.error_message)
 
             # Get environment variables from configuration
             try:
@@ -685,7 +685,7 @@ class MavenArtifactUploadJob(CraftRecipeJobDerived):
                 self.error_message = (
                     f"No configuration found for {distribution_name}"
                 )
-                return
+                raise Exception(self.error_message)
 
             # Look for specific Maven publishing repository configuration
             maven_publish_url = env_vars.get("MAVEN_PUBLISH_URL")
@@ -695,7 +695,7 @@ class MavenArtifactUploadJob(CraftRecipeJobDerived):
                 self.error_message = (
                     "Missing Maven publishing repository configuration"
                 )
-                return
+                raise Exception(self.error_message)
 
             # Download and extract the archive to a temporary location
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -723,11 +723,11 @@ class MavenArtifactUploadJob(CraftRecipeJobDerived):
                             pom_file = os.path.join(root, filename)
                 if jar_file is None:
                     self.error_message = "No .jar file found in archive"
-                    return
+                    raise Exception(self.error_message)
 
                 if pom_file is None:
                     self.error_message = "No pom.xml file found in archive"
-                    return
+                    raise Exception(self.error_message)
 
                 # Set up Maven settings
                 maven_dir = os.path.join(tmpdir, ".m2")
