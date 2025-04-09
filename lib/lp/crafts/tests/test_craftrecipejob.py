@@ -3,6 +3,7 @@
 
 """Tests for craft recipe jobs."""
 
+import json
 from textwrap import dedent
 
 import six
@@ -328,13 +329,119 @@ class TestRustCrateUploadJob(TestCaseWithFactory):
         )
 
         # Run the job
-        with dbuser(config.IRustCrateUploadJobSource.dbuser):
-            JobRunner([job]).runAll()
+        JobRunner([job]).runAll()
 
         # Verify job failed with error message
         job = removeSecurityProxy(job)
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
             "No archive file found in build",
+            job.error_message,
+        )
+
+    def test_run_failure_cannot_determine_distribution(self):
+        """Test failure when distribution cannot be determined."""
+        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+
+        # Create a mock for getFiles that returns a tar.xz file
+        mock_lfa = self.factory.makeLibraryFileAlias(
+            filename="test.tar.xz", db_only=True
+        )
+
+        # Patch the build's getFiles method to return a tar.xz file
+        self.patch(
+            removeSecurityProxy(self.build),
+            "getFiles",
+            lambda: [(None, mock_lfa, None)],
+        )
+
+        # Create a mock git repository with a non-distribution target
+        git_repo = self.factory.makeGitRepository()
+        self.patch(
+            removeSecurityProxy(self.recipe), "git_repository", git_repo
+        )
+
+        JobRunner([job]).runAll()
+
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "Could not determine distribution for build",
+            job.error_message,
+        )
+
+    def test_run_failure_no_configuration(self):
+        """Test failure when no configuration is found for the distribution."""
+        # Create a distribution with a name that won't have a configuration
+        distribution = self.factory.makeDistribution(name="nonexistent")
+
+        # Create a distribution source package for our distribution
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        # Create a git repository targeting that package
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        # Update our recipe to use this git repository
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        mock_lfa = self.factory.makeLibraryFileAlias(
+            filename="test.tar.xz", db_only=True
+        )
+
+        self.patch(
+            removeSecurityProxy(self.build),
+            "getFiles",
+            lambda: [(None, mock_lfa, None)],
+        )
+
+        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+
+        JobRunner([job]).runAll()
+
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "No configuration found for nonexistent",
+            job.error_message,
+        )
+
+    def test_run_failure_missing_cargo_config(self):
+        """Test failure when the cargo configuration is missing."""
+        distribution = self.factory.makeDistribution(name="soss")
+
+        # Set up config with environment variables but no Cargo publishing info
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps({"OTHER_VAR": "value"}),
+        )
+
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        mock_lfa = self.factory.makeLibraryFileAlias(
+            filename="test.tar.xz", db_only=True
+        )
+
+        self.patch(
+            removeSecurityProxy(self.build),
+            "getFiles",
+            lambda: [(None, mock_lfa, None)],
+        )
+
+        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+
+        JobRunner([job]).runAll()
+
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "Missing Cargo publishing repository configuration",
             job.error_message,
         )
