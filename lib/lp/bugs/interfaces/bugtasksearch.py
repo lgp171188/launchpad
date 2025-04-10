@@ -493,6 +493,7 @@ DEFAULT_SEARCH_BUGTASK_STATUSES = (
     BugTaskStatusSearch.CONFIRMED,
     BugTaskStatusSearch.TRIAGED,
     BugTaskStatusSearch.INPROGRESS,
+    BugTaskStatusSearch.DEFERRED,
     BugTaskStatusSearch.FIXCOMMITTED,
 )
 

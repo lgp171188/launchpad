@@ -1414,6 +1414,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
                     "Confirmed",
                     "Triaged",
                     "In Progress",
+                    "Deferred",
                     "Fix Committed",
                     "Fix Released",
                 ],

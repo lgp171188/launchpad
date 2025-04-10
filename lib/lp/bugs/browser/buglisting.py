@@ -129,6 +129,7 @@ DISPLAY_BUG_STATUS_FOR_PATCHES = {
     BugTaskStatus.CONFIRMED: True,
     BugTaskStatus.TRIAGED: True,
     BugTaskStatus.INPROGRESS: True,
+    BugTaskStatus.DEFERRED: True,
     BugTaskStatus.FIXCOMMITTED: True,
     BugTaskStatus.FIXRELEASED: False,
     BugTaskStatus.UNKNOWN: False,
@@ -1529,7 +1530,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
                     checked=term.value in default_values,
                 )
             )
-        return shortlist(widget_values, longest_expected=13)
+        return shortlist(widget_values, longest_expected=14)
 
     def getStatusWidgetValues(self):
         """Return data used to render the status checkboxes."""

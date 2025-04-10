@@ -2313,7 +2313,33 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
         self.assertEqual("trunk", alsa_utils.development_focus.name)
 
         current_series_netapplet_task.transitionToStatus(
-            BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+            BugTaskStatus.DEFERRED, getUtility(ILaunchpadCelebrities).admin
+        )
+
+        # The attributes were synced with the generic task.
+        self.assertEqual(
+            "Deferred", current_series_netapplet_task.status.title
+        )
+
+        self.assertEqual(
+            current_series_netapplet_task.date_assigned,
+            generic_netapplet_task.date_assigned,
+        )
+        self.assertEqual(
+            current_series_netapplet_task.date_confirmed,
+            generic_netapplet_task.date_confirmed,
+        )
+        self.assertEqual(
+            current_series_netapplet_task.date_inprogress,
+            generic_netapplet_task.date_inprogress,
+        )
+        self.assertEqual(
+            current_series_netapplet_task.date_closed,
+            generic_netapplet_task.date_closed,
+        )
+        # Only admin can transition from BugTaskStatus.DEFERRED
+        current_series_netapplet_task.transitionToStatus(
+            BugTaskStatus.FIXRELEASED, getUtility(ILaunchpadCelebrities).admin
         )
 
         self.assertIsInstance(generic_netapplet_task.date_left_new, datetime)

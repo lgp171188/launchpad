@@ -251,7 +251,7 @@ render the overview report.
     >>> print(ubuntu_firefox_bugcounts["package_name"])
     mozilla-firefox in Ubuntu
     >>> print(ubuntu_firefox_bugcounts["package_search_url"])  # noqa
-    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=New&field.status=Deferred&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
 
     >>> print(ubuntu_firefox_bugcounts["open_bugs_count"])
     1
@@ -263,11 +263,11 @@ render the overview report.
     0
 
     >>> print(ubuntu_firefox_bugcounts["open_bugs_url"])  # noqa
-    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=New&field.status=Deferred&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
     >>> print(ubuntu_firefox_bugcounts["critical_bugs_url"])  # noqa
-    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.importance=Critical&field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.importance=Critical&field.status=New&field.status=Deferred&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
     >>> print(ubuntu_firefox_bugcounts["unassigned_bugs_url"])  # noqa
-    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?assignee_option=none&field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?assignee_option=none&field.status=New&field.status=Deferred&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
     >>> print(ubuntu_firefox_bugcounts["inprogress_bugs_url"])  # noqa
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=In+Progress&search=Search
 

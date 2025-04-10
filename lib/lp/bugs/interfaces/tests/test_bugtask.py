@@ -53,6 +53,7 @@ class TestFunctions(TestCase):
             BugTaskStatus.TRIAGED: BugTaskStatus.TRIAGED,
             BugTaskStatus.UNKNOWN: BugTaskStatus.UNKNOWN,
             BugTaskStatus.WONTFIX: BugTaskStatus.WONTFIX,
+            BugTaskStatus.DEFERRED: BugTaskStatus.DEFERRED,
         }
         observed = {
             status: normalize_bugtask_status(status)
@@ -80,6 +81,7 @@ class TestFunctions(TestCase):
             BugTaskStatusSearch.OPINION: BugTaskStatus.OPINION,
             BugTaskStatusSearch.TRIAGED: BugTaskStatus.TRIAGED,
             BugTaskStatusSearch.WONTFIX: BugTaskStatus.WONTFIX,
+            BugTaskStatusSearch.DEFERRED: BugTaskStatus.DEFERRED,
         }
         observed = {
             status: normalize_bugtask_status(status)
@@ -112,6 +114,7 @@ class TestFunctions(TestCase):
             BugTaskStatusSearchDisplay.OPINION: BugTaskStatus.OPINION,
             BugTaskStatusSearchDisplay.TRIAGED: BugTaskStatus.TRIAGED,
             BugTaskStatusSearchDisplay.WONTFIX: BugTaskStatus.WONTFIX,
+            BugTaskStatusSearchDisplay.DEFERRED: BugTaskStatus.DEFERRED,
         }
         observed = {
             status: normalize_bugtask_status(status)

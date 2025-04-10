@@ -265,6 +265,7 @@ class FileBugViewBase(LaunchpadFormView):
                 BugTaskStatus.WONTFIX,
                 BugTaskStatus.INCOMPLETE,
                 BugTaskStatus.DOESNOTEXIST,
+                BugTaskStatus.DEFERRED,
             ],
         )
         cache.objects["bugtask_status_data"] = bugtask_status_data

@@ -58,6 +58,11 @@ those statuses are not shown in the UI:
     ...
     zope.testbrowser.browser.ItemNotFoundError: Does Not Exist
 
+    >>> status_control.displayValue = ["Deferred"]
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.ItemNotFoundError: Deferred
+
 Bug Supervisor
 --------------
 

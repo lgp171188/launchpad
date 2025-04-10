@@ -252,6 +252,7 @@ class TestProductSeriesStatus(TestCaseWithFactory):
             (BugTaskStatus.CONFIRMED, 1),
             (BugTaskStatus.TRIAGED, 1),
             (BugTaskStatus.INPROGRESS, 1),
+            (BugTaskStatus.DEFERRED, 1),
             (BugTaskStatus.FIXCOMMITTED, 1),
             (BugTaskStatus.FIXRELEASED, 1),
             (BugTaskStatus.DOESNOTEXIST, 1),
