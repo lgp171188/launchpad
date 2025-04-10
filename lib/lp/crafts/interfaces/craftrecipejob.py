@@ -7,10 +7,8 @@ __all__ = [
     "ICraftRecipeJob",
     "ICraftRecipeRequestBuildsJob",
     "ICraftRecipeRequestBuildsJobSource",
-    "IRustCrateUploadJob",
-    "IRustCrateUploadJobSource",
-    "IMavenArtifactUploadJob",
-    "IMavenArtifactUploadJobSource",
+    "ICraftPublishingJob",
+    "ICraftPublishingJobSource",
 ]
 
 from lazr.restful.fields import Reference
@@ -142,43 +140,32 @@ class ICraftRecipeRequestBuildsJobSource(IJobSource):
         """
 
 
-class IRustCrateUploadJob(IRunnableJob):
-    """A job that uploads a Rust crate to a registry."""
+class ICraftPublishingJob(IRunnableJob):
+    """
+    A job that publishes craft recipe build artifacts to external repositories.
+    """
 
-    build_id = Attribute("The ID of the build to upload.")
-    build = Attribute("The build to upload.")
-    error_message = Attribute("The error message if the upload failed.")
-
-    def create(build):
-        """Create a new RustCrateUploadJob."""
-
-
-class IRustCrateUploadJobSource(IJobSource):
-    """A source for creating and finding RustCrateUploadJobs."""
+    build_id = Attribute("The ID of the build to publish.")
+    build = Attribute("The build to publish.")
+    error_message = Attribute("The error message if the publishing failed.")
 
     def create(build):
-        """Upload a Rust crate build to a registry.
+        """Create a new CraftPublishingJob."""
 
-        :param build: The build to upload.
+    def getPublishingType():
+        """Return the publishing type that this job will handle.
+
+        Each type corresponds to a specific artifact type and publishing
+        destination.
         """
 
 
-class IMavenArtifactUploadJob(IRunnableJob):
-    """A job that uploads a Maven artifact to a repository."""
-
-    build_id = Attribute("The ID of the build to upload.")
-    build = Attribute("The build to upload.")
-    error_message = Attribute("The error message if the upload failed.")
+class ICraftPublishingJobSource(IJobSource):
+    """A source for creating and finding CraftPublishingJobs."""
 
     def create(build):
-        """Create a new MavenArtifactUploadJob."""
+        """
+        Publish artifacts from a craft recipe build to external repositories.
 
-
-class IMavenArtifactUploadJobSource(IJobSource):
-    """A source for creating and finding MavenArtifactUploadJobs."""
-
-    def create(build):
-        """Upload a Maven artifact build to a repository.
-
-        :param build: The build to upload.
+        :param build: The build to publish.
         """

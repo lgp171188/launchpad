@@ -2,18 +2,13 @@
 
 """Event subscribers for craft recipe builds."""
 
-import lzma
 from configparser import NoSectionError
-from tarfile import TarFile
 
 from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
 from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
-from lp.crafts.interfaces.craftrecipejob import (
-    IMavenArtifactUploadJobSource,
-    IRustCrateUploadJobSource,
-)
+from lp.crafts.interfaces.craftrecipejob import ICraftPublishingJobSource
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
@@ -72,42 +67,5 @@ def craft_build_status_changed(build, event):
 
         # Only schedule uploads for configured distribution builds
         if should_publish and build.recipe.store_upload:
-            # Get the archive file and check its contents
-            for _, lfa, _ in build.getFiles():
-                if lfa.filename.endswith(".tar.xz"):
-                    has_crate, has_jar = check_archive_contents(lfa)
-
-                    if has_crate:
-                        log.info(
-                            "Scheduling upload of Rust crate from %r" % build
-                        )
-                        getUtility(IRustCrateUploadJobSource).create(build)
-
-                    if has_jar:
-                        log.info(
-                            "Scheduling upload of Maven artifact from %r"
-                            % build
-                        )
-                        getUtility(IMavenArtifactUploadJobSource).create(build)
-
-                    break
-
-
-def check_archive_contents(lfa):
-    """Check archive for crates and jars.
-
-    Returns a tuple of (has_crate, has_jar)
-    """
-    has_crate = False
-    has_jar = False
-
-    with lzma.open(lfa.open()) as xz:
-        with TarFile.open(fileobj=xz) as tar:
-            for member in tar.getmembers():
-                if member.name.endswith(".crate"):
-                    has_crate = True
-                    break
-                elif member.name.endswith(".jar"):
-                    has_jar = True
-                    break
-    return has_crate, has_jar
+            log.info("Scheduling publishing of artifacts from %r" % build)
+            getUtility(ICraftPublishingJobSource).create(build)

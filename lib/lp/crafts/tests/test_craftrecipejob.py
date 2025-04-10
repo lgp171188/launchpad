@@ -29,16 +29,16 @@ from lp.crafts.interfaces.craftrecipe import (
     CannotParseSourcecraftYaml,
 )
 from lp.crafts.interfaces.craftrecipejob import (
+    ICraftPublishingJob,
+    ICraftPublishingJobSource,
     ICraftRecipeJob,
     ICraftRecipeRequestBuildsJob,
-    IRustCrateUploadJob,
-    IRustCrateUploadJobSource,
 )
 from lp.crafts.model.craftrecipejob import (
+    CraftPublishingJob,
     CraftRecipeJob,
     CraftRecipeJobType,
     CraftRecipeRequestBuildsJob,
-    RustCrateUploadJob,
 )
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
@@ -46,6 +46,7 @@ from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
+from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.mail.sendmail import format_address_for_person
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
@@ -273,87 +274,53 @@ class TestCraftRecipeRequestBuildsJob(TestCaseWithFactory):
         )
 
 
-class TestRustCrateUploadJob(TestCaseWithFactory):
-    """Test the RustCrateUploadJob."""
+class TestCraftPublishingJob(TestCaseWithFactory):
+    """Test the CraftPublishingJob."""
 
     layer = CeleryJobLayer
 
     def setUp(self):
         super().setUp()
+        self.useFixture(
+            FeatureFixture(
+                {"jobs.celery.enabled_classes": "CraftPublishingJob"}
+            )
+        )
         self.useFixture(FakeLogger())
         self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
         self.recipe = self.factory.makeCraftRecipe()
         self.build = self.factory.makeCraftRecipeBuild(recipe=self.recipe)
 
     def test_provides_interface(self):
-        # RustCrateUploadJob provides IRustCrateUploadJob.
-        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+        # CraftPublishingJob provides ICraftPublishingJob.
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
 
         # Check that the instance provides the job interface
-        self.assertProvides(job, IRustCrateUploadJob)
+        self.assertProvides(job, ICraftPublishingJob)
 
         # Check that the class provides the source interface
-        self.assertProvides(RustCrateUploadJob, IRustCrateUploadJobSource)
+        self.assertProvides(CraftPublishingJob, ICraftPublishingJobSource)
 
     def test_create(self):
-        # RustCrateUploadJob.create creates a RustCrateUploadJob with the
+        # CraftPublishingJob.create creates a CraftPublishingJob with the
         # correct attributes.
-        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
 
         job = removeSecurityProxy(job)
 
         self.assertThat(
             job,
             MatchesStructure(
-                class_job_type=Equals(CraftRecipeJobType.RUST_CRATE_UPLOAD),
+                class_job_type=Equals(CraftRecipeJobType.PUBLISH_ARTIFACTS),
                 recipe=Equals(self.recipe),
                 build=Equals(self.build),
                 error_message=Is(None),
             ),
         )
 
-    def test_run_failure_no_archive_file(self):
-        """Test failure when no archive file is found in the build."""
-        job = getUtility(IRustCrateUploadJobSource).create(self.build)
-
-        # Create a mock that returns files without .tar.xz extension
-        mock_lfa = self.factory.makeLibraryFileAlias(
-            filename="test.txt", db_only=True
-        )
-
-        # Patch the build's getFiles method to return a non-tar.xz file
-        self.patch(
-            removeSecurityProxy(self.build),
-            "getFiles",
-            lambda: [(None, mock_lfa, None)],
-        )
-
-        # Run the job
-        JobRunner([job]).runAll()
-
-        # Verify job failed with error message
-        job = removeSecurityProxy(job)
-        self.assertEqual(JobStatus.FAILED, job.job.status)
-        self.assertEqual(
-            "No archive file found in build",
-            job.error_message,
-        )
-
     def test_run_failure_cannot_determine_distribution(self):
         """Test failure when distribution cannot be determined."""
-        job = getUtility(IRustCrateUploadJobSource).create(self.build)
-
-        # Create a mock for getFiles that returns a tar.xz file
-        mock_lfa = self.factory.makeLibraryFileAlias(
-            filename="test.tar.xz", db_only=True
-        )
-
-        # Patch the build's getFiles method to return a tar.xz file
-        self.patch(
-            removeSecurityProxy(self.build),
-            "getFiles",
-            lambda: [(None, mock_lfa, None)],
-        )
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
 
         # Create a mock git repository with a non-distribution target
         git_repo = self.factory.makeGitRepository()
@@ -386,17 +353,7 @@ class TestRustCrateUploadJob(TestCaseWithFactory):
         # Update our recipe to use this git repository
         removeSecurityProxy(self.recipe).git_repository = git_repository
 
-        mock_lfa = self.factory.makeLibraryFileAlias(
-            filename="test.tar.xz", db_only=True
-        )
-
-        self.patch(
-            removeSecurityProxy(self.build),
-            "getFiles",
-            lambda: [(None, mock_lfa, None)],
-        )
-
-        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
 
         JobRunner([job]).runAll()
 
@@ -404,6 +361,94 @@ class TestRustCrateUploadJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
             "No configuration found for nonexistent",
+            job.error_message,
+        )
+
+    def test_run_failure_no_archive_file(self):
+        """Test failure when no archive file is found in the build."""
+        distribution = self.factory.makeDistribution(name="soss")
+
+        # Set up config with environment variables but no Cargo publishing info
+        # We just need a config section for the distribution name
+        self.pushConfig("craftbuild.soss")
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        # Create a job without adding any files to the build
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+
+        # Run the job - it should fail because there are no files
+        JobRunner([job]).runAll()
+
+        # Verify job failed with error message
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "No archive file found in build",
+            job.error_message,
+        )
+
+    def test_run_no_publishable_artifacts(self):
+        """Test failure when no publishable artifacts are found."""
+        distribution = self.factory.makeDistribution(name="soss")
+        self.pushConfig("craftbuild.soss")
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        # Create a tar.xz file with a dummy file (but no artifacts)
+        import lzma
+        import os
+        import tarfile
+        import tempfile
+        from io import BytesIO
+
+        # Create a temporary directory to work in
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a dummy file
+            dummy_file_path = os.path.join(tmpdir, "test.txt")
+            with open(dummy_file_path, "w") as f:
+                f.write("test content")
+
+            # Create a tar file
+            tar_path = os.path.join(tmpdir, "archive.tar")
+            with tarfile.open(tar_path, "w") as tar:
+                tar.add(dummy_file_path, arcname="test.txt")
+
+            # Compress the tar file with lzma
+            tar_xz_path = os.path.join(tmpdir, "archive.tar.xz")
+            with open(tar_path, "rb") as f_in:
+                with lzma.open(tar_xz_path, "wb") as f_out:
+                    f_out.write(f_in.read())
+
+            # Read the compressed file
+            with open(tar_xz_path, "rb") as f:
+                tar_xz_content = f.read()
+
+        librarian = getUtility(ILibraryFileAliasSet)
+        lfa = librarian.create(
+            "archive.tar.xz",
+            len(tar_xz_content),
+            BytesIO(tar_xz_content),
+            "application/x-xz",
+        )
+
+        # Add the file to the build
+        removeSecurityProxy(self.build).addFile(lfa)
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+
+        JobRunner([job]).runAll()
+
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "No publishable artifacts found in archive",
             job.error_message,
         )
 
@@ -420,9 +465,7 @@ class TestRustCrateUploadJob(TestCaseWithFactory):
         package = self.factory.makeDistributionSourcePackage(
             distribution=distribution
         )
-
         git_repository = self.factory.makeGitRepository(target=package)
-
         removeSecurityProxy(self.recipe).git_repository = git_repository
 
         mock_lfa = self.factory.makeLibraryFileAlias(
@@ -435,7 +478,7 @@ class TestRustCrateUploadJob(TestCaseWithFactory):
             lambda: [(None, mock_lfa, None)],
         )
 
-        job = getUtility(IRustCrateUploadJobSource).create(self.build)
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
 
         JobRunner([job]).runAll()
 
@@ -445,3 +488,233 @@ class TestRustCrateUploadJob(TestCaseWithFactory):
             "Missing Cargo publishing repository configuration",
             job.error_message,
         )
+
+    def test_run_failure_no_crate_file(self):
+        """Test failure when no crate files are found in the archive."""
+        distribution = self.factory.makeDistribution(name="soss")
+
+        # Set up config with proper Cargo publishing info
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps(
+                {
+                    "CARGO_PUBLISH_URL": "https://example.com/cargo",
+                    "CARGO_PUBLISH_AUTH": "user:pass",
+                }
+            ),
+        )
+
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        # Create a tar.xz file with a dummy file (but no crate files)
+        import tarfile
+        from io import BytesIO
+
+        # Create a temporary tar.xz file with a dummy file
+        tar_content = BytesIO()
+        with tarfile.open(fileobj=tar_content, mode="w:xz") as tar:
+            # Add a dummy file to the archive
+            info = tarfile.TarInfo("test.txt")
+            data = b"test content"
+            info.size = len(data)
+            tar.addfile(info, BytesIO(data))
+
+        # Get the tar.xz content
+        tar_content.seek(0)
+        content = tar_content.read()
+
+        # Create a LibraryFileAlias
+        mock_lfa = self.factory.makeLibraryFileAlias(
+            filename="test.tar.xz",
+            db_only=True,  # We'll mock the content access
+        )
+
+        # Create a mock file-like object that returns our content
+        mock_file = BytesIO(content)
+
+        # Mock the open method of the LibraryFileAlias
+        def mock_open():
+            mock_file.seek(0)
+            return mock_file
+
+        self.patch(removeSecurityProxy(mock_lfa), "open", mock_open)
+
+        # Add the file to the build
+        removeSecurityProxy(self.build).addFile(mock_lfa)
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+
+        JobRunner([job]).runAll()
+
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "No .crate file found in archive",
+            job.error_message,
+        )
+
+    def test_run_failure_cargo_publish(self):
+        """Test failure when cargo publish command fails."""
+        distribution = self.factory.makeDistribution(name="soss")
+
+        # Set up config with proper Cargo publishing info
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps(
+                {
+                    "CARGO_PUBLISH_URL": "https://example.com/cargo",
+                    "CARGO_PUBLISH_AUTH": "user:pass",
+                }
+            ),
+        )
+
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        # Create a tar.xz file with a dummy crate file
+        import subprocess
+        import tarfile
+        from io import BytesIO
+        from unittest.mock import Mock
+
+        # Create a temporary tar.xz file with a crate file
+        tar_content = BytesIO()
+        with tarfile.open(fileobj=tar_content, mode="w:xz") as tar:
+            # Add a dummy crate file
+            info = tarfile.TarInfo("test-package.crate")
+            data = b"dummy crate content"
+            info.size = len(data)
+            tar.addfile(info, BytesIO(data))
+
+        # Get the tar.xz content
+        tar_content.seek(0)
+        content = tar_content.read()
+
+        # Create a LibraryFileAlias
+        mock_lfa = self.factory.makeLibraryFileAlias(
+            filename="test.tar.xz",
+            db_only=True,  # We'll mock the content access
+        )
+
+        # Create a mock file-like object that returns our content
+        mock_file = BytesIO(content)
+
+        # Mock the open method of the LibraryFileAlias
+        def mock_open():
+            mock_file.seek(0)
+            return mock_file
+
+        self.patch(removeSecurityProxy(mock_lfa), "open", mock_open)
+
+        # Add the file to the build
+        removeSecurityProxy(self.build).addFile(mock_lfa)
+
+        # Mock subprocess.run to simulate a cargo command failure
+        mock_result = Mock()
+        mock_result.returncode = 1
+        mock_result.stderr = (
+            "error: failed to publish to registry at "
+            "https://example.com/cargo\n\nCaused by:\n  The package "
+            "test-package cannot be found in the registry."
+        )
+
+        self.patch(subprocess, "run", lambda *args, **kwargs: mock_result)
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+
+        JobRunner([job]).runAll()
+
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "Failed to publish crate: error: failed to publish to registry at "
+            "https://example.com/cargo\n\nCaused by:\n  The package "
+            "test-package cannot be found in the registry.",
+            job.error_message,
+        )
+
+    def test_run_success_cargo(self):
+        """Test successful execution of the Rust crate upload job."""
+        distribution = self.factory.makeDistribution(name="soss")
+
+        # Set up config with proper Cargo publishing info
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps(
+                {
+                    "CARGO_PUBLISH_URL": "https://example.com/cargo",
+                    "CARGO_PUBLISH_AUTH": "user:pass",
+                }
+            ),
+        )
+
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        # Create a tar.xz file with a dummy crate file
+        import subprocess
+        import tarfile
+        from io import BytesIO
+        from unittest.mock import Mock
+
+        # Create a temporary tar.xz file with a crate file
+        tar_content = BytesIO()
+        with tarfile.open(fileobj=tar_content, mode="w:xz") as tar:
+            # Add a dummy crate file
+            info = tarfile.TarInfo("test-package.crate")
+            data = b"dummy crate content"
+            info.size = len(data)
+            tar.addfile(info, BytesIO(data))
+
+        # Get the tar.xz content
+        tar_content.seek(0)
+        content = tar_content.read()
+
+        # Create a LibraryFileAlias
+        mock_lfa = self.factory.makeLibraryFileAlias(
+            filename="test.tar.xz",
+            db_only=True,  # We'll mock the content access
+        )
+
+        # Create a mock file-like object that returns our content
+        mock_file = BytesIO(content)
+
+        # Mock the open method of the LibraryFileAlias
+        def mock_open():
+            mock_file.seek(0)
+            return mock_file
+
+        self.patch(removeSecurityProxy(mock_lfa), "open", mock_open)
+
+        # Add the file to the build
+        removeSecurityProxy(self.build).addFile(mock_lfa)
+
+        # Mock subprocess.run to simulate a successful cargo command
+        mock_result = Mock()
+        mock_result.returncode = 0
+
+        self.patch(subprocess, "run", lambda *args, **kwargs: mock_result)
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+
+        JobRunner([job]).runAll()
+
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.COMPLETED, job.job.status)
+        self.assertIsNone(job.error_message)
