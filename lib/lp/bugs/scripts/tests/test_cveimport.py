@@ -142,6 +142,40 @@ class TestCVEUpdater(TestCase):
         self.assertIsNotNone(cve)
         self.assertEqual("Test description", cve.description)
 
+    def test_process_json_directory_with_bigger_group_name(self):
+        """Test processing a JSON CVE dir with sequence bigger than 9999.
+
+        This test makes sure the regular expression used allows this group dirs
+        and cve files.
+        """
+        # Create test directory structure
+        base_dir = Path(self.temp_dir) / "cves"
+        year_dir = base_dir / "2025"
+
+        # CVE sequence number can be > 9999 so we can have groups like 10xxx
+        # or 9000xxx. See cvelistV5/2014/1000xxx or 2024/56xxx
+        group_dir = year_dir / "9000xxx"
+        group_dir.mkdir(parents=True)
+
+        # Create a test CVE file
+        cve_file = group_dir / "CVE-2025-9000001.json"
+        cve_data = self.create_test_json_cve(cve_id="2025-9000001")
+        cve_file.write_text(json.dumps(cve_data))
+
+        # Process the directory using the script infrastructure
+        updater = self.make_updater([str(base_dir)])
+        processed, errors = updater.process_json_directory(str(base_dir))
+
+        # Verify results
+        self.assertEqual(1, processed)
+        self.assertEqual(0, errors)
+
+        # Verify CVE was created
+        cveset = getUtility(ICveSet)
+        cve = cveset["2025-9000001"]
+        self.assertIsNotNone(cve)
+        self.assertEqual("Test description", cve.description)
+
     def test_process_delta_directory(self):
         """Test processing a directory of delta CVE files."""
         # Create test delta directory
