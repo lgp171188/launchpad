@@ -560,11 +560,6 @@ class CraftPublishingJob(CraftRecipeJobDerived):
 
         # Look for .crate files
         crate_files = list(Path(extract_dir).rglob("*.crate"))
-
-        if not crate_files:
-            raise Exception("No .crate file found in archive")
-
-        # Use the first crate file found
         crate_file = crate_files[0]
 
         # Set up cargo config
