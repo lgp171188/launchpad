@@ -7,6 +7,7 @@ __all__ = [
 ]
 
 import operator
+from collections import defaultdict
 from datetime import timezone
 
 from storm.databases.postgres import JSON
@@ -166,9 +167,10 @@ class Cve(StormBase, BugLinkTargetMixin):
 
     def setCVSSVectorForAuthority(self, cvss):
         """See ICveReference."""
-        self._cvss = {}
+        self._cvss = defaultdict(list)
         for c in cvss:
-            self._cvss[c.authority] = c.vector_string
+            self._cvss[c.authority].append(c.vector_string)
+        self._cvss = dict(self._cvss)
 
 
 @implementer(ICveSet)
