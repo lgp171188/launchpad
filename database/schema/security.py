@@ -653,8 +653,14 @@ def reset_permissions(con, config, options):
     # in favour of requiring the users to do this manually as needed.
     # We conditionally enable it here as various Launchpad roles
     # need it to be able to run the Launchpad test suite without any errors.
+    # Also, we need to check for the existence of the
+    # `grant_create_on_public_schema`  attribute on the parsed options
+    # variable because the `full-update.py` script directly passes the
+    # options for this function without using the OptionParser instance
+    # and the options defined in it in this script.
     if (
-        options.grant_create_on_public_schema
+        hasattr(options, "grant_create_on_public_schema")
+        and options.grant_create_on_public_schema
         and con.server_version // 10000 >= 15
     ):
         log.debug("Granting CREATE on schema 'public' on PostgreSQL 15+.")
