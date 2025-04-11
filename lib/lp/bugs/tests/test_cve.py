@@ -12,6 +12,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.bugs.interfaces.cve import CveStatus, ICveSet
+from lp.bugs.scripts.uct.models import CVSS
 from lp.testing import (
     TestCaseWithFactory,
     login_person,
@@ -240,8 +241,14 @@ class TestCve(TestCaseWithFactory):
         self.assertEqual({}, unproxied_cve.cvss)
 
         cve.setCVSSVectorForAuthority(
-            authority="nvd",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            [
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                    ),
+                ),
+            ]
         )
 
         self.assertEqual(
@@ -263,8 +270,14 @@ class TestCve(TestCaseWithFactory):
         )
 
         cve.setCVSSVectorForAuthority(
-            authority="nvd",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+            [
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                    ),
+                )
+            ]
         )
 
         self.assertEqual(
@@ -273,6 +286,7 @@ class TestCve(TestCaseWithFactory):
         )
 
     def test_setCVSSVectorForAuthority_add_new_when_initial_value_set(self):
+        """Checks that we override CVSS although its not the same authority"""
         cve = self.factory.makeCVE(
             sequence="2099-1234",
             description="A critical vulnerability",
@@ -286,13 +300,18 @@ class TestCve(TestCaseWithFactory):
         )
 
         cve.setCVSSVectorForAuthority(
-            authority="nist",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+            [
+                CVSS(
+                    authority="nist",
+                    vector_string=(
+                        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                    ),
+                ),
+            ]
         )
 
         self.assertEqual(
             {
-                "nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
                 "nist": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
             },
             unproxied_cve.cvss,

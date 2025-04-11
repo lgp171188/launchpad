@@ -477,8 +477,5 @@ class UCTImporter:
         :param lp_cve: LP's `CVE` model to be updated
         :param cve: `CVE` with information from UCT
         """
-        for cvss in cve.cvss:
-            lp_cve.setCVSSVectorForAuthority(
-                cvss.authority, cvss.vector_string
-            )
+        lp_cve.setCVSSVectorForAuthority(cve.cvss)
         lp_cve.discovered_by = cve.discovered_by

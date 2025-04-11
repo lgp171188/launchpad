@@ -164,11 +164,11 @@ class Cve(StormBase, BugLinkTargetMixin):
             {("cve", self.sequence): [("bug", str(bug.id))]}
         )
 
-    def setCVSSVectorForAuthority(self, authority, vector_string):
+    def setCVSSVectorForAuthority(self, cvss):
         """See ICveReference."""
-        if self._cvss is None:
-            self._cvss = {}
-        self._cvss[authority] = vector_string
+        self._cvss = {}
+        for c in cvss:
+            self._cvss[c.authority] = c.vector_string
 
 
 @implementer(ICveSet)
