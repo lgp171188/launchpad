@@ -25,11 +25,17 @@ class HasSnapsMenuMixin:
         context = self.context
         if isinstance(context, DecoratedBranch):
             context = context.branch
-        enabled = (
-            not getUtility(ISnapSet)
-            .findByContext(context, visible_by_user=self.user)
-            .is_empty()
-        )
+
+        # The dynamic link enablement uses a query too complex to be useful
+        # So we disable it for now, for all recipe types:
+        # snap, charm, source, rock and oci
+        enabled = True
+
+        # enabled = (
+        #    not getUtility(ISnapSet)
+        #    .findByContext(context, visible_by_user=self.user)
+        #    .is_empty()
+        # )
         return Link("+snaps", text, icon="info", enabled=enabled)
 
     def create_snap(self):
