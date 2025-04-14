@@ -993,6 +993,89 @@ class TestLaunchpadBrowserRequestProcessInputs(TestCase):
             original_body_length + lf_count, request._environ["CONTENT_LENGTH"]
         )
 
+
+class TestLaunchpadBrowserRequestProcessInputsLarge(TestCase):
+    # Test case for the large inputs slotted into ProcessInputs method
+
+    layer = FunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+
+        self.body_template_str = dedent(
+            """\
+            Content-Type: multipart/mixed; \
+                boundary="===============4913381966751462219=="
+            MIME-Version: 1.0
+            \n\
+            --===============4913381966751462219==
+            Content-Type: text/plain; charset="us-ascii"
+            MIME-Version: 1.0
+            Content-Transfer-Encoding: 7bit
+            Content-Disposition: form-data; name="FORM_SUBMIT"
+            \n\
+            1
+            --===============4913381966751462219==
+            Content-Type: application/octet-stream
+            MIME-Version: 1.0
+            Content-Disposition: form-data; name="field.blob"; \
+                filename="x"
+            \n\
+            %s
+            \n\
+            --===============4913381966751462219==--
+            \n\
+            """
+        )
+
+        self.standard_blob = dedent(
+            """
+            This is for a test....
+            \n\
+            The second line of test
+            \n\
+            The third
+            """
+        )
+
+        self.body_str = self.body_template_str % self.standard_blob
+        self.body_bytes = self.body_str.encode("ASCII")
+
+        self.environ = {
+            "PATH_INFO": "/+storeblob",
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": "multipart/form-data; \
+                boundary================4913381966751462219==",
+        }
+
+    def prepareRequest_lineBreakTest(self, body_bytes, environ):
+        """Return a `LaunchpadBrowserRequest` with the given form.
+
+        Also set the accepted charset to 'utf-8'.
+        """
+
+        body_stream = io.BytesIO(body_bytes)
+        input_stream = HTTPInputStream(body_stream, environ)
+
+        request = LaunchpadBrowserRequest(input_stream, environ)
+        request.charsets = ["utf-8"]
+        return request
+
+    def _assessProcessInputsResult(self, request):
+        """
+        Assesses whether the request has correctly parsed the blob field.
+
+        Passing in this case means the request's form is correctly parsed
+        and it only includes CRLF endings.
+        """
+
+        self.assertIn("field.blob", request.form)
+
+        result = request.form["field.blob"].read()
+
+        self.assertIn(b"\r\n", result)
+        self.assertNotRegex(result, b"[^\r]\n")
+
     def test_processInputs_above_buffer_size_limit(self):
         """
         processInputs should work even when the initial message overflows the
