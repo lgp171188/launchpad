@@ -152,13 +152,6 @@ class ICraftPublishingJob(IRunnableJob):
     def create(build):
         """Create a new CraftPublishingJob."""
 
-    def getPublishingType():
-        """Return the publishing type that this job will handle.
-
-        Each type corresponds to a specific artifact type and publishing
-        destination.
-        """
-
 
 class ICraftPublishingJobSource(IJobSource):
     """A source for creating and finding CraftPublishingJobs."""

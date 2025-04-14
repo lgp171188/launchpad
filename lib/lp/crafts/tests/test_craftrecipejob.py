@@ -3,6 +3,9 @@
 
 """Tests for craft recipe jobs."""
 
+import io
+import json
+import tarfile
 from textwrap import dedent
 
 import six
@@ -362,34 +365,6 @@ class TestCraftPublishingJob(TestCaseWithFactory):
             job.error_message,
         )
 
-    def test_run_failure_no_archive_file(self):
-        """Test failure when no archive file is found in the build."""
-        distribution = self.factory.makeDistribution(name="soss")
-
-        # Set up config with environment variables but no Cargo publishing info
-        # We just need a config section for the distribution name
-        self.pushConfig("craftbuild.soss")
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
-        git_repository = self.factory.makeGitRepository(target=package)
-        removeSecurityProxy(self.recipe).git_repository = git_repository
-
-        # Create a job without adding any files to the build
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-
-        # Run the job - it should fail because there are no files
-        JobRunner([job]).runAll()
-
-        # Verify job failed with error message
-        job = removeSecurityProxy(job)
-
-        self.assertEqual(JobStatus.FAILED, job.job.status)
-        self.assertEqual(
-            "No archive file found in build",
-            job.error_message,
-        )
-
     def test_run_no_publishable_artifacts(self):
         """Test failure when no publishable artifacts are found."""
         distribution = self.factory.makeDistribution(name="soss")
@@ -403,36 +378,18 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         git_repository = self.factory.makeGitRepository(target=package)
         removeSecurityProxy(self.recipe).git_repository = git_repository
 
-        # Create a tar.xz file with a dummy file (but no artifacts)
-        import lzma
-        import tarfile
+        # Create a dummy file (but not a crate or jar)
         from io import BytesIO
 
-        # Create a tar file in memory
-        tar_content = BytesIO()
-        with tarfile.open(fileobj=tar_content, mode="w") as tar:
-            # Add a dummy text file
-            info = tarfile.TarInfo("test.txt")
-            dummy_content = b"test content"
-            info.size = len(dummy_content)
-            tar.addfile(info, BytesIO(dummy_content))
+        dummy_content = b"test content"
 
-        # Compress the tar content with lzma
-        tar_content.seek(0)
-        xz_content = BytesIO()
-        with lzma.open(xz_content, "w") as xz:
-            xz.write(tar_content.read())
-
-        xz_content.seek(0)
-        tar_xz_content = xz_content.read()
-
-        # Create a LibraryFileAlias with the tar.xz content
+        # Create a LibraryFileAlias with the dummy content
         librarian = getUtility(ILibraryFileAliasSet)
         lfa = librarian.create(
-            "archive.tar.xz",
-            len(tar_xz_content),
-            BytesIO(tar_xz_content),
-            "application/x-xz",
+            "test.txt",
+            len(dummy_content),
+            BytesIO(dummy_content),
+            "text/plain",
         )
 
         # Add the file to the build
@@ -441,10 +398,10 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         job = getUtility(ICraftPublishingJobSource).create(self.build)
         JobRunner([job]).runAll()
         job = removeSecurityProxy(job)
-
         self.assertEqual(JobStatus.FAILED, job.job.status)
+
         self.assertEqual(
-            "No publishable artifacts found in archive",
+            "No publishable artifacts found in build",
             job.error_message,
         )
 
@@ -460,33 +417,52 @@ class TestCraftPublishingJob(TestCaseWithFactory):
 
         removeSecurityProxy(self.recipe).git_repository = git_repository
 
-        # Create a tar.xz file with a .crate file
-        import lzma
-        import tarfile
-        from io import BytesIO
+        # Create a BytesIO object to hold the tar data
+        tar_data = io.BytesIO()
 
-        tar_content = BytesIO()
-        with tarfile.open(fileobj=tar_content, mode="w") as tar:
-            # Add a dummy crate file
-            info = tarfile.TarInfo("test-0.1.0.crate")
-            dummy_content = b"dummy crate content"
-            info.size = len(dummy_content)
-            tar.addfile(info, BytesIO(dummy_content))
+        # Create a tar archive
+        with tarfile.open(fileobj=tar_data, mode="w") as tar:
+            # Create a directory entry for the crate
+            crate_dir_info = tarfile.TarInfo("test-0.1.0")
+            crate_dir_info.type = tarfile.DIRTYPE
+            tar.addfile(crate_dir_info)
 
-        tar_content.seek(0)
-        xz_content = BytesIO()
-        with lzma.open(xz_content, "w") as xz:
-            xz.write(tar_content.read())
+            # Add a Cargo.toml file
+            cargo_toml = """
+[package]
+name = "test"
+version = "0.1.0"
+authors = ["Test <test@example.com>"]
+edition = "2018"
+"""
+            cargo_toml_info = tarfile.TarInfo("test-0.1.0/Cargo.toml")
+            cargo_toml_bytes = cargo_toml.encode("utf-8")
+            cargo_toml_info.size = len(cargo_toml_bytes)
+            tar.addfile(cargo_toml_info, io.BytesIO(cargo_toml_bytes))
 
-        xz_content.seek(0)
-        tar_xz_content = xz_content.read()
+            # Add a src directory
+            src_dir_info = tarfile.TarInfo("test-0.1.0/src")
+            src_dir_info.type = tarfile.DIRTYPE
+            tar.addfile(src_dir_info)
 
+            # Add a main.rs file
+            main_rs = 'fn main() { println!("Hello, world!"); }'
+            main_rs_info = tarfile.TarInfo("test-0.1.0/src/main.rs")
+            main_rs_bytes = main_rs.encode("utf-8")
+            main_rs_info.size = len(main_rs_bytes)
+            tar.addfile(main_rs_info, io.BytesIO(main_rs_bytes))
+
+        # Get the tar data
+        tar_data.seek(0)
+        crate_content = tar_data.getvalue()
+
+        # Create a LibraryFileAlias with the crate content
         librarian = getUtility(ILibraryFileAliasSet)
         lfa = librarian.create(
-            "archive.tar.xz",
-            len(tar_xz_content),
-            BytesIO(tar_xz_content),
-            "application/x-xz",
+            "test-0.1.0.crate",
+            len(crate_content),
+            io.BytesIO(crate_content),
+            "application/x-tar",
         )
 
         removeSecurityProxy(self.build).addFile(lfa)
@@ -498,6 +474,114 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
             "Missing Cargo publishing repository configuration",
+            job.error_message,
+        )
+
+    def test_run_crate_extraction_failure(self):
+        """Test failure when crate extraction fails."""
+        distribution = self.factory.makeDistribution(name="soss")
+
+        # Set up config with environment variables
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps(
+                {
+                    "CARGO_PUBLISH_URL": "https://example.com/registry",
+                    "CARGO_PUBLISH_AUTH": "token123",
+                }
+            ),
+        )
+
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        # Create an invalid tar file (just some random bytes)
+        invalid_crate_content = b"This is not a valid tar file"
+
+        librarian = getUtility(ILibraryFileAliasSet)
+        lfa = librarian.create(
+            "invalid-0.1.0.crate",
+            len(invalid_crate_content),
+            io.BytesIO(invalid_crate_content),
+            "application/x-tar",
+        )
+
+        removeSecurityProxy(self.build).addFile(lfa)
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        JobRunner([job]).runAll()
+        job = removeSecurityProxy(job)
+
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertIn(
+            "Failed to extract crate",
+            job.error_message,
+        )
+
+    def test_run_no_directory_in_crate(self):
+        """Test failure when no directory is found in extracted crate."""
+        distribution = self.factory.makeDistribution(name="soss")
+
+        # Set up config with environment variables
+        self.pushConfig(
+            "craftbuild.soss",
+            environment_variables=json.dumps(
+                {
+                    "CARGO_PUBLISH_URL": "https://example.com/registry",
+                    "CARGO_PUBLISH_AUTH": "token123",
+                }
+            ),
+        )
+
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+
+        git_repository = self.factory.makeGitRepository(target=package)
+
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        tar_data = io.BytesIO()
+
+        # Create a tar archive with only files (no directories)
+        with tarfile.open(fileobj=tar_data, mode="w") as tar:
+            # Add a file at the root level (no directory)
+            file_info = tarfile.TarInfo("file.txt")
+            file_content = b"This is a file with no directory"
+            file_info.size = len(file_content)
+            tar.addfile(file_info, io.BytesIO(file_content))
+
+        # Get the tar data
+        tar_data.seek(0)
+        crate_content = tar_data.getvalue()
+
+        # Create a LibraryFileAlias with the crate content
+        librarian = getUtility(ILibraryFileAliasSet)
+        lfa = librarian.create(
+            "nodirs-0.1.0.crate",
+            len(crate_content),
+            io.BytesIO(crate_content),
+            "application/x-tar",
+        )
+
+        # Add the file to the build
+        removeSecurityProxy(self.build).addFile(lfa)
+
+        # Create and run the job
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+
+        JobRunner([job]).runAll()
+
+        # Verify job failed with expected error message
+        job = removeSecurityProxy(job)
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        self.assertEqual(
+            "No directory found in extracted crate",
             job.error_message,
         )
 
@@ -515,43 +599,36 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         git_repository = self.factory.makeGitRepository(target=package)
         removeSecurityProxy(self.recipe).git_repository = git_repository
 
-        # Create a tar.xz file with a .jar file and pom.xml
-        import lzma
-        import tarfile
+        # Create a dummy jar file
         from io import BytesIO
 
-        tar_content = BytesIO()
-        with tarfile.open(fileobj=tar_content, mode="w") as tar:
-            # Add a dummy jar file
-            info = tarfile.TarInfo("test-0.1.0.jar")
-            dummy_jar_content = b"dummy jar content"
-            info.size = len(dummy_jar_content)
-            tar.addfile(info, BytesIO(dummy_jar_content))
+        dummy_jar_content = b"dummy jar content"
 
-            # Add a pom.xml file
-            info = tarfile.TarInfo("pom.xml")
-            dummy_pom_content = b"<project>...</project>"
-            info.size = len(dummy_pom_content)
-            tar.addfile(info, BytesIO(dummy_pom_content))
-
-        tar_content.seek(0)
-        xz_content = BytesIO()
-        with lzma.open(xz_content, "w") as xz:
-            xz.write(tar_content.read())
-
-        xz_content.seek(0)
-        tar_xz_content = xz_content.read()
-
+        # Create a LibraryFileAlias with the jar content
         librarian = getUtility(ILibraryFileAliasSet)
-        lfa = librarian.create(
-            "archive.tar.xz",
-            len(tar_xz_content),
-            BytesIO(tar_xz_content),
-            "application/x-xz",
+        jar_lfa = librarian.create(
+            "test-0.1.0.jar",
+            len(dummy_jar_content),
+            BytesIO(dummy_jar_content),
+            "application/java-archive",
         )
 
-        removeSecurityProxy(self.build).addFile(lfa)
+        # Create a dummy pom file
+        dummy_pom_content = b"<project>...</project>"
 
+        # Create a LibraryFileAlias with the pom content
+        pom_lfa = librarian.create(
+            "pom.xml",
+            len(dummy_pom_content),
+            BytesIO(dummy_pom_content),
+            "application/xml",
+        )
+
+        # Add the files to the build
+        removeSecurityProxy(self.build).addFile(jar_lfa)
+        removeSecurityProxy(self.build).addFile(pom_lfa)
+
+        # Create and run the job
         job = getUtility(ICraftPublishingJobSource).create(self.build)
         JobRunner([job]).runAll()
         job = removeSecurityProxy(job)

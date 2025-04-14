@@ -11,13 +11,10 @@ __all__ = [
 ]
 
 import json
-import lzma
 import os
 import subprocess
-import tarfile
 import tempfile
 from configparser import NoSectionError
-from pathlib import Path
 
 import transaction
 from lazr.delegates import delegate_to
@@ -414,37 +411,6 @@ class CraftPublishingJob(CraftRecipeJobDerived):
         """See `ICraftPublishingJob`."""
         self.metadata["error_message"] = message
 
-    def getPublishingType(self, archive_path):
-        """Determine the type of artifacts to publish.
-
-        :param archive_path: Optional path to an already downloaded archive
-        file
-        :return: "cargo", "maven", or None if no publishable artifacts found
-        """
-        try:
-            has_crate = False
-            has_jar = False
-            has_pom = False
-
-            with lzma.open(archive_path) as xz:
-                with tarfile.open(fileobj=xz) as tar:
-                    for member in tar.getmembers():
-                        if member.name.endswith(".crate"):
-                            has_crate = True
-                        elif member.name.endswith(".jar"):
-                            has_jar = True
-                        elif member.name == "pom.xml":
-                            has_pom = True
-
-                        if has_crate:
-                            return "cargo"
-                        if has_jar and has_pom:
-                            return "maven"
-        except Exception:
-            pass
-
-        return None
-
     def run(self):
         """See `IRunnableJob`."""
         try:
@@ -486,53 +452,95 @@ class CraftPublishingJob(CraftRecipeJobDerived):
                 )
                 raise Exception(self.error_message)
 
-            # Find the archive file in the build
-            archive_file = None
+            # Check if we have a .crate file or .jar file
+            crate_file = None
+            jar_file = None
+            pom_file = None
+
             for _, lfa, _ in self.build.getFiles():
-                if lfa.filename.endswith(".tar.xz"):
-                    archive_file = lfa
-                    break
+                if lfa.filename.endswith(".crate"):
+                    crate_file = lfa
+                elif lfa.filename.endswith(".jar"):
+                    jar_file = lfa
+                elif lfa.filename == "pom.xml":
+                    pom_file = lfa
 
-            if archive_file is None:
-                raise Exception("No archive file found in build")
-
-            # Process the archive file
+            # Process the crate file
             with tempfile.TemporaryDirectory() as tmpdir:
-                # Download the archive file to a temporary location
-                archive_path = os.path.join(tmpdir, "archive.tar.xz")
+                if crate_file is not None:
+                    # Download the crate file
+                    crate_path = os.path.join(tmpdir, crate_file.filename)
+                    crate_file.open()
+                    try:
+                        with open(crate_path, "wb") as f:
+                            f.write(crate_file.read())
+                    finally:
+                        crate_file.close()
 
-                # Use the correct pattern for LibraryFileAlias
-                archive_file.open()  # This sets _datafile but returns None
-                try:
-                    with open(archive_path, "wb") as f:
-                        f.write(archive_file.read())
-                finally:
-                    archive_file.close()
+                    # Create a directory to extract the crate
+                    crate_extract_dir = os.path.join(tmpdir, "crate_contents")
+                    os.makedirs(crate_extract_dir, exist_ok=True)
 
-                # Determine what to publish using the getPublishingType method
-                publishing_type = self.getPublishingType(archive_path)
-
-                if publishing_type is None:
-                    raise Exception(
-                        "No publishable artifacts found in archive"
+                    # Extract the .crate file using system tar command
+                    result = subprocess.run(
+                        ["tar", "-xf", crate_path, "-C", crate_extract_dir],
+                        capture_output=True,
+                        text=True,
                     )
 
-                # Extract the archive
-                extract_dir = os.path.join(tmpdir, "extract")
-                os.makedirs(extract_dir, exist_ok=True)
+                    if result.returncode != 0:
+                        raise Exception(
+                            f"Failed to extract crate: {result.stderr}"
+                        )
 
-                try:
-                    with lzma.open(archive_path) as xz:
-                        with tarfile.open(fileobj=xz, mode="r") as tar:
-                            tar.extractall(path=extract_dir)
-                except Exception as e:
-                    raise Exception(f"Failed to extract archive: {str(e)}")
+                    # Find the extracted directory(should be the only one)
+                    extracted_dirs = [
+                        d
+                        for d in os.listdir(crate_extract_dir)
+                        if os.path.isdir(os.path.join(crate_extract_dir, d))
+                    ]
 
-                # Publish artifacts based on type
-                if publishing_type == "cargo":
-                    self._publish_rust_crate(extract_dir, env_vars)
-                elif publishing_type == "maven":
-                    self._publish_maven_artifact(extract_dir, env_vars)
+                    if not extracted_dirs:
+                        raise Exception(
+                            "No directory found in extracted crate"
+                        )
+
+                    # Use the first directory as the crate directory
+                    crate_dir = os.path.join(
+                        crate_extract_dir, extracted_dirs[0]
+                    )
+
+                    # Publish the Rust crate
+                    self._publish_rust_crate(crate_dir, env_vars)
+                elif jar_file is not None and pom_file is not None:
+                    # Download the jar file
+                    jar_path = os.path.join(tmpdir, jar_file.filename)
+                    jar_file.open()
+                    try:
+                        with open(jar_path, "wb") as f:
+                            f.write(jar_file.read())
+                    finally:
+                        jar_file.close()
+
+                    # Download the pom file
+                    pom_path = os.path.join(tmpdir, "pom.xml")
+                    pom_file.open()
+                    try:
+                        with open(pom_path, "wb") as f:
+                            f.write(pom_file.read())
+                    finally:
+                        pom_file.close()
+
+                    # Publish the Maven artifact
+                    self._publish_maven_artifact(
+                        tmpdir,
+                        env_vars,
+                        jar_path,
+                        pom_path,
+                    )
+
+                else:
+                    raise Exception("No publishable artifacts found in build")
 
         except Exception as e:
             self.error_message = str(e)
@@ -543,9 +551,9 @@ class CraftPublishingJob(CraftRecipeJobDerived):
             raise
 
     def _publish_rust_crate(self, extract_dir, env_vars):
-        """Publish Rust crates found in the extracted archive.
+        """Publish Rust crates from the extracted crate directory.
 
-        :param extract_dir: Path to the extracted archive
+        :param extract_dir: Path to the extracted crate directory
         :param env_vars: Environment variables from configuration
         :raises: Exception if publishing fails
         """
@@ -558,9 +566,14 @@ class CraftPublishingJob(CraftRecipeJobDerived):
                 "Missing Cargo publishing repository configuration"
             )
 
-        # Look for .crate files
-        crate_files = list(Path(extract_dir).rglob("*.crate"))
-        crate_file = crate_files[0]
+        # Replace Cargo.toml with Cargo.toml.orig if it exists
+        cargo_toml_orig = os.path.join(extract_dir, "Cargo.toml.orig")
+        cargo_toml = os.path.join(extract_dir, "Cargo.toml")
+
+        if os.path.exists(cargo_toml_orig):
+            import shutil
+
+            shutil.move(cargo_toml_orig, cargo_toml)
 
         # Set up cargo config
         cargo_dir = os.path.join(extract_dir, ".cargo")
@@ -591,7 +604,7 @@ token = "Bearer {}"
                 )
             )
 
-        # Run cargo publish
+        # Run cargo publish from the extracted directory
         result = subprocess.run(
             [
                 "cargo",
@@ -601,7 +614,7 @@ token = "Bearer {}"
                 "--registry",
                 "launchpad",
             ],
-            cwd=os.path.dirname(str(crate_file)),
+            cwd=extract_dir,
             env={"CARGO_HOME": cargo_dir},
             capture_output=True,
             text=True,
@@ -610,11 +623,15 @@ token = "Bearer {}"
         if result.returncode != 0:
             raise Exception(f"Failed to publish crate: {result.stderr}")
 
-    def _publish_maven_artifact(self, extract_dir, env_vars):
-        """Publish Maven artifacts found in the extracted archive.
+    def _publish_maven_artifact(
+        self, work_dir, env_vars, jar_path=None, pom_path=None
+    ):
+        """Publish Maven artifacts.
 
-        :param extract_dir: Path to the extracted archive
+        :param work_dir: Working directory
         :param env_vars: Environment variables from configuration
+        :param jar_path: Path to the JAR file
+        :param pom_path: Path to the pom.xml file
         :raises: Exception if publishing fails
         """
         # Look for specific Maven publishing repository configuration
@@ -626,25 +643,11 @@ token = "Bearer {}"
                 "Missing Maven publishing repository configuration"
             )
 
-        # Find the JAR file and pom.xml in the extracted archive
-        jar_file = None
-        pom_file = None
-
-        for root, _, files in os.walk(extract_dir):
-            for filename in files:
-                if filename.endswith(".jar"):
-                    jar_file = os.path.join(root, filename)
-                elif filename == "pom.xml":
-                    pom_file = os.path.join(root, filename)
-
-        if jar_file is None:
-            raise Exception("No .jar file found in archive")
-
-        if pom_file is None:
-            raise Exception("No pom.xml file found in archive")
+        if jar_path is None or pom_path is None:
+            raise Exception("Missing JAR or POM file for Maven publishing")
 
         # Set up Maven settings
-        maven_dir = os.path.join(extract_dir, ".m2")
+        maven_dir = os.path.join(work_dir, ".m2")
         os.makedirs(maven_dir, exist_ok=True)
 
         # Extract username and password from auth string
@@ -657,14 +660,14 @@ token = "Bearer {}"
         # Create settings.xml with server configuration for the
         # publishing repository
         settings_xml = f"""<settings>
-<servers>
-    <server>
-        <id>launchpad-publish</id>
-        <username>{username}</username>
-        <password>{password}</password>
-    </server>
-</servers>
-</settings>"""
+    <servers>
+        <server>
+            <id>launchpad-publish</id>
+            <username>{username}</username>
+            <password>{password}</password>
+        </server>
+    </servers>
+    </settings>"""
 
         with open(os.path.join(maven_dir, "settings.xml"), "w") as f:
             f.write(settings_xml)
@@ -674,8 +677,8 @@ token = "Bearer {}"
             [
                 "mvn",
                 "deploy:deploy-file",
-                f"-DpomFile={pom_file}",
-                f"-Dfile={jar_file}",
+                f"-DpomFile={pom_path}",
+                f"-Dfile={jar_path}",
                 "-DrepositoryId=launchpad-publish",
                 f"-Durl={maven_publish_url}",
                 "--settings={}".format(
