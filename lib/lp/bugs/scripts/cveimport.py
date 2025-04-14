@@ -395,6 +395,9 @@ class CVEUpdater(LaunchpadCronScript):
                 1xxx/
                     CVE-2024-1001.json
                     ...
+                56xxx/
+                    CVE-2024-56001.json
+                    ...
 
         :param base_dir: Path to the base directory containing year folders
         """
@@ -407,7 +410,7 @@ class CVEUpdater(LaunchpadCronScript):
             self.logger.info(f"Processing year {year.name}...")
 
             # process each group directory (0xxx, 1xxx, etc)
-            for group in sorted(year.glob("[0-9]xxx")):
+            for group in sorted(year.glob("[0-9]*xxx")):
                 self.logger.info(f"Processing group {group.name}...")
 
                 # process each cve json file

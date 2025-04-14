@@ -22,9 +22,14 @@ class HasRecipesMenuMixin:
 
     def view_recipes(self):
         text = "View source package recipes"
-        enabled = False
-        if self.context.recipes.count():
-            enabled = True
+
+        # The dynamic link enablement uses a query too complex to be useful
+        # So we disable it for now, for all recipe types:
+        # snap, charm, source, rock and oci
+        enabled = True
+
+        # if self.context.recipes.count():
+        #    enabled = True
         return Link(
             "+recipes", text, icon="info", enabled=enabled, site="code"
         )
