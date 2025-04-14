@@ -777,11 +777,14 @@ class LaunchpadBrowserRequest(
         # getCacheStream() reads the remaining body as well and adds it to the
         # cache stream. A complete re-creation is necessary since these stream
         # classes don't have any "seek()" method we can use to reset.
-        self._body_instream = HTTPInputStream(
-            self._body_instream.getCacheStream(), self._environ
-        )
+        new_body_instream = self._body_instream.getCacheStream()
 
-    def createResetableStream(self, environment):
+        if isinstance(self._body_instream.stream, HTTPInputStream):
+            self._body_instream.stream.cacheStream.close()
+
+        self._body_instream = HTTPInputStream(new_body_instream, self._environ)
+
+    def _createResetableStream(self, environment):
         """Creates a stream to be resetted at the end of the parsing process.
 
         This method is a copy of the __init__ method of HTTPInputStream class
@@ -843,7 +846,7 @@ class LaunchpadBrowserRequest(
             # the instance dynamically for different request sizes in the
             # same way the zope.publisher framework's HTTPInputStream's
             # cacheStream is created.
-            parsing_body_stream = self.createResetableStream(self._environ)
+            parsing_body_stream = self._createResetableStream(self._environ)
 
             buffer = self._body_instream.read(self.buffer_size)
 
@@ -861,6 +864,7 @@ class LaunchpadBrowserRequest(
                     # request, we can skip the rest of the parsing when the
                     # CRLF is found.
                     self._skipParseProcess()
+                    parsing_body_stream.close()
 
                     logging_context.push(linebreak_type="CRLF")
                     super().processInputs()
@@ -874,6 +878,7 @@ class LaunchpadBrowserRequest(
 
                     if nextChar == b"\n":
                         self._skipParseProcess()
+                        parsing_body_stream.close()
 
                         logging_context.push(linebreak_type="CRLF")
                         super().processInputs()
@@ -914,9 +919,15 @@ class LaunchpadBrowserRequest(
 
             # Reset the stream before we re-create the original one.
             parsing_body_stream.seek(0)
+
+            deleting_stream = self._body_instream
             self._body_instream = HTTPInputStream(
                 parsing_body_stream, self._environ
             )
+
+            if isinstance(deleting_stream.stream, HTTPInputStream):
+                deleting_stream.stream.cacheStream.close()
+            deleting_stream.cacheStream.close()
 
         super().processInputs()
         return
