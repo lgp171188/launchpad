@@ -395,6 +395,9 @@ class CVEUpdater(LaunchpadCronScript):
                 1xxx/
                     CVE-2024-1001.json
                     ...
+                56xxx/
+                    CVE-2024-56001.json
+                    ...
 
         :param base_dir: Path to the base directory containing year folders
         """
