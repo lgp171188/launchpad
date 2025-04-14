@@ -21,11 +21,17 @@ class HasRockRecipesMenuMixin:
 
     def view_rock_recipes(self):
         text = "View rock recipes"
-        enabled = (
-            not getUtility(IRockRecipeSet)
-            .findByContext(self.context, visible_by_user=self.user)
-            .is_empty()
-        )
+
+        # The dynamic link enablement uses a query too complex to be useful
+        # So we disable it for now, for all recipe types:
+        # snap, charm, source, rock and oci
+        enabled = True
+
+        # enabled = (
+        #    not getUtility(IRockRecipeSet)
+        #    .findByContext(self.context, visible_by_user=self.user)
+        #    .is_empty()
+        # )
         return Link("+rock-recipes", text, icon="info", enabled=enabled)
 
 
