@@ -300,11 +300,10 @@ class UCTRecord:
             "Ubuntu-Description", self.ubuntu_description.split("\n"), output
         )
         self._write_field("Notes", self.notes.split("\n"), output)
-        self._write_field(
-            "Mitigation",
-            self.mitigation.split("\n") if self.mitigation else "",
-            output,
-        )
+        if self.mitigation:
+            self._write_field(
+                "Mitigation", self.mitigation.split("\n"), output
+            )
         self._write_field("Bugs", self.bugs, output)
         self._write_field("Priority", self.priority.value, output)
         self._write_field("Discovered-by", self.discovered_by, output)
@@ -382,7 +381,8 @@ class UCTRecord:
         elif isinstance(value, list):
             output.write(f"{name}:\n")
             for line in value:
-                output.write(f" {line}\n")
+                if line != "":
+                    output.write(f" {line}\n")
         else:
             raise AssertionError()
 
