@@ -614,10 +614,9 @@ token = "Bearer {}"
                 "--registry",
                 "launchpad",
             ],
+            capture_output=True,
             cwd=extract_dir,
             env={"CARGO_HOME": cargo_dir},
-            capture_output=True,
-            text=True,
         )
 
         if result.returncode != 0:
@@ -657,17 +656,8 @@ token = "Bearer {}"
             username = "token"
             password = maven_publish_auth
 
-        # Create settings.xml with server configuration for the
-        # publishing repository
-        settings_xml = f"""<settings>
-    <servers>
-        <server>
-            <id>launchpad-publish</id>
-            <username>{username}</username>
-            <password>{password}</password>
-        </server>
-    </servers>
-    </settings>"""
+        # Generate settings.xml content
+        settings_xml = self._get_maven_settings_xml(username, password)
 
         with open(os.path.join(maven_dir, "settings.xml"), "w") as f:
             f.write(settings_xml)
@@ -679,17 +669,52 @@ token = "Bearer {}"
                 "deploy:deploy-file",
                 f"-DpomFile={pom_path}",
                 f"-Dfile={jar_path}",
-                "-DrepositoryId=launchpad-publish",
+                "-DrepositoryId=central",
                 f"-Durl={maven_publish_url}",
                 "--settings={}".format(
                     os.path.join(maven_dir, "settings.xml")
                 ),
             ],
             capture_output=True,
-            text=True,
+            cwd=work_dir,
         )
 
         if result.returncode != 0:
             raise Exception(
                 f"Failed to publish Maven artifact: {result.stderr}"
             )
+
+    def _get_maven_settings_xml(self, username, password):
+        """Generate Maven settings.xml content.
+
+        :param username: Maven repository username
+        :param password: Maven repository password
+        :return: XML content as string
+        """
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 \
+http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <servers>
+        <server>
+            <id>central</id>
+            <username>{username}</username>
+            <password>{password}</password>
+        </server>
+    </servers>
+    <profiles>
+        <profile>
+            <id>system</id>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>central</id>
+                    <url>file:///usr/share/maven-repo</url>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+    <activeProfiles>
+        <activeProfile>system</activeProfile>
+    </activeProfiles>
+</settings>"""
