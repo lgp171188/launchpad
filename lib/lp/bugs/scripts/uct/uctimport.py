@@ -83,7 +83,6 @@ class UCTImporter:
         uct_record = UCTRecord.load(cve_path)
         cve = CVE.make_from_uct_record(uct_record)
         self.import_cve(cve)
-        logger.info("%s was imported successfully", cve_path)
 
     def import_cve(self, cve: CVE) -> None:
         """
@@ -94,14 +93,18 @@ class UCTImporter:
         if cve.date_made_public is None:
             logger.warning(
                 "%s does not have a publication date, "
-                "is it embargoed? Aborting.",
+                "is it embargoed? Aborting. "
+                "%s was not imported.",
+                cve.sequence,
                 cve.sequence,
             )
             return
         if not cve.series_packages:
             logger.warning(
-                "%s: could not find any affected packages, aborting.",
+                "%s: could not find any affected packages, aborting."
+                "%s was not imported.",
                 cve.series_packages,
+                cve.sequence,
             )
             return
         lp_cve: CveModel = removeSecurityProxy(
@@ -109,7 +112,10 @@ class UCTImporter:
         )
         if lp_cve is None:
             logger.warning(
-                "%s: could not find the CVE in LP. Aborting.", cve.sequence
+                "%s: could not find the CVE in LP. Aborting. "
+                "%s was not imported.",
+                cve.sequence,
+                cve.sequence,
             )
             return
         bug = self._find_existing_bug(cve, lp_cve)
@@ -142,6 +148,8 @@ class UCTImporter:
             transaction.abort()
         else:
             transaction.commit()
+
+        logger.info("%s was imported successfully", cve.sequence)
 
     def create_bug(self, cve: CVE, lp_cve: CveModel) -> BugModel:
         """
