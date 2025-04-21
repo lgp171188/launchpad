@@ -355,7 +355,7 @@ class TestCVE(TestCaseWithFactory):
                         ),
                     ],
                     priority=None,
-                    tags=set(),
+                    tags={"not-ue", "universe-binary"},
                     patches=[
                         UCTRecord.Patch(
                             patch_type="upstream",
@@ -423,11 +423,13 @@ class TestCVE(TestCaseWithFactory):
                     target=dsp1,
                     importance=None,
                     package_name=dsp1.sourcepackagename,
+                    tags={"not-ue", "universe-binary"},
                 ),
                 CVE.DistroPackage(
                     target=dsp2,
                     importance=BugTaskImportance.HIGH,
                     package_name=dsp2.sourcepackagename,
+                    tags=set(),
                 ),
             ],
             series_packages=[
@@ -677,11 +679,13 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     target=self.ubuntu_package,
                     importance=BugTaskImportance.LOW,
                     package_name=self.ubuntu_package.sourcepackagename,
+                    tags={"review-break-fix"},
                 ),
                 CVE.DistroPackage(
                     target=self.esm_package,
                     importance=None,
                     package_name=self.esm_package.sourcepackagename,
+                    tags={"universe-binary"},
                 ),
             ],
             series_packages=[
@@ -823,6 +827,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         package_importances = {}
 
+        tags = set()
+
         for distro_package in cve.distro_packages:
             self.assertIn(distro_package.target, bug_tasks_by_target)
             t = bug_tasks_by_target[distro_package.target]
@@ -837,9 +843,15 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             else:
                 expected_importance = package_importance
                 expected_status = BugTaskStatus.NEW
+
+            for tag in distro_package.tags:
+                tags.add(f"{distro_package.package_name.name}.{tag}")
+
             self.assertEqual(expected_importance, t.importance)
             self.assertEqual(expected_status, t.status)
             self.assertIsNone(t.status_explanation)
+
+        self.assertEqual(tags, set(bug.tags))
 
         for series_package in cve.series_packages:
             self.assertIn(series_package.target, bug_tasks_by_target)
@@ -1010,6 +1022,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     target=affected_package,
                     importance=BugTaskImportance.LOW,
                     package_name=affected_package.sourcepackagename,
+                    tags={"universe-binary", "not-ue"},
                 ),
             ],
             series_packages=[
@@ -1106,6 +1119,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 target=package,
                 package_name=package.sourcepackagename,
                 importance=BugTaskImportance.HIGH,
+                tags={"review-break-fix"},
             )
         )
         cve.series_packages.append(
@@ -1178,6 +1192,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 target=new_dsp,
                 package_name=new_dsp.sourcepackagename,
                 importance=BugTaskImportance.HIGH,
+                tags={"not-ue"},
             )
         )
         cve.series_packages.append(
@@ -1312,6 +1327,17 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 notes=None,
             )
         )
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+    def test_update_distro_packages_tags(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        # Add new tags
+        cve.distro_packages[0].tags.add("test-tag")
+        cve.distro_packages[0].tags.add("another-test-tag")
+
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 
