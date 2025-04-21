@@ -15,7 +15,7 @@ For each entry in UCT we:
 4. Update the statuses of Bug Tasks based on the information in the CVE entry
 5. Update the information the related Launchpad's `Cve` model, if necessary
 
-Three types of bug tags are created:
+Three types of bug tasks are created:
 
 1. Bug tasks with a distribution package as a target - they represent
    importance of the package
