@@ -375,7 +375,7 @@ class CraftPublishingJob(CraftRecipeJobDerived):
     retry_error_types = ()
     max_retries = 5
 
-    task_queue = "publisher_job"
+    task_queue = "native_publisher_job"
 
     config = config.ICraftPublishingJobSource
 
