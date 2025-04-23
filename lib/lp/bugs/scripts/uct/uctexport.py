@@ -231,6 +231,7 @@ class UCTExporter:
             series_packages=series_packages,
             upstream_packages=upstream_packages,
             importance=cve_importance,
+            importance_explanation=vulnerability.importance_explanation,
             status=vulnerability.status,
             assignee=bug_tasks[0].assignee,
             discovered_by=lp_cve.discovered_by or "",

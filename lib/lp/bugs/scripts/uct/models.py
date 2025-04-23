@@ -118,6 +118,7 @@ class UCTRecord:
         references: List[str],
         ubuntu_description: str,
         packages: List[Package],
+        priority_explanation: str = "",
     ):
         self.parent_dir = parent_dir
         self.assigned_to = assigned_to
@@ -132,6 +133,7 @@ class UCTRecord:
         self.mitigation = mitigation
         self.notes = notes
         self.priority = priority
+        self.priority_explanation = priority_explanation
         self.references = references
         self.ubuntu_description = ubuntu_description
         self.packages = packages
@@ -233,6 +235,8 @@ class UCTRecord:
                 )
             )
 
+        _priority = cls._pop_cve_property(cve_data, "Priority").split("\n")
+
         entry = UCTRecord(
             parent_dir=cve_path.absolute().parent.name,
             assigned_to=cls._pop_cve_property(cve_data, "Assigned-to"),
@@ -254,7 +258,8 @@ class UCTRecord:
                 cve_data, "Mitigation", required=False
             ),
             notes=cls._format_notes(cls._pop_cve_property(cve_data, "Notes")),
-            priority=cls.Priority(cls._pop_cve_property(cve_data, "Priority")),
+            priority=cls.Priority(_priority[0]),
+            priority_explanation="\n".join(_priority[1:]),
             references=cls._pop_cve_property(cve_data, "References").split(
                 "\n"
             ),
@@ -305,7 +310,11 @@ class UCTRecord:
                 "Mitigation", self.mitigation.split("\n"), output
             )
         self._write_field("Bugs", self.bugs, output)
-        self._write_field("Priority", self.priority.value, output)
+        self._write_field(
+            "Priority",
+            self._format_priority(self.priority, self.priority_explanation),
+            output,
+        )
         self._write_field("Discovered-by", self.discovered_by, output)
         self._write_field("Assigned-to", self.assigned_to, output)
         self._write_field(
@@ -400,6 +409,17 @@ class UCTRecord:
                 lines.append("  " + line)
         return "\n".join(lines)
 
+    @classmethod
+    def _format_priority(cls, priority: Priority, explanation: str) -> str:
+        lines = [priority.value]
+
+        if explanation:
+            for line in explanation.split("\n"):
+                if line != "":
+                    lines.append(" " + line)
+
+        return "\n".join(lines)
+
 
 class CVE:
     """
@@ -492,6 +512,7 @@ class CVE:
         mitigation: str,
         cvss: List[CVSS],
         patch_urls: Optional[List[PatchURL]] = None,
+        importance_explanation: str = "",
     ):
         self.sequence = sequence
         self.date_made_public = date_made_public
@@ -501,6 +522,7 @@ class CVE:
         self.series_packages = series_packages
         self.upstream_packages = upstream_packages
         self.importance = importance
+        self.importance_explanation = importance_explanation
         self.status = status
         self.assignee = assignee
         self.discovered_by = discovered_by
@@ -646,6 +668,7 @@ class CVE:
             series_packages=series_packages,
             upstream_packages=upstream_packages,
             importance=cls.PRIORITY_MAP[uct_record.priority],
+            importance_explanation=uct_record.priority_explanation,
             status=cls.infer_vulnerability_status(uct_record),
             assignee=assignee,
             discovered_by=uct_record.discovered_by,
@@ -773,6 +796,7 @@ class CVE:
             mitigation=self.mitigation,
             notes=self.notes,
             priority=self.PRIORITY_MAP_REVERSE[self.importance],
+            priority_explanation=self.importance_explanation,
             references=self.references,
             ubuntu_description=self.ubuntu_description,
             packages=list(packages_by_name.values()),
