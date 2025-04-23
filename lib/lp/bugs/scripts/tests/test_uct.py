@@ -1,6 +1,7 @@
 #  Copyright 2022 Canonical Ltd.  This software is licensed under the
 #  GNU Affero General Public License version 3 (see the file LICENSE).
 
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
@@ -821,8 +822,13 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             self.assertEqual([bug], vulnerability.bugs)
 
     def checkLaunchpadCve(self, lp_cve: CveModel, cve: CVE):
+        cvss = defaultdict(list)
+        for c in cve.cvss:
+            cvss[c.authority].append(c.vector_string)
+        cvss = dict(cvss)
+
         self.assertDictEqual(
-            {cvss.authority: cvss.vector_string for cvss in cve.cvss},
+            cvss,
             lp_cve.cvss,
         )
         self.assertEqual(cve.discovered_by, lp_cve.discovered_by)

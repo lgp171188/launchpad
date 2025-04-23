@@ -245,7 +245,8 @@ class UCTExporter:
                     authority=authority,
                     vector_string=vector_string,
                 )
-                for authority, vector_string in lp_cve.cvss.items()
+                for authority in lp_cve.cvss
+                for vector_string in lp_cve.cvss[authority]
             ],
             patch_urls=patch_urls,
         )
