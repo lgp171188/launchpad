@@ -32,7 +32,7 @@ Chameleon==3.6.2
 configobj==5.0.6
 contextvars==2.4
 constantly==15.1.0
-craft-platforms==0.6.0
+craft-platforms==0.8.0
 cryptography==2.7
 cssselect==0.9.1
 cssutils==2.11.1
