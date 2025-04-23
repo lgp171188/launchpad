@@ -43,6 +43,12 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
             self.assertRaises(
                 UserCannotEditBugTaskStatus,
                 self.task.transitionToStatus,
+                BugTaskStatus.DEFERRED,
+                self.user,
+            )
+            self.assertRaises(
+                UserCannotEditBugTaskStatus,
+                self.task.transitionToStatus,
                 BugTaskStatus.DOESNOTEXIST,
                 self.user,
             )
@@ -87,6 +93,18 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
                 self.user,
             )
 
+    def test_user_cannot_unset_deferred_status(self):
+        # A regular user should not be able to transition a bug away
+        # from Deferred
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DEFERRED
+        with person_logged_in(self.user):
+            self.assertRaises(
+                UserCannotEditBugTaskStatus,
+                self.task.transitionToStatus,
+                BugTaskStatus.CONFIRMED,
+                self.user,
+            )
+
     def test_user_cannot_unset_does_not_exist_status(self):
         # A regular user should not be able to transition a bug away
         # from Does not exist.
@@ -116,6 +134,10 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
         # but can transition to any other status.
         self.assertEqual(
             self.task.canTransitionToStatus(BugTaskStatus.WONTFIX, self.user),
+            False,
+        )
+        self.assertEqual(
+            self.task.canTransitionToStatus(BugTaskStatus.DEFERRED, self.user),
             False,
         )
         self.assertEqual(
@@ -178,6 +200,15 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
         # A regular user cannot transition away from Won't Fix,
         # so canTransitionToStatus should return False.
         removeSecurityProxy(self.task)._status = BugTaskStatus.WONTFIX
+        self.assertEqual(
+            self.task.canTransitionToStatus(BugTaskStatus.NEW, self.user),
+            False,
+        )
+
+    def test_user_canTransitionToStatus_from_deferred(self):
+        # A regular user cannot transition away from Deferred
+        # so canTransitionToStatus should return False.
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DEFERRED
         self.assertEqual(
             self.task.canTransitionToStatus(BugTaskStatus.NEW, self.user),
             False,
@@ -324,6 +355,8 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
         with person_logged_in(self.person):
             self.task.transitionToStatus(BugTaskStatus.WONTFIX, self.person)
             self.assertEqual(self.task.status, BugTaskStatus.WONTFIX)
+            self.task.transitionToStatus(BugTaskStatus.DEFERRED, self.person)
+            self.assertEqual(self.task.status, BugTaskStatus.DEFERRED)
             self.task.transitionToStatus(
                 BugTaskStatus.DOESNOTEXIST, self.person
             )
@@ -360,6 +393,13 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
             self.task.transitionToStatus(BugTaskStatus.CONFIRMED, self.person)
             self.assertEqual(self.task.status, BugTaskStatus.CONFIRMED)
 
+    def test_privileged_user_can_unset_deferred_status(self):
+        # Privileged users can transition away from Deferred
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DEFERRED
+        with person_logged_in(self.person):
+            self.task.transitionToStatus(BugTaskStatus.CONFIRMED, self.person)
+            self.assertEqual(self.task.status, BugTaskStatus.CONFIRMED)
+
     def test_privileged_user_can_unset_does_not_exist_status(self):
         # Privileged users can transition away from Does Not Exist.
         removeSecurityProxy(self.task)._status = BugTaskStatus.DOESNOTEXIST
@@ -381,6 +421,12 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
         self.assertEqual(
             self.task.canTransitionToStatus(
                 BugTaskStatus.WONTFIX, self.person
+            ),
+            True,
+        )
+        self.assertEqual(
+            self.task.canTransitionToStatus(
+                BugTaskStatus.DEFERRED, self.person
             ),
             True,
         )
@@ -453,6 +499,15 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
         # A privileged user can transition away from Won't Fix, so
         # canTransitionToStatus should return True.
         removeSecurityProxy(self.task)._status = BugTaskStatus.WONTFIX
+        self.assertEqual(
+            self.task.canTransitionToStatus(BugTaskStatus.NEW, self.person),
+            True,
+        )
+
+    def test_privileged_user_canTransitionToStatus_from_deferred(self):
+        # A privileged user can transition away from Deferred, so
+        # canTransitionToStatus should return True.
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DEFERRED
         self.assertEqual(
             self.task.canTransitionToStatus(BugTaskStatus.NEW, self.person),
             True,
