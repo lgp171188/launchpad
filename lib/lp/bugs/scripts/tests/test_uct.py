@@ -160,6 +160,7 @@ class TestUCTRecord(TestCase):
                         patches=[],
                     ),
                 ],
+                global_tags={"cisa-kev"},
             ).__dict__,
             uct_record.__dict__,
         )
@@ -248,6 +249,7 @@ class TestUCTRecord(TestCase):
                         patches=[],
                     ),
                 ],
+                global_tags=set(),
             ).__dict__,
             uct_record.__dict__,
         )
@@ -404,6 +406,7 @@ class TestCVE(TestCaseWithFactory):
                     patches=[],
                 ),
             ],
+            global_tags={"cisa-kev"},
         )
 
         self.cve = CVE(
@@ -539,6 +542,7 @@ class TestCVE(TestCaseWithFactory):
                     notes=None,
                 ),
             ],
+            global_tags={"cisa-kev"},
         )
 
     def test_make_from_uct_record(self):
@@ -781,6 +785,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     notes=None,
                 ),
             ],
+            global_tags={"cisa-kev"},
         )
         self.importer = UCTImporter()
         self.exporter = UCTExporter()
@@ -800,6 +805,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         watches = list(bug.watches)
         self.assertEqual(len(cve.bug_urls), len(watches))
         self.assertEqual(sorted(cve.bug_urls), sorted(w.url for w in watches))
+
+        self.assertEqual(sorted(bug.tags), sorted(list(cve.global_tags)))
 
         self.checkBugAttachments(bug, cve)
 
@@ -951,6 +958,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual(expected.mitigation, actual.mitigation)
         self.assertListEqual(expected.cvss, actual.cvss)
         self.assertListEqual(expected.patch_urls, actual.patch_urls)
+        self.assertEqual(expected.global_tags, actual.global_tags)
 
     def test_create_bug(self):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
@@ -1047,6 +1055,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 ),
             ],
             patch_urls=[],
+            global_tags={"cisa-kev"},
         )
         lp_cve = self.factory.makeCVE(sequence="2022-1234")
         bug = self.importer.create_bug(cve, lp_cve)
@@ -1257,6 +1266,14 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         # Remove URL
         cve.bug_urls.pop(0)
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+    def test_update_bug_global_tags_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        cve.global_tags.add("another-tag")
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 
