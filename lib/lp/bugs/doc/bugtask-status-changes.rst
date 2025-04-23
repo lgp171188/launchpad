@@ -5,9 +5,10 @@ Restrictions
 ------------
 
 There are a few simple rules around who can change the status of a
-bug task.  There are four statuses that can only be set by either
+bug task.  There are five statuses that can only be set by either
 the project maintainer, driver or bug supervisor:
 
+ * Deferred
  * Won't Fix
  * Does Not Exist
  * Expired
@@ -20,6 +21,10 @@ the project maintainer, driver or bug supervisor:
 
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> ignored = login_person(owner)
+    >>> bugtask.transitionToStatus(BugTaskStatus.DEFERRED, owner)
+    >>> print(bugtask.status.title)
+    Deferred
+
     >>> bugtask.transitionToStatus(BugTaskStatus.WONTFIX, owner)
     >>> print(bugtask.status.title)
     Won't Fix
@@ -31,7 +36,7 @@ the project maintainer, driver or bug supervisor:
 Regular users of Launchpad cannot transition a bug task to any of
 these statuses.
 
-An additional restraint is added to Won't Fix and Does Not Exist.
+An additional restraint is added to Won't Fix, Does Not Exist and Deferred.
 Only the product maintainer, driver or bug supervisor can change
 from this status to any other status.
 
@@ -52,6 +57,14 @@ from this status to any other status.
     >>> bugtask.transitionToStatus(BugTaskStatus.WONTFIX, owner)
     >>> print(bugtask.status.title)
     Won't Fix
+    >>> bugtask.transitionToStatus(BugTaskStatus.CONFIRMED, user)
+    Traceback (most recent call last):
+    ...
+    lp.bugs.interfaces.bugtask.UserCannotEditBugTaskStatus: ...
+
+    >>> bugtask.transitionToStatus(BugTaskStatus.DEFERRED, owner)
+    >>> print(bugtask.status.title)
+    Deferred
     >>> bugtask.transitionToStatus(BugTaskStatus.CONFIRMED, user)
     Traceback (most recent call last):
     ...

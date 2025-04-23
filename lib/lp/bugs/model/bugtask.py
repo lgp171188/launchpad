@@ -1026,9 +1026,11 @@ class BugTask(StormBase):
             return False
         elif (
             self.status == BugTaskStatus.WONTFIX
+            or self.status == BugTaskStatus.DEFERRED
             or self.status == BugTaskStatus.DOESNOTEXIST
         ):
-            # Only bug supervisors can switch away from WONTFIX and DNE.
+            # Only bug supervisors can switch away from WONTFIX,
+            # DEFERRED and DNE.
             return False
         # Non-supervisors can transition to non-supervisor statuses.
         return new_status not in BUG_SUPERVISOR_BUGTASK_STATUSES

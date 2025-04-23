@@ -1105,6 +1105,7 @@ class TestFileBugRequestCache(TestCaseWithFactory):
             BugTaskStatus.OPINION,
             BugTaskStatus.WONTFIX,
             BugTaskStatus.DOESNOTEXIST,
+            BugTaskStatus.DEFERRED,
             BugTaskStatus.INCOMPLETE,
         ]
         bugtask_status_data = []

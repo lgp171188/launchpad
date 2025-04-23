@@ -241,6 +241,15 @@ class BugTaskStatus(DBEnumeratedType):
         """,
     )
 
+    DEFERRED = DBItem(
+        23,
+        """
+        Deferred
+
+        Fixing has been deferred.
+        """,
+    )
+
     FIXCOMMITTED = DBItem(
         25,
         """
@@ -346,6 +355,7 @@ class BugTaskStatusSearchDisplay(DBEnumeratedType):
 
 UNRESOLVED_BUGTASK_STATUSES = (
     BugTaskStatus.NEW,
+    BugTaskStatus.DEFERRED,
     BugTaskStatus.INCOMPLETE,
     BugTaskStatus.CONFIRMED,
     BugTaskStatus.TRIAGED,
@@ -374,6 +384,7 @@ RESOLVED_BUGTASK_STATUSES = (
 
 BUG_SUPERVISOR_BUGTASK_STATUSES = (
     BugTaskStatus.WONTFIX,
+    BugTaskStatus.DEFERRED,
     BugTaskStatus.EXPIRED,
     BugTaskStatus.TRIAGED,
     BugTaskStatus.DOESNOTEXIST,

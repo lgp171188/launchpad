@@ -454,8 +454,7 @@ class CVE:
         UCTRecord.PackageStatus.DOES_NOT_EXIST: BugTaskStatus.DOESNOTEXIST,
         UCTRecord.PackageStatus.RELEASED: BugTaskStatus.FIXRELEASED,
         UCTRecord.PackageStatus.NOT_AFFECTED: BugTaskStatus.INVALID,
-        # we don't have a corresponding BugTaskStatus for this yet
-        # PackageStatus.DEFERRED: ...,
+        UCTRecord.PackageStatus.DEFERRED: BugTaskStatus.DEFERRED,
         UCTRecord.PackageStatus.NEEDED: BugTaskStatus.NEW,
         UCTRecord.PackageStatus.PENDING: BugTaskStatus.FIXCOMMITTED,
     }
