@@ -171,6 +171,7 @@ class UCTImporter:
                 target=distro_package.target,
                 importance=distro_package.importance,
                 cve=lp_cve,
+                tags=cve.global_tags,
             )
         )
 
@@ -233,6 +234,8 @@ class UCTImporter:
         self._assign_bug_tasks(bug, cve.assignee)
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
+
+        bug.tags = cve.global_tags
 
         # Update or add new Vulnerabilities
         vulnerabilities_by_distro = {

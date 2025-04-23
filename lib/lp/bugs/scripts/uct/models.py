@@ -65,6 +65,8 @@ class UCTRecord:
     It contains exactly the same information as a UCT CVE record.
     """
 
+    GLOBAL_TAGS_KEY = "*"
+
     class Priority(Enum):
         CRITICAL = "critical"
         HIGH = "high"
@@ -118,6 +120,7 @@ class UCTRecord:
         references: List[str],
         ubuntu_description: str,
         packages: List[Package],
+        global_tags: Set[str],
         priority_explanation: str = "",
     ):
         self.parent_dir = parent_dir
@@ -137,6 +140,7 @@ class UCTRecord:
         self.references = references
         self.ubuntu_description = ubuntu_description
         self.packages = packages
+        self.global_tags = global_tags
 
     def __eq__(self, other):
         if not isinstance(other, UCTRecord):
@@ -158,6 +162,8 @@ class UCTRecord:
 
         packages = []
         tags: Dict[str, Set[str]] = cls._pop_cve_property(cve_data, "tags")
+        global_tags = tags.pop(cls.GLOBAL_TAGS_KEY, set())
+
         patches: Dict[str, List[Tuple[str, str]]] = cls._pop_cve_property(
             cve_data, "patches"
         )
@@ -267,6 +273,7 @@ class UCTRecord:
                 cve_data, "Ubuntu-Description"
             ),
             packages=packages,
+            global_tags=global_tags,
         )
 
         # make sure all fields are consumed
@@ -317,6 +324,8 @@ class UCTRecord:
         )
         self._write_field("Discovered-by", self.discovered_by, output)
         self._write_field("Assigned-to", self.assigned_to, output)
+        if self.global_tags:
+            self._write_field("Tags", " ".join(self.global_tags), output)
         self._write_field(
             "CVSS",
             [
@@ -511,6 +520,7 @@ class CVE:
         notes: str,
         mitigation: str,
         cvss: List[CVSS],
+        global_tags: Set[str],
         patch_urls: Optional[List[PatchURL]] = None,
         importance_explanation: str = "",
     ):
@@ -533,6 +543,7 @@ class CVE:
         self.notes = notes
         self.mitigation = mitigation
         self.cvss = cvss
+        self.global_tags = global_tags
         self.patch_urls: List[CVE.PatchURL] = patch_urls or []
 
     @classmethod
@@ -679,6 +690,7 @@ class CVE:
             notes=uct_record.notes,
             mitigation=uct_record.mitigation,
             cvss=uct_record.cvss,
+            global_tags=uct_record.global_tags,
             patch_urls=patch_urls,
         )
 
@@ -799,6 +811,7 @@ class CVE:
             priority_explanation=self.importance_explanation,
             references=self.references,
             ubuntu_description=self.ubuntu_description,
+            global_tags=self.global_tags,
             packages=list(packages_by_name.values()),
         )
 
