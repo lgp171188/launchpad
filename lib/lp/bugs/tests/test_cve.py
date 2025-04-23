@@ -12,6 +12,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.bugs.interfaces.cve import CveStatus, ICveSet
+from lp.bugs.scripts.uct.models import CVSS
 from lp.testing import (
     TestCaseWithFactory,
     login_person,
@@ -170,7 +171,7 @@ class TestCve(TestCaseWithFactory):
 
     def test_cveset_new_method_parameters(self):
         today = datetime.now(tz=timezone.utc)
-        cvss = {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}
+        cvss = {"nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"]}
         cve = getUtility(ICveSet).new(
             sequence="2099-1234",
             description="A critical vulnerability",
@@ -240,12 +241,18 @@ class TestCve(TestCaseWithFactory):
         self.assertEqual({}, unproxied_cve.cvss)
 
         cve.setCVSSVectorForAuthority(
-            authority="nvd",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            [
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                    ),
+                ),
+            ]
         )
 
         self.assertEqual(
-            {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+            {"nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"]},
             unproxied_cve.cvss,
         )
 
@@ -254,46 +261,99 @@ class TestCve(TestCaseWithFactory):
             sequence="2099-1234",
             description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
-            cvss={"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+            cvss={"nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"]},
         )
         unproxied_cve = removeSecurityProxy(cve)
         self.assertEqual(
-            {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+            {"nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"]},
             unproxied_cve.cvss,
         )
 
         cve.setCVSSVectorForAuthority(
-            authority="nvd",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+            [
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                    ),
+                )
+            ]
         )
 
         self.assertEqual(
-            {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"},
+            {"nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"]},
             unproxied_cve.cvss,
         )
 
     def test_setCVSSVectorForAuthority_add_new_when_initial_value_set(self):
+        """Checks that we override CVSS although its not the same authority"""
         cve = self.factory.makeCVE(
             sequence="2099-1234",
             description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
-            cvss={"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+            cvss={"nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"]},
         )
         unproxied_cve = removeSecurityProxy(cve)
         self.assertEqual(
-            {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+            {"nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"]},
             unproxied_cve.cvss,
         )
 
         cve.setCVSSVectorForAuthority(
-            authority="nist",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+            [
+                CVSS(
+                    authority="nist",
+                    vector_string=(
+                        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                    ),
+                ),
+            ]
         )
 
         self.assertEqual(
             {
-                "nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-                "nist": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+                "nist": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"],
+            },
+            unproxied_cve.cvss,
+        )
+
+    def test_setCVSSVectorForAuthority_remove_one_when_initial_value_set(self):
+        cve = self.factory.makeCVE(
+            sequence="2099-1234",
+            description="A critical vulnerability",
+            cvestate=CveStatus.CANDIDATE,
+            cvss={
+                "nvd": [
+                    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                ]
+            },
+        )
+        unproxied_cve = removeSecurityProxy(cve)
+        self.assertEqual(
+            {
+                "nvd": [
+                    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                ]
+            },
+            unproxied_cve.cvss,
+        )
+
+        cve.setCVSSVectorForAuthority(
+            [
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                    ),
+                ),
+            ]
+        )
+
+        self.assertEqual(
+            {
+                "nvd": ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"],
             },
             unproxied_cve.cvss,
         )
