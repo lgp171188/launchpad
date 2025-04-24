@@ -112,12 +112,14 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
                 f.write(b"dummy jar contents")
 
             # Create dummy POM file
-            pom_content = f"""<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.example</groupId>
-  <artifactId>{jar_name}</artifactId>
-  <version>{jar_version}</version>
-</project>"""
+            pom_content = (
+                "<project>\n"
+                "  <modelVersion>4.0.0</modelVersion>\n"
+                f"  <groupId>com.example</groupId>\n"
+                f"  <artifactId>{jar_name}</artifactId>\n"
+                f"  <version>{jar_version}</version>\n"
+                "</project>"
+            )
             pom_path = os.path.join(tmpdir, "pom.xml")
             with open(pom_path, "w") as f:
                 f.write(pom_content)

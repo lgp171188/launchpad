@@ -382,12 +382,10 @@ class CraftPublishingJob(CraftRecipeJobDerived):
     @classmethod
     def create(cls, build):
         """See `ICraftPublishingJobSource`."""
-        cls.metadata = {
+        metadata = {
             "build_id": build.id,
         }
-        recipe_job = CraftRecipeJob(
-            build.recipe, cls.class_job_type, cls.metadata
-        )
+        recipe_job = CraftRecipeJob(build.recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
         job.celeryRunOnCommit()
         IStore(CraftRecipeJob).flush()
@@ -581,26 +579,18 @@ class CraftPublishingJob(CraftRecipeJobDerived):
         # Create config.toml
         with open(os.path.join(cargo_dir, "config.toml"), "w") as f:
             f.write(
-                """
-[registry]
-global-credential-providers = ["cargo:token"]
-
-[registries.launchpad]
-index = "{}"
-""".format(
-                    cargo_publish_url
-                )
+                "\n"
+                "[registry]\n"
+                'global-credential-providers = ["cargo:token"]\n'
+                "\n"
+                "[registries.launchpad]\n"
+                f'index = "{cargo_publish_url}"\n'
             )
 
         # Create credentials.toml
         with open(os.path.join(cargo_dir, "credentials.toml"), "w") as f:
             f.write(
-                """
-[registries.launchpad]
-token = "Bearer {}"
-""".format(
-                    token
-                )
+                "\n" "[registries.launchpad]\n" f'token = "Bearer {token}"\n'
             )
 
         # Run cargo publish from the extracted directory
@@ -690,30 +680,49 @@ token = "Bearer {}"
         :param password: Maven repository password
         :return: XML content as string
         """
-        return f"""<?xml version="1.0" encoding="UTF-8"?>
-<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 \
-http://maven.apache.org/xsd/settings-1.0.0.xsd">
-    <servers>
-        <server>
-            <id>central</id>
-            <username>{username}</username>
-            <password>{password}</password>
-        </server>
-    </servers>
-    <profiles>
-        <profile>
-            <id>system</id>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>central</id>
-                    <url>file:///usr/share/maven-repo</url>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
-    </profiles>
-    <activeProfiles>
-        <activeProfile>system</activeProfile>
-    </activeProfiles>
-</settings>"""
+        # Break it into smaller parts to avoid long lines
+        header = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"\n'
+            '        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n'
+        )
+
+        schema = (
+            '        xsi:schemaLocation="'
+            "http://maven.apache.org/SETTINGS/1.0.0 "
+            'http://maven.apache.org/xsd/settings-1.0.0.xsd">\n'
+        )
+
+        servers = (
+            "    <servers>\n"
+            "        <server>\n"
+            "            <id>central</id>\n"
+            f"            <username>{username}</username>\n"
+            f"            <password>{password}</password>\n"
+            "        </server>\n"
+            "    </servers>\n"
+        )
+
+        profiles = (
+            "    <profiles>\n"
+            "        <profile>\n"
+            "            <id>system</id>\n"
+            "            <pluginRepositories>\n"
+            "                <pluginRepository>\n"
+            "                    <id>central</id>\n"
+            "                    <url>file:///usr/share/maven-repo</url>\n"
+            "                </pluginRepository>\n"
+            "            </pluginRepositories>\n"
+            "        </profile>\n"
+            "    </profiles>\n"
+        )
+
+        active_profiles = (
+            "    <activeProfiles>\n"
+            "        <activeProfile>system</activeProfile>\n"
+            "    </activeProfiles>\n"
+            "</settings>"
+        )
+
+        # Combine all parts
+        return header + schema + servers + profiles + active_profiles

@@ -93,8 +93,27 @@ class CraftRecipeUpload:
 
                 if has_crate and has_maven:
                     raise UploadError(
-                        "Archive contains both Rust crate and Maven artifacts."
+                        "Archive contains both Rust and Java artifacts. "
                         "Only one artifact type is allowed per build."
+                    )
+
+                # Check for multiple artifacts of the same type
+                if len(crate_files) > 1:
+                    raise UploadError(
+                        "Archive contains multiple Rust crate files. "
+                        "Only one .crate file is allowed per build."
+                    )
+
+                if len(jar_files) > 1:
+                    raise UploadError(
+                        "Archive contains multiple JAR files. "
+                        "Only one .jar file is allowed per build."
+                    )
+
+                if len(pom_files) > 1:
+                    raise UploadError(
+                        "Archive contains multiple pom.xml files. "
+                        "Only one pom.xml file is allowed per build."
                     )
 
                 if crate_files and metadata_path.exists():
@@ -134,7 +153,7 @@ class CraftRecipeUpload:
                             restricted=build.is_private,
                         )
                     build.addFile(libraryfile)
-                elif jar_files and pom_files:
+                elif jar_files and pom_files and metadata_path.exists():
                     try:
                         metadata = yaml.safe_load(metadata_path.read_text())
                         jar_name = metadata.get("name")
