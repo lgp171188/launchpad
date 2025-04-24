@@ -56,6 +56,13 @@ WEBHOOK_EVENT_TYPES = {
     "git:push:0.1": "Git push",
     "livefs:build:0.1": "Live filesystem build",
     "merge-proposal:0.1": "Merge proposal",
+    # Merge proposal subscopes
+    "merge-proposal:0.1::create": "Create",
+    "merge-proposal:0.1::push": "Push",
+    "merge-proposal:0.1::review": "Review",
+    "merge-proposal:0.1::edit": "Edit",
+    "merge-proposal:0.1::status-change": "Status Change",
+    "merge-proposal:0.1::delete": "Delete",
     "oci-recipe:build:0.1": "OCI recipe build",
     "snap:build:0.1": "Snap build",
     "craft-recipe:build:0.1": "Craft recipe build",

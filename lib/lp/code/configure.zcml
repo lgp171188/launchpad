@@ -296,6 +296,10 @@
       for="lp.code.interfaces.branchmergeproposal.IBranchMergeProposal
            lazr.lifecycle.interfaces.IObjectModifiedEvent"
       handler="lp.code.subscribers.karma.branch_merge_modified"/>
+  <subscriber
+      for="lp.code.interfaces.codereviewcomment.ICodeReviewComment
+          lazr.lifecycle.interfaces.IObjectCreatedEvent"
+      handler="lp.code.subscribers.branchmergeproposal.review_comment_created"/>
 
   <!-- hierarchy -->
 
