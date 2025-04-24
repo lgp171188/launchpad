@@ -568,14 +568,11 @@ class CraftPublishingJob(CraftRecipeJobDerived):
                 "Missing Cargo publishing repository configuration"
             )
 
-        # Replace Cargo.toml with Cargo.toml.orig if it exists
-        cargo_toml_orig = os.path.join(extract_dir, "Cargo.toml.orig")
-        cargo_toml = os.path.join(extract_dir, "Cargo.toml")
-
-        if os.path.exists(cargo_toml_orig):
-            import shutil
-
-            shutil.move(cargo_toml_orig, cargo_toml)
+        # Extract token from auth string (discard username if present)
+        if ":" in cargo_publish_auth:
+            _, token = cargo_publish_auth.split(":", 1)
+        else:
+            token = cargo_publish_auth
 
         # Set up cargo config
         cargo_dir = os.path.join(extract_dir, ".cargo")
@@ -602,7 +599,7 @@ index = "{}"
 [registries.launchpad]
 token = "Bearer {}"
 """.format(
-                    cargo_publish_auth
+                    token
                 )
             )
 
@@ -655,7 +652,7 @@ token = "Bearer {}"
         if ":" in maven_publish_auth:
             username, password = maven_publish_auth.split(":", 1)
         else:
-            username = "token"
+            username = "launchpad"
             password = maven_publish_auth
 
         # Generate settings.xml content
