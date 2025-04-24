@@ -399,7 +399,161 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
         # Verify upload was rejected
         self.assertEqual(UploadStatusEnum.REJECTED, result)
         self.assertIn(
-            "ERROR Archive contains both Rust crate and Maven artifacts",
+            "ERROR Archive contains both Rust and Java artifacts",
+            self.log.getLogBuffer(),
+        )
+        self.assertFalse(self.build.verifySuccessfulUpload())
+
+    def test_errors_on_multiple_crates(self):
+        """Test that an error is raised when multiple crates are present."""
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id)
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Create a temporary directory to build our archive
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create metadata.yaml
+            metadata = {
+                "name": "test-artifact",
+                "version": "0.1.0",
+            }
+            metadata_path = os.path.join(tmpdir, "metadata.yaml")
+            with open(metadata_path, "w") as f:
+                yaml.safe_dump(metadata, f)
+
+            # Create multiple crate files
+            crate_path1 = os.path.join(tmpdir, "test-artifact-0.1.0.crate")
+            with open(crate_path1, "wb") as f:
+                f.write(b"dummy crate contents")
+
+            crate_path2 = os.path.join(tmpdir, "another-crate-0.2.0.crate")
+            with open(crate_path2, "wb") as f:
+                f.write(b"another crate contents")
+
+            # Create tar.xz archive
+            archive_path = os.path.join(upload_dir, "output.tar.xz")
+            with tarfile.open(archive_path, "w:xz") as tar:
+                tar.add(metadata_path, arcname="metadata.yaml")
+                tar.add(crate_path1, arcname=os.path.basename(crate_path1))
+                tar.add(crate_path2, arcname=os.path.basename(crate_path2))
+
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build
+        )
+        result = handler.processCraftRecipe(self.log)
+
+        # Verify upload was rejected
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
+        self.assertIn(
+            "ERROR Archive contains multiple Rust crate files",
+            self.log.getLogBuffer(),
+        )
+        self.assertFalse(self.build.verifySuccessfulUpload())
+
+    def test_errors_on_multiple_jars(self):
+        """Test that an error is raised when multiple jars are present."""
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id)
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Create a temporary directory to build our archive
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create metadata.yaml
+            metadata = {
+                "name": "test-artifact",
+                "version": "0.1.0",
+            }
+            metadata_path = os.path.join(tmpdir, "metadata.yaml")
+            with open(metadata_path, "w") as f:
+                yaml.safe_dump(metadata, f)
+
+            # Create multiple JAR files
+            jar_path1 = os.path.join(tmpdir, "test-artifact-0.1.0.jar")
+            with open(jar_path1, "wb") as f:
+                f.write(b"dummy jar contents")
+
+            jar_path2 = os.path.join(tmpdir, "another-jar-0.2.0.jar")
+            with open(jar_path2, "wb") as f:
+                f.write(b"another jar contents")
+
+            # Create POM file
+            pom_path = os.path.join(tmpdir, "pom.xml")
+            with open(pom_path, "w") as f:
+                f.write("<project></project>")
+
+            # Create tar.xz archive
+            archive_path = os.path.join(upload_dir, "output.tar.xz")
+            with tarfile.open(archive_path, "w:xz") as tar:
+                tar.add(metadata_path, arcname="metadata.yaml")
+                tar.add(jar_path1, arcname=os.path.basename(jar_path1))
+                tar.add(jar_path2, arcname=os.path.basename(jar_path2))
+                tar.add(pom_path, arcname="pom.xml")
+
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build
+        )
+        result = handler.processCraftRecipe(self.log)
+
+        # Verify upload was rejected
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
+        self.assertIn(
+            "ERROR Archive contains multiple JAR files",
+            self.log.getLogBuffer(),
+        )
+        self.assertFalse(self.build.verifySuccessfulUpload())
+
+    def test_errors_on_multiple_poms(self):
+        """Test that an error is raised when multiple POM files are present."""
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id)
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Create a temporary directory to build our archive
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create metadata.yaml
+            metadata = {
+                "name": "test-artifact",
+                "version": "0.1.0",
+            }
+            metadata_path = os.path.join(tmpdir, "metadata.yaml")
+            with open(metadata_path, "w") as f:
+                yaml.safe_dump(metadata, f)
+
+            # Create JAR file
+            jar_path = os.path.join(tmpdir, "test-artifact-0.1.0.jar")
+            with open(jar_path, "wb") as f:
+                f.write(b"dummy jar contents")
+
+            # Create multiple POM files
+            pom_path1 = os.path.join(tmpdir, "pom.xml")
+            with open(pom_path1, "w") as f:
+                f.write("<project></project>")
+
+            pom_path2 = os.path.join(tmpdir, "subdir/pom.xml")
+            os.makedirs(os.path.join(tmpdir, "subdir"), exist_ok=True)
+            with open(pom_path2, "w") as f:
+                f.write("<project>another</project>")
+
+            # Create tar.xz archive
+            archive_path = os.path.join(upload_dir, "output.tar.xz")
+            with tarfile.open(archive_path, "w:xz") as tar:
+                tar.add(metadata_path, arcname="metadata.yaml")
+                tar.add(jar_path, arcname=os.path.basename(jar_path))
+                tar.add(pom_path1, arcname="pom.xml")
+                tar.add(pom_path2, arcname="subdir/pom.xml")
+
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build
+        )
+        result = handler.processCraftRecipe(self.log)
+
+        # Verify upload was rejected
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
+        self.assertIn(
+            "ERROR Archive contains multiple pom.xml files",
             self.log.getLogBuffer(),
         )
         self.assertFalse(self.build.verifySuccessfulUpload())
