@@ -200,7 +200,7 @@ class TestUCTRecord(TestCase):
                     "code on the server."
                 ),
                 discovered_by="",
-                mitigation="",
+                mitigation=None,
                 notes=(
                     "ccdm94> this has likely been fixed in all 2.x "
                     "versions."
