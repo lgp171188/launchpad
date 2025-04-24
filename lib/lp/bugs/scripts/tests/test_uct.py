@@ -171,6 +171,94 @@ class TestUCTRecord(TestCase):
         )
         self.assertEqual(load_from.read_text(), saved_to_path.read_text())
 
+    def test_load_save_with_priority_explanation(self):
+        load_from = Path(__file__).parent / "sampledata" / "CVE-2023-32637"
+        uct_record = UCTRecord.load(load_from)
+        self.assertDictEqual(
+            UCTRecord(
+                parent_dir="sampledata",
+                assigned_to="",
+                bugs=[""],
+                cvss=[
+                    CVSS(
+                        authority="nvd",
+                        vector_string=(
+                            "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H "
+                            "[9.8 CRITICAL]"
+                        ),
+                    ),
+                ],
+                candidate="CVE-2023-32637",
+                crd=None,
+                public_date_at_USN=None,
+                public_date=datetime(2023, 7, 25, 6, 15, tzinfo=timezone.utc),
+                description=(
+                    "GBrowse accepts files with any formats uploaded and "
+                    "places them in the area\naccessible through "
+                    "unauthenticated web requests. Therefore, anyone who can\n"
+                    "upload files through the product may execute arbitrary "
+                    "code on the server."
+                ),
+                discovered_by="",
+                mitigation=None,
+                notes=(
+                    "ccdm94> this has likely been fixed in all 2.x "
+                    "versions."
+                ),
+                priority=UCTRecord.Priority.HIGH,
+                priority_explanation=(
+                    "This has a high priority because it is a vulnerability "
+                    "that allows a remote\nattacker to execute code in a "
+                    "machine, and it looks to be easily exploitable\ngiven "
+                    "that it involves regular functionalities provided by the "
+                    "application."
+                ),
+                references=[
+                    "https://jvn.jp/en/jp/JVN35897618/",
+                    "https://jbrowse.org/jb2/",
+                    "http://gmod.org/wiki/GBrowse",
+                    "https://www.cve.org/CVERecord?id=CVE-2023-32637",
+                ],
+                ubuntu_description="",
+                packages=[
+                    UCTRecord.Package(
+                        name="gbrowse",
+                        statuses=[
+                            UCTRecord.SeriesPackageStatus(
+                                series="upstream",
+                                status=UCTRecord.PackageStatus.RELEASED,
+                                reason="2.56+dfsg-1",
+                                priority=None,
+                            ),
+                            UCTRecord.SeriesPackageStatus(
+                                series="trusty",
+                                status=UCTRecord.PackageStatus.IGNORED,
+                                reason="end of standard support",
+                                priority=None,
+                            ),
+                            UCTRecord.SeriesPackageStatus(
+                                series="xenial",
+                                status=UCTRecord.PackageStatus.IGNORED,
+                                reason="end of standard support",
+                                priority=None,
+                            ),
+                        ],
+                        priority=None,
+                        tags=set(),
+                        patches=[],
+                    ),
+                ],
+            ).__dict__,
+            uct_record.__dict__,
+        )
+
+        output_dir = Path(self.makeTemporaryDirectory())
+        saved_to_path = uct_record.save(output_dir)
+        self.assertEqual(
+            output_dir / "sampledata" / "CVE-2023-32637", saved_to_path
+        )
+        self.assertEqual(load_from.read_text(), saved_to_path.read_text())
+
 
 class TestCVE(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
@@ -232,6 +320,7 @@ class TestCVE(TestCaseWithFactory):
             mitigation="mitigation",
             notes="author> text",
             priority=UCTRecord.Priority.CRITICAL,
+            priority_explanation="sample priority_explanation",
             references=["https://ubuntu.com/security/notices/USN-5368-1"],
             ubuntu_description="ubuntu-description",
             packages=[
@@ -417,6 +506,7 @@ class TestCVE(TestCaseWithFactory):
                 ),
             ],
             importance=BugTaskImportance.CRITICAL,
+            importance_explanation="sample priority_explanation",
             status=VulnerabilityStatus.ACTIVE,
             assignee=assignee,
             discovered_by="tr3e wang",

@@ -313,6 +313,7 @@ class UCTImporter:
             distribution=distribution,
             status=cve.status,
             importance=cve.importance,
+            importance_explanation=cve.importance_explanation,
             creator=bug.owner,
             information_type=InformationType.PUBLICSECURITY,
             cve=lp_cve,
@@ -362,6 +363,7 @@ class UCTImporter:
         vulnerability.notes = cve.notes
         vulnerability.mitigation = cve.mitigation
         vulnerability.importance = cve.importance
+        vulnerability.importance_explanation = cve.importance_explanation
         vulnerability.date_made_public = date_made_public
         vulnerability.date_notice_issued = date_notice_issued
         vulnerability.date_coordinated_release = date_coordinated_release
