@@ -63,6 +63,11 @@
             interface="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildAdmin" />
     </class>
 
+    <subscriber
+        for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild
+            lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildStatusChangedEvent"
+        handler="lp.crafts.subscribers.craftrecipebuild.craft_build_status_changed" />
+
     <!-- CraftRecipeBuildSet -->
     <lp:securedutility
         class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildSet"
@@ -110,4 +115,15 @@
         name="craft-recipe-build">
         <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
     </lp:securedutility>
+
+    <!-- CraftPublishingJob -->
+    <lp:securedutility
+        component="lp.crafts.model.craftrecipejob.CraftPublishingJob"
+        provides="lp.crafts.interfaces.craftrecipejob.ICraftPublishingJobSource">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftPublishingJobSource" />
+    </lp:securedutility>
+    <class class="lp.crafts.model.craftrecipejob.CraftPublishingJob">
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
+        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftPublishingJob" />
+    </class>
 </configure>

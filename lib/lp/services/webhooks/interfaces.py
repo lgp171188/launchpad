@@ -58,6 +58,7 @@ WEBHOOK_EVENT_TYPES = {
     "merge-proposal:0.1": "Merge proposal",
     "oci-recipe:build:0.1": "OCI recipe build",
     "snap:build:0.1": "Snap build",
+    "craft-recipe:build:0.1": "Craft recipe build",
 }
 
 
