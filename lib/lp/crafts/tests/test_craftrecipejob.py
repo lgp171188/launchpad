@@ -487,7 +487,7 @@ edition = "2018"
             environment_variables=json.dumps(
                 {
                     "CARGO_PUBLISH_URL": "https://example.com/registry",
-                    "CARGO_PUBLISH_AUTH": "token123",
+                    "CARGO_PUBLISH_AUTH": "lp:token123",
                 }
             ),
         )
@@ -533,7 +533,7 @@ edition = "2018"
             environment_variables=json.dumps(
                 {
                     "CARGO_PUBLISH_URL": "https://example.com/registry",
-                    "CARGO_PUBLISH_AUTH": "token123",
+                    "CARGO_PUBLISH_AUTH": "lp:token123",
                 }
             ),
         )
