@@ -81,12 +81,42 @@ class CraftRecipeUpload:
                 with tarfile.open(craft_path, "r:xz") as tar:
                     tar.extractall(path=tmpdir)
 
-                # Look for .crate files and metadata.yaml
+                # Look for .crate files, .jar files, pom.xml, and metadata.yaml
                 crate_files = list(Path(tmpdir).rglob("*.crate"))
+                jar_files = list(Path(tmpdir).rglob("*.jar"))
+                pom_files = list(Path(tmpdir).rglob("pom.xml"))
                 metadata_path = Path(tmpdir) / "metadata.yaml"
 
+                # Check for multiple artifact types
+                has_crate = bool(crate_files)
+                has_maven = bool(jar_files and pom_files)
+
+                if has_crate and has_maven:
+                    raise UploadError(
+                        "Archive contains both Rust and Java artifacts. "
+                        "Only one artifact type is allowed per build."
+                    )
+
+                # Check for multiple artifacts of the same type
+                if len(crate_files) > 1:
+                    raise UploadError(
+                        "Archive contains multiple Rust crate files. "
+                        "Only one .crate file is allowed per build."
+                    )
+
+                if len(jar_files) > 1:
+                    raise UploadError(
+                        "Archive contains multiple JAR files. "
+                        "Only one .jar file is allowed per build."
+                    )
+
+                if len(pom_files) > 1:
+                    raise UploadError(
+                        "Archive contains multiple pom.xml files. "
+                        "Only one pom.xml file is allowed per build."
+                    )
+
                 if crate_files and metadata_path.exists():
-                    # If we found a crate file and metadata, upload those
                     try:
                         metadata = yaml.safe_load(metadata_path.read_text())
                         crate_name = metadata.get("name")
@@ -123,10 +153,61 @@ class CraftRecipeUpload:
                             restricted=build.is_private,
                         )
                     build.addFile(libraryfile)
+                elif jar_files and pom_files and metadata_path.exists():
+                    try:
+                        metadata = yaml.safe_load(metadata_path.read_text())
+                        jar_name = metadata.get("name")
+                        jar_version = metadata.get("version")
+                        self.logger.debug(
+                            "Found jar %s version %s",
+                            jar_name,
+                            jar_version,
+                        )
+                    except Exception as e:
+                        self.logger.warning(
+                            "Failed to parse metadata.yaml: %s", e
+                        )
+
+                    # Upload the JAR file
+                    jar_path = jar_files[0]
+                    with open(jar_path, "rb") as file:
+                        libraryfile = self.librarian.create(
+                            os.path.basename(str(jar_path)),
+                            os.stat(jar_path).st_size,
+                            file,
+                            filenameToContentType(str(jar_path)),
+                            restricted=build.is_private,
+                        )
+                    build.addFile(libraryfile)
+
+                    # Upload the POM file
+                    pom_path = pom_files[0]
+                    with open(pom_path, "rb") as file:
+                        libraryfile = self.librarian.create(
+                            "pom.xml",
+                            os.stat(pom_path).st_size,
+                            file,
+                            filenameToContentType(str(pom_path)),
+                            restricted=build.is_private,
+                        )
+                    build.addFile(libraryfile)
+
+                    # Upload metadata.yaml
+                    with open(metadata_path, "rb") as file:
+                        libraryfile = self.librarian.create(
+                            "metadata.yaml",
+                            os.stat(metadata_path).st_size,
+                            file,
+                            filenameToContentType(str(metadata_path)),
+                            restricted=build.is_private,
+                        )
+                    build.addFile(libraryfile)
                 else:
-                    # If no crate file found, upload the original archive
+                    # If no crate or jar+pom files found
+                    # upload the original archive
                     self.logger.debug(
-                        "No crate files found in archive, " "uploading tar.xz"
+                        "No crate or jar+pom found in archive, "
+                        "uploading tar.xz"
                     )
                     with open(craft_path, "rb") as file:
                         libraryfile = self.librarian.create(
