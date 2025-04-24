@@ -458,6 +458,7 @@ data in a bug task is derived from the bug.
     date_closed: None
     date_confirmed: None
     date_created: '2004-01-04T03:49:22.790240+00:00'
+    date_deferred: None
     date_fix_committed: None
     date_fix_released: None
     date_in_progress: None
