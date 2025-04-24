@@ -19,8 +19,10 @@ from lp.buildmaster.interfaces.processor import (
     ProcessorNotFound,
 )
 from lp.charms.adapters.buildarch import (
+    BadPropertyError,
     CharmBase,
     CharmBaseConfiguration,
+    CraftPlatformsBuildPlanError,
     DuplicateRunOnError,
     determine_instances_to_build,
 )
@@ -122,6 +124,7 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
     # Scenarios taken from the charmcraft build providers specification:
     # https://discourse.charmhub.io/t/charmcraft-bases-provider-support/4713
     scenarios = [
+        # 'Bases' format scenarios
         (
             "single entry, single arch",
             {
@@ -373,17 +376,6 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
             },
         ),
         (
-            "no bases specified",
-            {
-                "bases": None,
-                "expected": [
-                    ("20.04", "amd64"),
-                    ("20.04", "arm64"),
-                    ("20.04", "riscv64"),
-                ],
-            },
-        ),
-        (
             "abbreviated, no architectures specified",
             {
                 "bases": [
@@ -399,6 +391,184 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
                 ],
             },
         ),
+        # Unified format scenarios
+        (
+            "unified single platform",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    }
+                },
+                "expected": [("20.04", "amd64")],
+                "expected_platforms": ["ubuntu-amd64"],
+            },
+        ),
+        (
+            "unified multi-platforms",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                    "ubuntu-arm64": {
+                        "build-on": ["arm64"],
+                        "build-for": ["arm64"],
+                    },
+                },
+                "expected": [("20.04", "amd64"), ("20.04", "arm64")],
+                "expected_platforms": ["ubuntu-amd64", "ubuntu-arm64"],
+            },
+        ),
+        (
+            "unified build-for all single platform",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["all"],
+                    },
+                },
+                "expected": [("20.04", "amd64")],
+                "expected_platforms": ["ubuntu-amd64"],
+            },
+        ),
+        (
+            "unified multiple build-for all platforms",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["all"],
+                    },
+                    "ubuntu-arm64": {
+                        "build-on": ["arm64"],
+                        "build-for": ["all"],
+                    },
+                },
+                "expected": [("20.04", "amd64"), ("20.04", "arm64")],
+                "expected_platforms": ["ubuntu-amd64", "ubuntu-arm64"],
+            },
+        ),
+        (
+            "unified without platforms, builds for all allowed archs",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": None,
+                "expected": [
+                    ("20.04", "amd64"),
+                    ("20.04", "arm64"),
+                    ("20.04", "riscv64"),
+                ],
+                "expected_platforms": ["amd64", "arm64", "riscv64"],
+            },
+        ),
+        (
+            "unified without supported series",
+            {
+                "bases": None,
+                "base": "ubuntu@22.04",
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                },
+                "expected": [],
+            },
+        ),
+        (
+            "unified invalid platform name",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": {"not-a-valid-arch": None},
+                "expected_exception": MatchesException(
+                    CraftPlatformsBuildPlanError,
+                    r"Failed to compute the build plan for base=.+",
+                ),
+            },
+        ),
+        (
+            "unified missing build-on",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": [],
+                        "build-for": ["amd64"],
+                    },
+                },
+                "expected": [],
+            },
+        ),
+        (
+            "unified cross-compiling combinations, taking the first one",
+            {
+                "bases": None,
+                "base": "ubuntu@20.04",
+                "platforms": {
+                    "ubuntu-cross": {
+                        "build-on": ["amd64", "arm64"],
+                        "build-for": ["riscv64"],
+                    },
+                },
+                "expected": [("20.04", "amd64")],
+                "expected_platforms": ["ubuntu-cross"],
+            },
+        ),
+        (
+            "unified base only with unsupported series",
+            {
+                "bases": None,
+                "base": "ubuntu@99.99",
+                "platforms": None,
+                "expected": [],
+            },
+        ),
+        (
+            "unified base when base is dict",
+            {
+                "bases": None,
+                "base": {"name": "ubuntu", "channel": "20.04"},
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                },
+                "expected_exception": MatchesException(
+                    BadPropertyError,
+                    r"'base' must be a string, but got a dict: \{.+\}",
+                ),
+            },
+        ),
+        # No bases specified scenario
+        (
+            "no bases specified",
+            {
+                "bases": None,
+                "base": None,
+                "platforms": None,
+                "expected": [
+                    ("20.04", "amd64"),
+                    ("20.04", "arm64"),
+                    ("20.04", "riscv64"),
+                ],
+            },
+        ),
     ]
 
     def test_parser(self):
@@ -409,7 +579,7 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
             )
             for version in ("20.04", "18.04")
         ]
-        dases = []
+        supported_dases = []
         for arch_tag in ("amd64", "arm64", "riscv64"):
             try:
                 processor = getUtility(IProcessorSet).getByName(arch_tag)
@@ -418,7 +588,7 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
                     name=arch_tag, supports_virtualized=True
                 )
             for distro_series in distro_serieses:
-                dases.append(
+                supported_dases.append(
                     self.factory.makeDistroArchSeries(
                         distroseries=distro_series,
                         architecturetag=arch_tag,
@@ -426,12 +596,16 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
                     )
                 )
         charmcraft_data = {}
-        if self.bases is not None:
+        if getattr(self, "bases", None) is not None:
             charmcraft_data["bases"] = self.bases
+        if getattr(self, "base", None) is not None:
+            charmcraft_data["base"] = self.base
+        if getattr(self, "platforms", None) is not None:
+            charmcraft_data["platforms"] = self.platforms
         build_instances_factory = partial(
             determine_instances_to_build,
             charmcraft_data,
-            dases,
+            supported_dases,
             distro_serieses[0],
         )
         if hasattr(self, "expected_exception"):
@@ -439,20 +613,34 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
                 build_instances_factory, Raises(self.expected_exception)
             )
         else:
+            result = build_instances_factory()
+            # Assert the correct DistroArchSeries were selected for the build
+            dases_only = [das for (_info, das) in result]
             self.assertThat(
-                build_instances_factory(),
+                dases_only,
                 MatchesListwise(
                     [
                         MatchesStructure(
                             distroseries=MatchesStructure.byEquality(
-                                version=version
+                                version=ver
                             ),
-                            architecturetag=Equals(arch_tag),
+                            architecturetag=Equals(arch),
                         )
-                        for version, arch_tag in self.expected
+                        for ver, arch in self.expected
                     ]
                 ),
             )
+            # Assert the expected platform names (from BuildInfo.platform) are
+            # returned correctly
+            if hasattr(self, "expected_platforms"):
+                expected_platforms = self.expected_platforms
+            else:
+                expected_platforms = [None] * len(self.expected)
+
+            actual_platforms = [
+                info.platform if info else None for (info, _das) in result
+            ]
+            self.assertEqual(expected_platforms, actual_platforms)
 
 
 load_tests = load_tests_apply_scenarios

@@ -6826,6 +6826,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         requester=None,
         distro_arch_series=None,
         channels=None,
+        craft_platform=None,
         store_upload_metadata=None,
         date_created=DEFAULT,
         status=BuildStatus.NEEDSBUILD,
@@ -6851,6 +6852,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             recipe,
             distro_arch_series,
             channels=channels,
+            craft_platform=craft_platform,
             store_upload_metadata=store_upload_metadata,
             date_created=date_created,
         )

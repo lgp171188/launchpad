@@ -110,6 +110,8 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 )
             )
         args["private"] = build.is_private
+        if build.craft_platform:
+            args["craft_platform"] = build.craft_platform
         return args
 
     def verifySuccessfulBuild(self):

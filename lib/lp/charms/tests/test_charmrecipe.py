@@ -50,7 +50,7 @@ from lp.buildmaster.interfaces.processor import (
 )
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.charms.adapters.buildarch import BadPropertyError, MissingPropertyError
+from lp.charms.adapters.buildarch import CraftPlatformsBuildPlanError
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
@@ -546,6 +546,15 @@ class TestCharmRecipe(TestCaseWithFactory):
                     ),
                 )
 
+    def test_requestBuild_with_platform_name(self):
+        recipe = self.factory.makeCharmRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(
+            build_request, das, craft_platform="ubuntu-amd64"
+        )
+        self.assertEqual("ubuntu-amd64", build.craft_platform)
+
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding
         # CharmRecipeBuildRequest.
@@ -781,9 +790,12 @@ class TestCharmRecipe(TestCaseWithFactory):
         transaction.commit()
         with person_logged_in(job.requester):
             with ExpectedException(
-                BadPropertyError,
-                "Invalid value for base 'ubuntu-24.04'. "
-                "Expected value should be like 'ubuntu@24.04'",
+                CraftPlatformsBuildPlanError,
+                r"Failed to compute the build plan for base=ubuntu-24\.04, "
+                r"build base=None, platforms=\{'ubuntu-amd64': \{'build-on': "
+                r"\['amd64'\], 'build-for': \['amd64'\]\}\}: Invalid base "
+                r"string 'ubuntu-24\.04'\. Format should be "
+                r"'<distribution>@<series>'",
             ):
                 job.recipe.requestBuildsFromJob(
                     job.build_request,
@@ -793,6 +805,8 @@ class TestCharmRecipe(TestCaseWithFactory):
     def test_requestBuildsFromJob_unified_charmcraft_yaml_platforms_missing(
         self,
     ):
+        # If the recipe has no platforms specified, craft-platforms builds
+        # for all default architectures without an option of cross-compiling.
         self.useFixture(
             GitHostingFixture(
                 blob=dedent(
@@ -809,22 +823,20 @@ class TestCharmRecipe(TestCaseWithFactory):
         )
         transaction.commit()
         with person_logged_in(job.requester):
-            with ExpectedException(
-                MissingPropertyError, "The 'platforms' property is required"
-            ):
-                job.recipe.requestBuildsFromJob(
-                    job.build_request,
-                    channels=removeSecurityProxy(job.channels),
-                )
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request,
+                channels=removeSecurityProxy(job.channels),
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64", "riscv64", "arm64"], job.channels
+        )
 
     def test_requestBuildsFromJob_unified_charmcraft_yaml_fully_expanded(self):
         self.useFixture(
             GitHostingFixture(
                 blob=dedent(
                     """\
-                    base:
-                        name: ubuntu
-                        channel: 24.04
+                    base: ubuntu@24.04
                     platforms:
                         ubuntu-amd64:
                             build-on: [amd64]
@@ -853,9 +865,7 @@ class TestCharmRecipe(TestCaseWithFactory):
             GitHostingFixture(
                 blob=dedent(
                     """\
-                    base:
-                        name: ubuntu
-                        channel: 24.04
+                    base: ubuntu@24.04
                     platforms:
                         ubuntu-amd64:
                             build-on: [amd64]
@@ -885,9 +895,7 @@ class TestCharmRecipe(TestCaseWithFactory):
             GitHostingFixture(
                 blob=dedent(
                     """\
-                    base:
-                        name: ubuntu
-                        channel: 24.04
+                    base: ubuntu@24.04
                     platforms:
                         ubuntu-amd64:
                             build-on: amd64
@@ -943,9 +951,7 @@ class TestCharmRecipe(TestCaseWithFactory):
             GitHostingFixture(
                 blob=dedent(
                     """\
-                    base:
-                        name: ubuntu
-                        channel: 24.04
+                    base: ubuntu@24.04
                     platforms:
                         foobar:
                     """
@@ -959,9 +965,11 @@ class TestCharmRecipe(TestCaseWithFactory):
         transaction.commit()
         with person_logged_in(job.requester):
             with ExpectedException(
-                BadPropertyError,
-                "'foobar' is not a supported architecture for "
-                "'ubuntu@24.04'",
+                CraftPlatformsBuildPlanError,
+                "Failed to compute the build plan for base=ubuntu@24.04, "
+                "build base=None, platforms={'foobar': None}: Platform name "
+                "'foobar' is not a valid Debian architecture. Specify a "
+                "build-on and build-for.",
             ):
                 job.recipe.requestBuildsFromJob(
                     job.build_request,
@@ -975,9 +983,7 @@ class TestCharmRecipe(TestCaseWithFactory):
             GitHostingFixture(
                 blob=dedent(
                     """\
-                    base:
-                        name: ubuntu
-                        channel: 24.04
+                    base: ubuntu@24.04
                     platforms:
                         amd64:
                     """
@@ -1004,9 +1010,7 @@ class TestCharmRecipe(TestCaseWithFactory):
             GitHostingFixture(
                 blob=dedent(
                     """\
-                    base:
-                        name: ubuntu
-                        channel: 24.04
+                    base: ubuntu@24.04
                     platforms:
                         amd64:
                         arm64:

@@ -154,6 +154,14 @@ class ICharmRecipeBuildView(IPackageBuildView):
         )
     )
 
+    craft_platform = exported(
+        TextLine(
+            title=_("Craft platform name"),
+            required=False,
+            readonly=True,
+        )
+    )
+
     virtualized = Bool(
         title=_("If True, this build is virtualized."), readonly=True
     )
@@ -318,6 +326,7 @@ class ICharmRecipeBuildSet(ISpecificBuildFarmJobSource):
         recipe,
         distro_arch_series,
         channels=None,
+        craft_platform=None,
         store_upload_metadata=None,
         date_created=DEFAULT,
     ):
