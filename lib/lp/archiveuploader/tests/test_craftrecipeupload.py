@@ -115,7 +115,7 @@ class TestCraftRecipeUploads(TestUploadProcessorBase):
             pom_content = (
                 "<project>\n"
                 "  <modelVersion>4.0.0</modelVersion>\n"
-                f"  <groupId>com.example</groupId>\n"
+                "  <groupId>com.example</groupId>\n"
                 f"  <artifactId>{jar_name}</artifactId>\n"
                 f"  <version>{jar_version}</version>\n"
                 "</project>"
