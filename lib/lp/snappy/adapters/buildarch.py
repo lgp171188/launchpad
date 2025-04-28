@@ -6,6 +6,8 @@ __all__ = ["determine_architectures_to_build", "BadPropertyError"]
 from collections import Counter
 from typing import Any, Dict, List, Optional, Union
 
+from craft_platforms import BuildInfo, CraftPlatformsError, get_build_plan
+
 from lp.services.helpers import english_list
 from lp.snappy.interfaces.snapbase import SnapBaseFeature
 from lp.snappy.model.snapbase import SnapBase
@@ -83,6 +85,16 @@ class UnsupportedBuildOnError(SnapArchitecturesParserError):
         self.build_on = build_on
 
 
+class CraftPlatformsBuildPlanError(SnapArchitecturesParserError):
+    """Error raised when craft-platforms fails while generating
+    a build plan."""
+
+    def __init__(Self, message, resolution=None):
+        if resolution:
+            message += f" Resolution: {resolution}"
+        super().__init__(message)
+
+
 class SnapArchitecture:
     """A single entry in the snapcraft.yaml 'architectures' list."""
 
@@ -91,6 +103,7 @@ class SnapArchitecture:
         build_on: Union[str, List[str]],
         build_for: Optional[Union[str, List[str]]] = None,
         build_error: Optional[str] = None,
+        build_info: Optional[BuildInfo] = None,
     ):
         """Create a new architecture entry.
 
@@ -111,6 +124,7 @@ class SnapArchitecture:
         else:
             self.build_for = self.build_on
         self.build_error = build_error
+        self.build_info = build_info
 
     @classmethod
     def from_dict(cls, properties):
@@ -132,7 +146,7 @@ class SnapArchitecture:
 class SnapBuildInstance:
     """A single instance of a snap that should be built.
 
-    It has two useful attributes:
+    If has the following useful attributes:
 
       - architecture: The architecture tag that should be used to build the
             snap.
@@ -141,18 +155,21 @@ class SnapBuildInstance:
             in the case of cross-building)
       - required: Whether or not failure to build should cause the entire
             set to fail.
+      - platform_name: The platform to build for.
     """
 
     def __init__(
         self,
         architecture: SnapArchitecture,
         supported_architectures: List[str],
+        platform_name: str = None,
     ):
         """Construct a new `SnapBuildInstance`.
 
         :param architecture: `SnapArchitecture` instance.
         :param supported_architectures: List of supported architectures,
             sorted by priority.
+        : param platform_name: The platform to build for.
         """
         build_on = architecture.build_on
         # "all" indicates that the architecture doesn't matter.  Try to pick
@@ -172,6 +189,7 @@ class SnapBuildInstance:
 
         self.target_architectures = architecture.build_for
         self.required = architecture.build_error != "ignore"
+        self.platform_name = platform_name
 
 
 def determine_architectures_to_build(
@@ -187,16 +205,28 @@ def determine_architectures_to_build(
         we can create builds for.
     :return: a list of `SnapBuildInstance`s.
     """
-    architectures_list: Optional[List] = snapcraft_data.get("architectures")
-
-    if architectures_list:
-        architectures = parse_architectures_list(architectures_list)
-    elif "platforms" in snapcraft_data:
-        snap_base_name = snap_base.name if snap_base else "unknown"
-        architectures = parse_platforms(
-            snapcraft_data, supported_arches, snap_base_name
+    architectures = None
+    # 1) Snap with 'architectures' format
+    if "architectures" in snapcraft_data and snapcraft_data.get(
+        "architectures"
+    ):
+        # XXX tushar5526 2025-04-15: craft_platforms do not support
+        # "architectures" format used in core22 or older,
+        # fallback to the existing LP parsing logic in that case.
+        architectures_list: Optional[List] = snapcraft_data.get(
+            "architectures"
         )
-    else:
+        architectures = parse_architectures_list(architectures_list)
+    # 2) Snap with 'platforms' format
+    elif "platforms" in snapcraft_data:
+        # Use craft-platforms to generate the build plan
+        architectures = parse_platforms(snapcraft_data)
+    # 3) Snap with no 'architectures' or 'platforms' format:
+    # XXX alvarocs 2025-04-29: craft-platforms handles cases where
+    # neither 'platforms' nor 'architectures' are defined, but makes
+    # legacy tests fail. For compatibility, still use Launchpad logic
+    # of building for all supported architectures.
+    if not architectures:
         # If no architectures are specified, build one for each supported
         # architecture.
         architectures = [
@@ -235,40 +265,53 @@ def parse_architectures_list(
 
 def parse_platforms(
     snapcraft_data: Dict[str, Any],
-    supported_arches: List[str],
-    base_name: str,
 ) -> List[SnapArchitecture]:
-    architectures = []
-    supported_arch_names = supported_arches
 
-    for platform, configuration in snapcraft_data["platforms"].items():
-        # The 'platforms' property and its values look like
-        # platforms:
-        #   ubuntu-amd64:
-        #     build-on: [amd64]
-        #     build-for: [amd64]
-        # 'ubuntu-amd64' will be the value of 'platform' and its value dict
-        # containing the keys 'build-on', 'build-for' will be the value of
-        # 'configuration'.
-        if configuration:
-            build_on = configuration.get("build-on", [platform])
-            build_for = configuration.get("build-for", build_on)
-            architectures.append(
-                SnapArchitecture(
-                    build_on=build_on,
-                    build_for=build_for,
-                )
-            )
-        elif platform in supported_arch_names:
-            architectures.append(
-                SnapArchitecture(build_on=[platform], build_for=[platform])
-            )
+    try:
+        exhaustive_build_plan = get_build_plan(
+            app="snapcraft",
+            project_data=snapcraft_data,
+        )
+    # XXX alvarocs 2025-04-04: craft-platforms currently raises
+    # 'ValueError' when it encounters malformed input such as an invalid
+    # base or platform name. These should instead raise
+    # 'CraftPlatformsError'. Bug tracked at:
+    # https://github.com/canonical/craft-platforms/issues/116
+    except (CraftPlatformsError, ValueError) as e:
+        message = getattr(e, "message", str(e))
+        resolution = getattr(e, "resolution", None)
+        raise CraftPlatformsBuildPlanError(
+            "Failed to compute the build plan for the snapcraft file "
+            "with error: "
+            f"{message}",
+            resolution=resolution,
+        )
+    platform_plans: Dict[str, BuildInfo] = {}
+    for plan in exhaustive_build_plan:
+        platform_plans.setdefault(plan.platform, []).append(plan)
+    instances_to_build: List[BuildInfo] = []
+    for _platform, pairs in platform_plans.items():
+        # One way of building for that platform, i.e one (info, das)
+        if len(pairs) == 1:
+            instances_to_build.append(pairs[0])
+            continue
+        # Multiple ways of building for that platform:
+        for info in pairs:
+            # Pick the native build
+            if info.build_on == info.build_for:
+                instances_to_build.append(info)
+                break
+        # Pick first one if none are native
         else:
-            raise BadPropertyError(
-                f"'{platform}' is not a supported platform for '{base_name}'."
-            )
-
-    return architectures
+            instances_to_build.append(pairs[0])
+    return [
+        SnapArchitecture(
+            build_on=str(instance.build_on),
+            build_for=str(instance.build_for),
+            build_info=instance,
+        )
+        for instance in instances_to_build
+    ]
 
 
 def validate_architectures(architectures: List[SnapArchitecture]):
@@ -298,8 +341,13 @@ def build_architectures_list(
     architectures_to_build = []
     for arch in architectures:
         try:
+            platform_name = (
+                arch.build_info.platform
+                if arch.build_info is not None
+                else None
+            )
             architectures_to_build.append(
-                SnapBuildInstance(arch, supported_arches)
+                SnapBuildInstance(arch, supported_arches, platform_name)
             )
         except UnsupportedBuildOnError:
             # Snaps are allowed to declare that they build on architectures

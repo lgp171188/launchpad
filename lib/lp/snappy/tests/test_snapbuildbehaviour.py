@@ -1217,6 +1217,22 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
         )
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_craft_platform(self):
+        # If the build is for a particular platform, extraBuildArgs
+        # sends it.
+        job = self.makeJob(craft_platform="ubuntu-amd64")
+        (
+            expected_archives,
+            expected_trusted_keys,
+        ) = yield get_sources_list_for_building(
+            job, job.build.distro_arch_series, None
+        )
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertFalse(isProxy(args["craft_platform"]))
+        self.assertEqual("ubuntu-amd64", args["craft_platform"])
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_channels_apt(self):
         # {"snapcraft": "apt"} causes snapcraft to be installed from apt.
         job = self.makeJob(channels={"snapcraft": "apt"})

@@ -186,6 +186,8 @@ class SnapBuild(PackageBuildMixin, StormBase):
 
     store_upload_metadata = JSON("store_upload_json_data", allow_none=True)
 
+    craft_platform = Unicode(name="craft_platform", allow_none=True)
+
     def __init__(
         self,
         build_farm_job,
@@ -202,6 +204,7 @@ class SnapBuild(PackageBuildMixin, StormBase):
         store_upload_metadata=None,
         build_request=None,
         target_architectures=None,
+        craft_platform=None,
     ):
         """Construct a `SnapBuild`."""
         super().__init__()
@@ -221,6 +224,7 @@ class SnapBuild(PackageBuildMixin, StormBase):
         if build_request is not None:
             self.build_request_id = build_request.id
         self.status = BuildStatus.NEEDSBUILD
+        self.craft_platform = craft_platform
 
     @property
     def build_request(self):
@@ -566,6 +570,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
         store_upload_metadata=None,
         build_request=None,
         target_architectures=None,
+        craft_platform=None,
     ):
         """See `ISnapBuildSet`."""
         store = IPrimaryStore(SnapBuild)
@@ -593,6 +598,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
             store_upload_metadata=store_upload_metadata,
             build_request=build_request,
             target_architectures=target_architectures,
+            craft_platform=craft_platform,
         )
         store.add(snapbuild)
         store.flush()

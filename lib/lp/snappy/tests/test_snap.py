@@ -696,6 +696,23 @@ class TestSnap(TestCaseWithFactory):
                     ),
                 )
 
+    def test_requestBuild_with_platform_name(self):
+        processor = self.factory.makeProcessor(supports_virtualized=True)
+        distroarchseries = self.makeBuildableDistroArchSeries(
+            processor=processor
+        )
+        snap = self.factory.makeSnap(
+            distroseries=distroarchseries.distroseries, processors=[processor]
+        )
+        build = snap.requestBuild(
+            snap.owner,
+            snap.distro_series.main_archive,
+            distroarchseries,
+            PackagePublishingPocket.UPDATES,
+            craft_platform="ubuntu-amd64",
+        )
+        self.assertEqual("ubuntu-amd64", build.craft_platform)
+
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding
         # SnapBuildRequest.

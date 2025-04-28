@@ -6350,6 +6350,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         builder=None,
         duration=None,
         target_architectures=None,
+        craft_platform=None,
         **kwargs,
     ):
         """Make a new SnapBuild."""
@@ -6391,6 +6392,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             date_created=date_created,
             build_request=build_request,
             target_architectures=target_architectures,
+            craft_platform=craft_platform,
         )
         if duration is not None:
             removeSecurityProxy(snapbuild).updateStatus(
