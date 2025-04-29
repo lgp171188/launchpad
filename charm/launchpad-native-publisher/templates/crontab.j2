@@ -1,0 +1,12 @@
+TZ=UTC
+MAILFROM={{ bounce_address }}
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-native-publisher
+
+{% if active -%}
+*/6 * * * * {{ code_dir }}/cronscripts/process-job-source.py ICraftPublishJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.ICraftPublishJobSource.log
+{% endif -%}
+
+# OOPS amqp
+*/15 * * * * run-one {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+
