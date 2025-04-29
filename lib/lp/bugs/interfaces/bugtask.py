@@ -694,6 +694,14 @@ class IBugTask(IHasBug, IBugTaskDelete):
             required=False,
         )
     )
+    date_deferred = exported(
+        Datetime(
+            title=_("Date deferred"),
+            description=_("The date on which this task was " "deferred."),
+            readonly=True,
+            required=False,
+        )
+    )
     age = Datetime(
         title=_("Age"),
         description=_(

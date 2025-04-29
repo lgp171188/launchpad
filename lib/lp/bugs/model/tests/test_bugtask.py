@@ -1969,6 +1969,7 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
     * date_triaged
     * date_fix_committed
     * date_fix_released
+    * date_deferred
 
 
     XXX: rharding 2012-05-14 bug=999298: These tests are ported from doctests
@@ -2337,6 +2338,12 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
             current_series_netapplet_task.date_closed,
             generic_netapplet_task.date_closed,
         )
+        self.assertIsInstance(generic_netapplet_task.date_deferred, datetime)
+        self.assertEqual(
+            current_series_netapplet_task.date_deferred,
+            generic_netapplet_task.date_deferred,
+        )
+
         # Only admin can transition from BugTaskStatus.DEFERRED
         current_series_netapplet_task.transitionToStatus(
             BugTaskStatus.FIXRELEASED, getUtility(ILaunchpadCelebrities).admin
