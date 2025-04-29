@@ -858,6 +858,7 @@ class Snap(StormBase, WebhookTargetMixin):
         channels=None,
         build_request=None,
         target_architectures: t.Optional[t.List[str]] = None,
+        craft_platform: str = None,
     ) -> ISnapBuild:
         """See `ISnap`."""
         self._checkRequestBuild(requester, archive)
@@ -884,6 +885,7 @@ class Snap(StormBase, WebhookTargetMixin):
             SnapBuild.target_architectures == target_architectures,
             channels_clause,
             SnapBuild.status == BuildStatus.NEEDSBUILD,
+            SnapBuild.craft_platform == craft_platform,
         )
         if pending.any() is not None:
             raise SnapBuildAlreadyPending
@@ -898,6 +900,7 @@ class Snap(StormBase, WebhookTargetMixin):
             channels=channels,
             build_request=build_request,
             target_architectures=target_architectures,
+            craft_platform=craft_platform,
         )
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
@@ -1059,13 +1062,15 @@ class Snap(StormBase, WebhookTargetMixin):
                     channels=arch_channels,
                     build_request=build_request,
                     target_architectures=build_instance.target_architectures,
+                    craft_platform=build_instance.platform_name,
                 )
                 if logger is not None:
                     logger.debug(
-                        " - %s/%s/%s: Build requested.",
+                        " - %s/%s/%s/%s: Build requested.",
                         self.owner.name,
                         self.name,
                         arch,
+                        build_instance.platform_name,
                     )
                 builds.append(build)
             except SnapBuildAlreadyPending:
@@ -1075,7 +1080,12 @@ class Snap(StormBase, WebhookTargetMixin):
                     raise
                 elif logger is not None:
                     logger.exception(
-                        " - %s/%s/%s: %s", self.owner.name, self.name, arch, e
+                        " - %s/%s/%s/%s: %s",
+                        self.owner.name,
+                        self.name,
+                        arch,
+                        build_instance.platform_name,
+                        e,
                     )
         return builds
 

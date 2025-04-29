@@ -352,6 +352,14 @@ class ISnapBuildView(IPackageBuildView, IPrivacy):
         )
     )
 
+    craft_platform = exported(
+        TextLine(
+            title=_("Craft platform name"),
+            required=False,
+            readonly=True,
+        )
+    )
+
     def getFiles():
         """Retrieve the build's `ISnapFile` records.
 
@@ -432,6 +440,7 @@ class ISnapBuildSet(ISpecificBuildFarmJobSource):
         store_upload_metadata=None,
         build_request=None,
         target_architectures=None,
+        craft_platform=None,
     ):
         """Create an `ISnapBuild`."""
 
