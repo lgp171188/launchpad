@@ -634,7 +634,7 @@ class TestPersonIndexView(BrowserTestCase):
         markup = self.get_markup(view, person)
         self.assertThat(markup, link_match)
 
-    def test_hides_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
+    def test_shows_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         person = self.factory.makePerson()
         # Creates a recipe from another user, just to make sure it will not
@@ -652,11 +652,11 @@ class TestPersonIndexView(BrowserTestCase):
                 text="View OCI recipes",
             )
         )
-        self.assertThat(markup, Not(link_match))
+        self.assertThat(markup, link_match)
 
         login(ANONYMOUS)
         markup = self.get_markup(view, person)
-        self.assertThat(markup, Not(link_match))
+        self.assertThat(markup, link_match)
 
     def test_ppas_query_count(self):
         owner = self.factory.makePerson()
