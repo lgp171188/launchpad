@@ -437,10 +437,14 @@ class CVE:
     Do not confuse this with `Cve` database model.
     """
 
+    # XXX enriqueesanchz 2025-04-21: We add tags to DistroPackage as we have
+    # only one DistroPackage per UCTRecord.Package, so we match
+    # UCTRecord.Package.tags with CVE.DistroPackage.tags
     class DistroPackage(NamedTuple):
         target: DistributionSourcePackage
         package_name: SourcePackageName
         importance: Optional[BugTaskImportance]
+        tags: Set[str]
 
     class SeriesPackage(NamedTuple):
         target: SourcePackage
@@ -608,6 +612,7 @@ class CVE:
                     ),
                     package_name=source_package_name,
                     importance=package_importance,
+                    tags=uct_package.tags,
                 )
                 if distro_package not in distro_packages:
                     distro_packages.append(distro_package)
@@ -752,7 +757,7 @@ class CVE:
                     if distro_package.importance
                     else None
                 ),
-                tags=set(),
+                tags=distro_package.tags,
                 patches=[],
             )
 

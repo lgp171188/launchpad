@@ -15,7 +15,7 @@ For each entry in UCT we:
 4. Update the statuses of Bug Tasks based on the information in the CVE entry
 5. Update the information the related Launchpad's `Cve` model, if necessary
 
-Three types of bug tags are created:
+Three types of bug tasks are created:
 
 1. Bug tasks with a distribution package as a target - they represent
    importance of the package
@@ -177,6 +177,7 @@ class UCTImporter:
 
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
+        self._update_distro_packages_tags(bug, cve.distro_packages)
 
         self._create_bug_tasks(
             bug,
@@ -234,6 +235,7 @@ class UCTImporter:
         self._assign_bug_tasks(bug, cve.assignee)
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
+        self._update_distro_packages_tags(bug, cve.distro_packages)
 
         bug.tags = cve.global_tags
 
@@ -247,6 +249,16 @@ class UCTImporter:
                 self._create_vulnerability(bug, cve, lp_cve, distro)
             else:
                 self._update_vulnerability(vulnerability, cve)
+
+    def _update_distro_packages_tags(
+        self, bug: BugModel, distro_packages: List
+    ):
+        tags = set()
+        for distro_package in distro_packages:
+            for tag in distro_package.tags:
+                tags.add(f"{distro_package.package_name.name}.{tag}")
+
+        bug.tags = tags
 
     def _find_existing_bug(
         self, cve: CVE, lp_cve: CveModel

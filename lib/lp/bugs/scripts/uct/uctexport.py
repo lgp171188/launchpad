@@ -109,6 +109,10 @@ class UCTExporter:
 
         cve_importance = vulnerability.importance
 
+        tags_by_pkg = defaultdict(set)
+        for tag in bug.tags:
+            tags_by_pkg[tag.split(".")[0]].add(tag.split(".")[1])
+
         # When exporting, we shouldn't output the importance value if it
         # hasn't been specified in the original UCT file.
         # So, the following logic is used:
@@ -136,6 +140,11 @@ class UCTExporter:
                 package_name_by_product[product] = target.sourcepackagename
             dp_importance = bug_task.importance
             package_importances[target.sourcepackagename] = dp_importance
+
+            tags = set()
+            if target.sourcepackagename.name in tags_by_pkg:
+                tags = tags.union(tags_by_pkg[target.sourcepackagename.name])
+
             distro_packages.append(
                 CVE.DistroPackage(
                     target=target,
@@ -145,6 +154,7 @@ class UCTExporter:
                         if dp_importance != cve_importance
                         else None
                     ),
+                    tags=tags,
                 )
             )
 
