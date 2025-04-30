@@ -249,6 +249,7 @@ class UCTExporter:
                 for authority in lp_cve.cvss
                 for vector_string in lp_cve.cvss[authority]
             ],
+            global_tags=set(bug.tags),
             patch_urls=patch_urls,
         )
 

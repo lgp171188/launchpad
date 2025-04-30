@@ -15,6 +15,8 @@ from collections import OrderedDict
 
 import yaml
 
+GLOBAL_TAGS_KEY = "*"
+
 
 def set_cve_dir(path):
     """Return a path with CVEs in it. Specifically:
@@ -935,7 +937,15 @@ for release in subprojects:
         releases.append(rel)
 
 
-VALID_TAGS = {
+valid_cve_tags = {
+    "cisa-kev": (
+        "This vulnerability is listed in the CISA Known Exploited "
+        "Vulnerabilities Catalog. For more details see "
+        "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+    ),
+}
+
+valid_package_tags = {
     "universe-binary": (
         "Binaries built from this source package are in universe and so are "
         "supported by the community. For more details see "
@@ -978,6 +988,10 @@ VALID_TAGS = {
         "This vulnerability is mitigated in part by the use of Position "
         "Independent Executables in Ubuntu. For more details see "
         "https://wiki.ubuntu.com/Security/Features#pie"
+    ),
+    "review-break-fix": (
+        "This vulnerability automatically received break-fix commits entries "
+        "when it was added and needs to be reviewed."
     ),
 }
 
@@ -1388,23 +1402,29 @@ def load_cve(cve, strict=False, srcmap=None):
                 continue
             data["patches"].setdefault(pkg, list())
             srcmap["patches"].setdefault(pkg, list())
-        elif "Tags_" in field:
+        # This changes are needed to support global `Tags:`
+        elif "Tags" in field:
             """These are processed into the "tags" hash"""
             try:
                 _, pkg = field.split("_", 1)
             except ValueError:
-                msg += "%s: %d: bad field with 'Tags_': '%s'\n" % (
-                    cve,
-                    linenum,
-                    field,
-                )
-                code = EXIT_FAIL
-                continue
+                # no package specified - this is the global tags field - use a
+                # key of '*' to store it in the package hash
+                pkg = GLOBAL_TAGS_KEY
             data["tags"].setdefault(pkg, set())
             srcmap["tags"].setdefault(pkg, (cve, linenum))
             for word in value.strip().split(" "):
-                if word not in VALID_TAGS:
-                    msg += "%s: %d: invalid tag '%s': '%s'\n" % (
+                if pkg == GLOBAL_TAGS_KEY and word not in valid_cve_tags:
+                    msg += "%s: %d: invalid CVE tag '%s': '%s'\n" % (
+                        cve,
+                        linenum,
+                        word,
+                        field,
+                    )
+                    code = EXIT_FAIL
+                    continue
+                elif pkg != GLOBAL_TAGS_KEY and word not in valid_package_tags:
+                    msg += "%s: %d: invalid package tag '%s': '%s'\n" % (
                         cve,
                         linenum,
                         word,
