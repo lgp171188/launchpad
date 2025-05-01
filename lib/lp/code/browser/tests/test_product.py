@@ -466,7 +466,7 @@ class TestProductOverviewLinks(TestCaseWithFactory):
         self.assertIn("View snap packages", text)
         self.assertIn("Create snap package", text)
 
-    def test_hides_list_snaps_if_no_snap_is_available(self):
+    def test_shows_list_snaps_link_if_no_snap_is_available(self):
         project = self.factory.makeProduct()
 
         browser = self.getUserBrowser(
@@ -477,7 +477,7 @@ class TestProductOverviewLinks(TestCaseWithFactory):
         )
 
         # Search link should not be available.
-        self.assertNotIn("View snap packages", text)
+        self.assertIn("View snap packages", text)
         self.assertIn("Create snap package", text)
 
     def test_displays_create_and_list_oci_project_link_for_owner(self):

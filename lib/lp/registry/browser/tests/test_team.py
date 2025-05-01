@@ -1018,7 +1018,7 @@ class TestTeamIndexView(TestCaseWithFactory):
         browser = self.getUserBrowser(team_url, user=None)
         self.assertThat(browser.contents, link_match)
 
-    def test_hides_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
+    def test_shows_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         member = self.factory.makePerson()
         team = self.factory.makeTeam(owner=member, members=[member])
@@ -1040,10 +1040,10 @@ class TestTeamIndexView(TestCaseWithFactory):
                 text="View OCI recipes",
             )
         )
-        self.assertThat(browser.contents, Not(link_match))
+        self.assertThat(browser.contents, link_match)
 
         browser = self.getUserBrowser(team_url, user=None)
-        self.assertThat(browser.contents, Not(link_match))
+        self.assertThat(browser.contents, link_match)
 
 
 class TestPersonIndexVisibilityView(TestCaseWithFactory):
