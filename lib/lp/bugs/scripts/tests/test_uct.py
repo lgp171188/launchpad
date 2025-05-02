@@ -894,18 +894,53 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             self.assertEqual(cve.assignee, t.assignee)
 
     def checkBugAttachments(self, bug: Bug, cve: CVE):
-        attachments_by_url = {a.url: a for a in bug.attachments if a.url}
+        # attachment.title is the package name
+        attachments_by_pkg = {att.title: att for att in bug.attachments}
+        patch_url_by_pkg = defaultdict(list)
         for patch_url in cve.patch_urls:
-            self.assertIn(patch_url.url, attachments_by_url)
-            attachment = attachments_by_url[patch_url.url]
-            expected_title = "{}/{}".format(
-                patch_url.package_name.name, patch_url.type
+            patch_url_by_pkg[patch_url.package_name.name].append(patch_url)
+
+        self.assertEqual(
+            len(attachments_by_pkg),
+            len(patch_url_by_pkg),
+            "Mismatch in attachment count and patch URL count",
+        )
+
+        for pkg, patch_urls in patch_url_by_pkg.items():
+            attachment = attachments_by_pkg.get(pkg)
+            self.assertIsNotNone(
+                attachment, f"Attachment for package '{pkg}' not found"
             )
-            if patch_url.notes:
-                expected_title = "{}/{}".format(
-                    expected_title, patch_url.notes
+
+            self.assertEqual(pkg, attachment.title)
+
+            vulnerability_patches = attachment.vulnerability_patches
+            self.assertEqual(
+                len(patch_urls),
+                len(vulnerability_patches),
+                "Number of patches and vulnerabilities don't match for "
+                f"package '{pkg}'",
+            )
+
+            # Check content and its order
+            for patch_url, vulnerability_patch in zip(
+                patch_urls, vulnerability_patches
+            ):
+                self.assertEqual(
+                    patch_url.type,
+                    vulnerability_patch["name"],
+                    f"Type mismatch for patch in package '{pkg}'",
                 )
-            self.assertEqual(expected_title, attachment.title)
+                self.assertEqual(
+                    patch_url.url,
+                    vulnerability_patch["value"],
+                    f"URL mismatch for patch in package '{pkg}'",
+                )
+                self.assertEqual(
+                    patch_url.notes,
+                    vulnerability_patch["comment"],
+                    f"Notes mismatch for patch in package '{pkg}'",
+                )
 
     def checkVulnerabilities(self, bug: Bug, cve: CVE):
         vulnerabilities = bug.vulnerabilities
@@ -992,8 +1027,9 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         self.assertEqual([self.lp_cve], bug.cves)
 
+        # We only add 1 attachment since now it's a compound value per package
         activities = list(bug.activity)
-        self.assertEqual(6, len(activities))
+        self.assertEqual(5, len(activities))
         import_bug_activity = activities[-1]
         self.assertEqual(self.bug_importer, import_bug_activity.person)
         self.assertEqual("bug", import_bug_activity.whatchanged)
@@ -1338,6 +1374,21 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 notes=None,
             )
         )
+        cve.patch_urls.append(
+            CVE.PatchURL(
+                package_name=cve.distro_packages[1].package_name,
+                type="upstream",
+                url="https://github.com/012",
+                notes=None,
+            )
+        )
+
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+        # Remove patch_url and check it removes from bug
+        cve.patch_urls.pop()
+
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 
