@@ -29,6 +29,8 @@ from lp.services.propertycache import clear_property_cache
 from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
+TAG_SEPARATOR = UCTImporter.TAG_SEPARATOR
+
 
 class TestUCTRecord(TestCase):
     maxDiff = None
@@ -810,9 +812,17 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual(len(cve.bug_urls), len(watches))
         self.assertEqual(sorted(cve.bug_urls), sorted(w.url for w in watches))
 
-        self.assertEqual(sorted(bug.tags), sorted(list(cve.global_tags)))
-
+        self.checkBugTags(bug, cve)
         self.checkBugAttachments(bug, cve)
+
+    def checkBugTags(self, bug: Bug, cve: CVE):
+        tags = cve.global_tags.copy()
+        for distro_package in cve.distro_packages:
+            for tag in distro_package.tags:
+                tags.add(
+                    f"{distro_package.package_name.name}{TAG_SEPARATOR}{tag}"
+                )
+        self.assertEqual(sorted(bug.tags), sorted(list(tags)))
 
     def checkBugTasks(self, bug: Bug, cve: CVE):
         bug_tasks: List[BugTask] = bug.bugtasks
@@ -851,7 +861,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             self.assertEqual(expected_status, t.status)
             self.assertIsNone(t.status_explanation)
 
-        self.assertEqual(tags, set(bug.tags))
+        distro_package_tags = {tag for tag in bug.tags if TAG_SEPARATOR in tag}
+        self.assertEqual(tags, distro_package_tags)
 
         for series_package in cve.series_packages:
             self.assertIn(series_package.target, bug_tasks_by_target)
@@ -1330,13 +1341,14 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 
-    def test_update_distro_packages_tags(self):
+    def test_update_tags(self):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
         cve = self.cve
 
         # Add new tags
-        cve.distro_packages[0].tags.add("test-tag")
-        cve.distro_packages[0].tags.add("another-test-tag")
+        cve.global_tags.add("global-test-tag")
+        cve.distro_packages[0].tags.add("package-test-tag")
+        cve.distro_packages[0].tags.add("another-package-test-tag")
 
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
