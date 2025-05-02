@@ -28,7 +28,7 @@ import logging
 from datetime import timezone
 from itertools import chain
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import transaction
 from zope.component import getUtility
@@ -68,6 +68,8 @@ class UCTImporter:
     """
     `UCTImporter` is used to import UCT CVE files to Launchpad database.
     """
+
+    TAG_SEPARATOR = "."
 
     def __init__(self, dry_run=False):
         self.dry_run = dry_run
@@ -171,13 +173,12 @@ class UCTImporter:
                 target=distro_package.target,
                 importance=distro_package.importance,
                 cve=lp_cve,
-                tags=cve.global_tags,
             )
         )
 
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
-        self._update_distro_packages_tags(bug, cve.distro_packages)
+        self._update_tags(bug, cve.global_tags, cve.distro_packages)
 
         self._create_bug_tasks(
             bug,
@@ -235,9 +236,7 @@ class UCTImporter:
         self._assign_bug_tasks(bug, cve.assignee)
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
-        self._update_distro_packages_tags(bug, cve.distro_packages)
-
-        bug.tags = cve.global_tags
+        self._update_tags(bug, cve.global_tags, cve.distro_packages)
 
         # Update or add new Vulnerabilities
         vulnerabilities_by_distro = {
@@ -250,13 +249,16 @@ class UCTImporter:
             else:
                 self._update_vulnerability(vulnerability, cve)
 
-    def _update_distro_packages_tags(
-        self, bug: BugModel, distro_packages: List
+    def _update_tags(
+        self, bug: BugModel, global_tags: Set, distro_packages: List
     ):
-        tags = set()
+        tags = global_tags.copy()
         for distro_package in distro_packages:
             for tag in distro_package.tags:
-                tags.add(f"{distro_package.package_name.name}.{tag}")
+                tags.add(
+                    f"{distro_package.package_name.name}"
+                    f"{self.TAG_SEPARATOR}{tag}"
+                )
 
         bug.tags = tags
 
