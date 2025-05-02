@@ -7,5 +7,5 @@ options:
       db:
         name: launchpad_dev
         roles:
-          - craft-publish-job
-          # TODO: might need uploading role? need to check when testing
+          - craft-build-job
+          - uploader
