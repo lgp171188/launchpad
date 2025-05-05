@@ -45,7 +45,7 @@ def _compose_merge_proposal_webhook_payload(merge_proposal):
     )
 
 
-def _trigger_webhook(merge_proposal, payload):
+def _trigger_webhook(merge_proposal, payload, event_type):
     payload = dict(payload)
     payload["merge_proposal"] = canonical_url(
         merge_proposal, force_local_path=True
@@ -63,11 +63,29 @@ def _trigger_webhook(merge_proposal, payload):
 
     getUtility(IWebhookSet).trigger(
         target,
-        "merge-proposal:0.1",
+        event_type,
         payload,
         context=merge_proposal,
         git_refs=git_refs,
     )
+
+
+def review_comment_created(comment, event):
+    """Trigger a webhook when a main comment is posted.
+
+    Originally, creating inline comments triggered the 'merge-proposal:0.1'
+    webhook. To keep a similar behavior, we now prevent the trigger when
+    we add inline comments and instead trigger it when a main (top-level)
+    comment is submitted. The event type and payload structure is preserved.
+    """
+    merge_proposal = comment.branch_merge_proposal
+    base_payload = _compose_merge_proposal_webhook_payload(merge_proposal)
+    payload = {
+        "action": "reviewed",
+        "old": base_payload,
+        "new": base_payload,
+    }
+    _trigger_webhook(merge_proposal, payload, "merge-proposal:0.1::review")
 
 
 def merge_proposal_created(merge_proposal, event):
@@ -80,7 +98,7 @@ def merge_proposal_created(merge_proposal, event):
         "action": "created",
         "new": _compose_merge_proposal_webhook_payload(merge_proposal),
     }
-    _trigger_webhook(merge_proposal, payload)
+    _trigger_webhook(merge_proposal, payload, "merge-proposal:0.1::create")
 
 
 def merge_proposal_needs_review(merge_proposal, event):
@@ -94,6 +112,12 @@ def merge_proposal_needs_review(merge_proposal, event):
 
 def merge_proposal_modified(merge_proposal, event):
     """Notify branch subscribers when merge proposals are updated."""
+    old_status = event.object_before_modification.queue_status
+    new_status = merge_proposal.queue_status
+    # No webhook triggered if neither the status nor any of the merge proposal
+    # fields were changed
+    if event.edited_fields is None and old_status == new_status:
+        return
     # Check the user.
     if event.user is None:
         return
@@ -101,8 +125,6 @@ def merge_proposal_modified(merge_proposal, event):
         from_person = None
     else:
         from_person = IPerson(event.user)
-    old_status = event.object_before_modification.queue_status
-    new_status = merge_proposal.queue_status
 
     in_progress_states = (
         BranchMergeProposalStatus.WORK_IN_PROGRESS,
@@ -141,7 +163,18 @@ def merge_proposal_modified(merge_proposal, event):
     for field in payload["old"]:
         if not hasattr(event.object_before_modification, field):
             payload["old"][field] = payload["new"][field]
-    _trigger_webhook(merge_proposal, payload)
+
+    if old_status != new_status:
+        event_type = "merge-proposal:0.1::status-change"
+    elif "preview_diff" in event.edited_fields:
+        event_type = "merge-proposal:0.1::push"
+    else:
+        event_type = "merge-proposal:0.1::edit"
+    _trigger_webhook(
+        merge_proposal,
+        payload,
+        event_type=event_type,
+    )
 
 
 def review_requested(vote_reference, event):
@@ -161,4 +194,4 @@ def merge_proposal_deleted(merge_proposal, event):
         "action": "deleted",
         "old": _compose_merge_proposal_webhook_payload(merge_proposal),
     }
-    _trigger_webhook(merge_proposal, payload)
+    _trigger_webhook(merge_proposal, payload, "merge-proposal:0.1::delete")

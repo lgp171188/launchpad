@@ -360,12 +360,22 @@ class WebhookSet:
         # each webhook, but the set should be small and we'd have to defer
         # the triggering itself to a job to fix it.
         for webhook in self.findByTarget(target):
+            # Support sub-scoped event types. Allow triggering if the
+            # webhook is subscribed to the exact subscope or the parent
+            # subscope.
+            parent_event_type = event_type.split("::", 1)[0]
+
+            # Deliver using the parent scope to preserve
+            # compatibility with existing consumers and payloads.
             if (
                 webhook.active
-                and event_type in webhook.event_types
+                and (
+                    event_type in webhook.event_types
+                    or parent_event_type in webhook.event_types
+                )
                 and self._checkGitRefs(webhook, git_refs)
             ):
-                WebhookDeliveryJob.create(webhook, event_type, payload)
+                WebhookDeliveryJob.create(webhook, parent_event_type, payload)
 
 
 class WebhookTargetMixin:
