@@ -38,6 +38,7 @@ from zope.schema import Bool, Choice, Datetime, Dict, Int, List, TextLine
 from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
+from lp.app.validators import LaunchpadValidationError
 from lp.registry.interfaces.person import IPerson
 from lp.services.fields import URIField
 from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
@@ -57,12 +58,12 @@ WEBHOOK_EVENT_TYPES = {
     "livefs:build:0.1": "Live filesystem build",
     "merge-proposal:0.1": "Merge proposal",
     # Merge proposal subscopes
-    "merge-proposal:0.1::create": "Create",
-    "merge-proposal:0.1::push": "Push",
-    "merge-proposal:0.1::review": "Review",
-    "merge-proposal:0.1::edit": "Edit",
-    "merge-proposal:0.1::status-change": "Status Change",
-    "merge-proposal:0.1::delete": "Delete",
+    "merge-proposal:0.1::create": "Merge proposal Created",
+    "merge-proposal:0.1::push": "Merge proposal Pushed",
+    "merge-proposal:0.1::review": "Merge proposal Reviewed",
+    "merge-proposal:0.1::edit": "Merge proposal Edited",
+    "merge-proposal:0.1::status-change": "Merge proposal Status Changed",
+    "merge-proposal:0.1::delete": "Merge proposal Deleted",
     "oci-recipe:build:0.1": "OCI recipe build",
     "snap:build:0.1": "Snap build",
     "craft-recipe:build:0.1": "Craft recipe build",
@@ -105,6 +106,20 @@ class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
         super().__init__(terms)
 
 
+def validate_event_type_parent_subscope(event_types):
+    """Validator to handle parent and its subscopes selection."""
+    # Subscopes are identified by the presence of '::' in the event type
+    # string.
+    parents = {et.split("::")[0] for et in event_types if "::" in et}
+    for parent in parents:
+        if parent in event_types:
+            raise LaunchpadValidationError(
+                f"Please, select either the parent event type ({parent}) "
+                "or its subscopes - not both."
+            )
+    return True
+
+
 @exported_as_webservice_entry(as_of="beta")
 class IWebhook(Interface):
     id = Int(title=_("ID"), readonly=True, required=True)
@@ -126,6 +141,7 @@ class IWebhook(Interface):
             title=_("Event types"),
             required=True,
             readonly=False,
+            constraint=validate_event_type_parent_subscope,
         )
     )
     registrant = exported(

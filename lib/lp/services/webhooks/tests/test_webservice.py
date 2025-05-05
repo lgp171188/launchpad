@@ -260,6 +260,63 @@ class TestWebhook(TestCaseWithFactory):
         with person_logged_in(self.owner):
             self.assertIs(None, self.webhook.secret)
 
+    def test_patch_event_types_allows_only_parent_scope(self):
+        # Parent scope alone should be accepted
+        patch = json.dumps({"event_types": ["merge-proposal:0.1"]})
+        response = self.webservice.patch(
+            self.webhook_url, "application/json", patch, api_version="devel"
+        )
+        self.assertEqual(209, response.status)
+        representation = self.webservice.get(
+            self.webhook_url, api_version="devel"
+        ).jsonBody()
+        self.assertEqual(["merge-proposal:0.1"], representation["event_types"])
+
+    def test_patch_event_types_allows_only_subscopes(self):
+        # Subscopes alone should be accepted
+        patch = json.dumps(
+            {
+                "event_types": [
+                    "" "merge-proposal:0.1::create",
+                    "merge-proposal:0.1::edit",
+                ]
+            }
+        )
+        response = self.webservice.patch(
+            self.webhook_url, "application/json", patch, api_version="devel"
+        )
+        self.assertEqual(209, response.status)
+        representation = self.webservice.get(
+            self.webhook_url, api_version="devel"
+        ).jsonBody()
+        self.assertEqual(
+            ["merge-proposal:0.1::create", "merge-proposal:0.1::edit"],
+            representation["event_types"],
+        )
+
+    def test_patch_event_types_rejects_parent_and_subscopes(self):
+        # A parent and one of its subscopes cannot be selected together
+        patch = json.dumps(
+            {
+                "event_types": [
+                    "merge-proposal:0.1",
+                    "merge-proposal:0.1::create",
+                ]
+            }
+        )
+        response = self.webservice.patch(
+            self.webhook_url,
+            "application/json",
+            patch,
+            api_version="devel",
+        )
+        self.assertEqual(400, response.status)
+        self.assertIn(
+            b"Please, select either the parent event type (merge-proposal:0.1)"
+            b" or its subscopes - not both.",
+            response.body,
+        )
+
 
 class TestWebhookDelivery(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer

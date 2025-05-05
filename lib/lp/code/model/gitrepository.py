@@ -417,7 +417,17 @@ class GitRepository(
 
     @property
     def valid_webhook_event_types(self):
-        return ["ci:build:0.1", "git:push:0.1", "merge-proposal:0.1"]
+        return [
+            "ci:build:0.1",
+            "git:push:0.1",
+            "merge-proposal:0.1",
+            "merge-proposal:0.1::create",
+            "merge-proposal:0.1::push",
+            "merge-proposal:0.1::review",
+            "merge-proposal:0.1::edit",
+            "merge-proposal:0.1::status-change",
+            "merge-proposal:0.1::delete",
+        ]
 
     @property
     def default_webhook_event_types(self):
