@@ -108,6 +108,8 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.services.webhooks.interfaces import IWebhookSet
+from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import DistroArchSeries, PocketChroot
 
 
@@ -121,7 +123,7 @@ def craft_recipe_modified(recipe, event):
 
 
 @implementer(ICraftRecipe)
-class CraftRecipe(StormBase):
+class CraftRecipe(StormBase, WebhookTargetMixin):
     """See `ICraftRecipe`."""
 
     __storm_table__ = "CraftRecipe"
@@ -323,6 +325,10 @@ class CraftRecipe(StormBase):
         """See `ICraftRecipe`."""
         self._store_channels = value or None
 
+    @property
+    def valid_webhook_event_types(self):
+        return ["craft-recipe:build:0.1"]
+
     def getAllowedInformationTypes(self, user):
         """See `ICraftRecipe`."""
         # Allow both public and private information types
@@ -399,8 +405,9 @@ class CraftRecipe(StormBase):
 
     @property
     def can_upload_to_store(self):
-        # no store upload planned for the initial implementation, as artifacts
-        # get pulled from Launchpad for now only.
+        # XXX ruinedyourlife 2025-05-02: remove this property all together as
+        # we do not use it anywhere. we do thorough checks for this in the
+        # publishing job itself `CraftPublishingJob`.
         return False
 
     def destroySelf(self):
@@ -439,8 +446,7 @@ class CraftRecipe(StormBase):
             And(CraftRecipeJob.job == Job.id, CraftRecipeJob.recipe == self),
         )
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
-        # XXX ruinedyourlife 2024-10-02: we need to remove webhooks once
-        # implemented getUtility(IWebhookSet).delete(self.webhooks)
+        getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)

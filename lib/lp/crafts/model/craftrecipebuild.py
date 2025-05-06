@@ -6,7 +6,6 @@
 __all__ = [
     "CraftFile",
     "CraftRecipeBuild",
-    "ICraftRecipeBuildStatusChangedEvent",
 ]
 
 from datetime import timedelta, timezone
@@ -17,7 +16,6 @@ from storm.locals import Bool, DateTime, Desc, Int, Reference, Store, Unicode
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.interface.interfaces import ObjectEvent
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
@@ -35,7 +33,6 @@ from lp.crafts.interfaces.craftrecipebuild import (
     ICraftFile,
     ICraftRecipeBuild,
     ICraftRecipeBuildSet,
-    ICraftRecipeBuildStatusChangedEvent,
 )
 from lp.crafts.mail.craftrecipebuild import CraftRecipeBuildMailer
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -61,11 +58,6 @@ from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.model.distroarchseries import DistroArchSeries
-
-
-@implementer(ICraftRecipeBuildStatusChangedEvent)
-class CraftRecipeBuildStatusChangedEvent(ObjectEvent):
-    """See `ICraftRecipeBuildStatusChangedEvent`."""
 
 
 @implementer(ICraftRecipeBuild)
