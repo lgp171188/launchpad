@@ -8,23 +8,13 @@
 # as utilities/rocketfuel-setup
 
 DO_WORKSPACE=1
-INSTALL_POSTGRES_14=0
-INSTALL_POSTGRES_16=0
 INSTALL_OPTS=""
-getopt_output="$(getopt -o '' -l no-workspace,postgres14,postgres16,lpusername:,assume-yes -- "$@")" || exit 1
+getopt_output="$(getopt -o '' -l no-workspace,lpusername:,assume-yes -- "$@")" || exit 1
 eval set -- "$getopt_output"
 while :; do
   case $1 in
     --no-workspace)
         DO_WORKSPACE=0
-        shift
-        ;;
-    --postgres14)
-        INSTALL_POSTGRES_14=1
-        shift
-        ;;
-    --postgres16)
-        INSTALL_POSTGRES_16=1
         shift
         ;;
     --lpusername)
@@ -94,7 +84,7 @@ for hostname in $hostnames; do
   dev_host;
 done
 
-sudo add-apt-repository ppa:launchpad/ppa
+sudo add-apt-repository $INSTALL_OPTS ppa:launchpad/ppa
 
 do_install() {
   if ! dpkg -s "$pkg" | grep -q "^Status: install ok installed"; then
@@ -107,14 +97,9 @@ do_install() {
   }
 
 sudo apt update
-REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi-py3"
-if [ $INSTALL_POSTGRES_14 == 1 ]; then
-  sudo add-apt-repository ppa:launchpad/postgresql-14-ports
-  REQUIRED_PACKAGES="launchpad-database-dependencies-14 ${REQUIRED_PACKAGES}"
-elif [ $INSTALL_POSTGRES_16 == 1 ]; then
-  sudo add-apt-repository ppa:launchpad/postgresql-16-ports
-  REQUIRED_PACKAGES="launchpad-database-dependencies-16 ${REQUIRED_PACKAGES}"
-fi
+REQUIRED_PACKAGES="launchpad-database-dependencies-16 launchpad-developer-dependencies apache2 libapache2-mod-wsgi-py3"
+sudo add-apt-repository $INSTALL_OPTS ppa:launchpad/postgresql-16-ports
+
 for pkg in $REQUIRED_PACKAGES; do
   do_install;
 done
