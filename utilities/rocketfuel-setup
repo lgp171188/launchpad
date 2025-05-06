@@ -84,25 +84,9 @@ for hostname in $hostnames; do
   dev_host;
 done
 
-sudo add-apt-repository $INSTALL_OPTS ppa:launchpad/ppa
-
-do_install() {
-  if ! dpkg -s "$pkg" | grep -q "^Status: install ok installed"; then
-    echo "Installing $pkg package..."
-    if ! sudo apt install $INSTALL_OPTS "$pkg"; then
-      echo "Unable to install $pkg."
-      exit 1
-    fi
-  fi
-  }
-
-sudo apt update
-REQUIRED_PACKAGES="launchpad-database-dependencies-16 launchpad-developer-dependencies apache2 libapache2-mod-wsgi-py3"
-sudo add-apt-repository $INSTALL_OPTS ppa:launchpad/postgresql-16-ports
-
-for pkg in $REQUIRED_PACKAGES; do
-  do_install;
-done
+REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi-py3"
+sudo add-apt-repository -u $INSTALL_OPTS ppa:launchpad/ppa
+sudo apt install $INSTALL_OPTS $REQUIRED_PACKAGES
 
 # Create the document root(s) to avoid Apache warnings
 mkdir -p /var/tmp/bazaar.launchpad.test/static
