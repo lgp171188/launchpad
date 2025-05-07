@@ -204,6 +204,11 @@ class Webhook(StormBase):
         """See `IWebhook`."""
         self.secret = secret
 
+    @staticmethod
+    def is_subscope(event_type):
+        """Return True if the event_type is a subscope (contains '::')."""
+        return "::" in event_type
+
 
 @implementer(IWebhookSet)
 class WebhookSet:

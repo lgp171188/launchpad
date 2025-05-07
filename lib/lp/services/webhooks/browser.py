@@ -12,6 +12,8 @@ from lazr.restful.interface import use_template
 from lazr.restful.interfaces import IJSONRequestCache
 from zope.component import getUtility
 from zope.interface import Interface
+from zope.schema import Choice, List
+from zope.schema.vocabulary import SimpleVocabulary
 
 from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
@@ -33,7 +35,38 @@ from lp.services.webapp.batching import (
     get_batch_properties_for_json_cache,
 )
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webhooks.interfaces import IWebhook, IWebhookSet
+from lp.services.webhooks.interfaces import (
+    WEBHOOK_EVENT_TYPES,
+    IWebhook,
+    IWebhookSet,
+)
+from lp.services.webhooks.model import Webhook
+
+
+class UIValidWebhookEventTypeVocabulary(SimpleVocabulary):
+    """A UI-specific vocabulary that excludes subscopes.
+
+    This is used in form views to present only top-level
+    event types (e.g., 'merge-proposal:0.1'), hiding subscopes,
+    which currently have no UI support.
+
+    The full list including subscopes is still available via
+    the Launchpad API through ValidWebhookEventTypeVocabulary.
+    """
+
+    def __init__(self, context):
+        if IWebhook.providedBy(context):
+            target = context.target
+        else:
+            target = context
+
+        terms = []
+        for key in target.valid_webhook_event_types:
+            if not Webhook.is_subscope(key):
+                terms.append(
+                    self.createTerm(key, key, WEBHOOK_EVENT_TYPES[key])
+                )
+        super().__init__(terms)
 
 
 class WebhookNavigation(Navigation):
@@ -104,11 +137,16 @@ class WebhookEditSchema(Interface):
         IWebhook,
         include=[
             "delivery_url",
-            "event_types",
             "active",
             "secret",
             "git_ref_pattern",
         ],
+    )
+
+    event_types = List(
+        title="Event types",
+        required=True,
+        value_type=Choice(vocabulary="UIValidWebhookEventType"),
     )
 
 

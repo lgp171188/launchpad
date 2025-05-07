@@ -41,6 +41,17 @@
     <class class="lp.services.webhooks.interfaces.ValidWebhookEventTypeVocabulary">
         <allow interface="zope.schema.interfaces.IVocabularyTokenized"/>
     </class>
+    
+    <lp:securedutility
+        name="UIValidWebhookEventType"
+        component="lp.services.webhooks.browser.UIValidWebhookEventTypeVocabulary"
+        provides="zope.schema.interfaces.IVocabularyFactory">
+        <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
+    </lp:securedutility>
+
+    <class class="lp.services.webhooks.browser.UIValidWebhookEventTypeVocabulary">
+        <allow interface="zope.schema.interfaces.IVocabularyTokenized"/>
+    </class>
 
     <lp:securedutility
         component="lp.services.webhooks.model.WebhookJob"
