@@ -103,6 +103,9 @@ class Webhook(StormBase):
     charm_recipe_id = Int(name="charm_recipe")
     charm_recipe = Reference(charm_recipe_id, "CharmRecipe.id")
 
+    craft_recipe_id = Int(name="craft_recipe")
+    craft_recipe = Reference(craft_recipe_id, "CraftRecipe.id")
+
     project_id = Int(name="project")
     project = Reference(project_id, "Product.id")
 
@@ -141,6 +144,8 @@ class Webhook(StormBase):
             return self.oci_recipe
         elif self.charm_recipe is not None:
             return self.charm_recipe
+        elif self.craft_recipe is not None:
+            return self.craft_recipe
         elif self.project is not None:
             return self.project
         elif self.distribution is not None:
@@ -217,6 +222,7 @@ class WebhookSet:
         from lp.charms.interfaces.charmrecipe import ICharmRecipe
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.crafts.interfaces.craftrecipe import ICraftRecipe
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
         from lp.registry.interfaces.distribution import IDistribution
         from lp.registry.interfaces.distributionsourcepackage import (
@@ -239,6 +245,8 @@ class WebhookSet:
             hook.oci_recipe = target
         elif ICharmRecipe.providedBy(target):
             hook.charm_recipe = target
+        elif ICraftRecipe.providedBy(target):
+            hook.craft_recipe = target
         elif IProduct.providedBy(target):
             hook.project = target
         elif IDistribution.providedBy(target):
@@ -246,7 +254,6 @@ class WebhookSet:
         elif IDistributionSourcePackage.providedBy(target):
             hook.distribution = target.distribution
             hook.source_package_name = target.sourcepackagename
-
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         hook.registrant = registrant
@@ -273,6 +280,7 @@ class WebhookSet:
         from lp.charms.interfaces.charmrecipe import ICharmRecipe
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.crafts.interfaces.craftrecipe import ICraftRecipe
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
         from lp.registry.interfaces.distribution import IDistribution
         from lp.registry.interfaces.distributionsourcepackage import (
@@ -294,6 +302,8 @@ class WebhookSet:
             target_filter = Webhook.oci_recipe == target
         elif ICharmRecipe.providedBy(target):
             target_filter = Webhook.charm_recipe == target
+        elif ICraftRecipe.providedBy(target):
+            target_filter = Webhook.craft_recipe == target
         elif IProduct.providedBy(target):
             target_filter = Webhook.project == target
         elif IDistribution.providedBy(target):

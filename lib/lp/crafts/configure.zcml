@@ -65,7 +65,7 @@
 
     <subscriber
         for="lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuild
-            lp.crafts.interfaces.craftrecipebuild.ICraftRecipeBuildStatusChangedEvent"
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
         handler="lp.crafts.subscribers.craftrecipebuild.craft_build_status_changed" />
 
     <!-- CraftRecipeBuildSet -->

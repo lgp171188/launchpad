@@ -7,7 +7,6 @@ __all__ = [
     "ICraftFile",
     "ICraftRecipeBuild",
     "ICraftRecipeBuildSet",
-    "ICraftRecipeBuildStatusChangedEvent",
 ]
 
 from lazr.restful.declarations import (
@@ -18,7 +17,6 @@ from lazr.restful.declarations import (
 )
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.interface.interfaces import IObjectEvent
 from zope.schema import Bool, Datetime, Dict, Int, TextLine
 
 from lp import _
@@ -38,10 +36,6 @@ from lp.registry.interfaces.person import IPerson
 from lp.services.database.constants import DEFAULT
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
-
-
-class ICraftRecipeBuildStatusChangedEvent(IObjectEvent):
-    """The status of a craft recipe build changed."""
 
 
 class ICraftRecipeBuildView(IPackageBuildView):
