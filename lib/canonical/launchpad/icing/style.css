@@ -918,6 +918,9 @@ table.listing tr.webhook-delivery:hover {
     cursor: pointer;
 }
 
+.indentation {
+  padding-left: 1rem;
+}
 
 /* ====== Content area styles ====== */
 

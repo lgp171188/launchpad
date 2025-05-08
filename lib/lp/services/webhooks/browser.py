@@ -12,15 +12,13 @@ from lazr.restful.interface import use_template
 from lazr.restful.interfaces import IJSONRequestCache
 from zope.component import getUtility
 from zope.interface import Interface
-from zope.schema import Choice, List
-from zope.schema.vocabulary import SimpleVocabulary
 
 from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     LaunchpadFormView,
     action,
 )
-from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.app.widgets.itemswidgets import WebhookCheckboxWidget
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -35,38 +33,7 @@ from lp.services.webapp.batching import (
     get_batch_properties_for_json_cache,
 )
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webhooks.interfaces import (
-    WEBHOOK_EVENT_TYPES,
-    IWebhook,
-    IWebhookSet,
-)
-from lp.services.webhooks.model import Webhook
-
-
-class UIValidWebhookEventTypeVocabulary(SimpleVocabulary):
-    """A UI-specific vocabulary that excludes subscopes.
-
-    This is used in form views to present only top-level
-    event types (e.g., 'merge-proposal:0.1'), hiding subscopes,
-    which currently have no UI support.
-
-    The full list including subscopes is still available via
-    the Launchpad API through ValidWebhookEventTypeVocabulary.
-    """
-
-    def __init__(self, context):
-        if IWebhook.providedBy(context):
-            target = context.target
-        else:
-            target = context
-
-        terms = []
-        for key in target.valid_webhook_event_types:
-            if not Webhook.is_subscope(key):
-                terms.append(
-                    self.createTerm(key, key, WEBHOOK_EVENT_TYPES[key])
-                )
-        super().__init__(terms)
+from lp.services.webhooks.interfaces import IWebhook, IWebhookSet
 
 
 class WebhookNavigation(Navigation):
@@ -138,15 +105,10 @@ class WebhookEditSchema(Interface):
         include=[
             "delivery_url",
             "active",
+            "event_types",
             "secret",
             "git_ref_pattern",
         ],
-    )
-
-    event_types = List(
-        title="Event types",
-        required=True,
-        value_type=Choice(vocabulary="UIValidWebhookEventType"),
     )
 
 
@@ -154,7 +116,7 @@ class WebhookAddView(LaunchpadFormView):
     page_title = label = "Add webhook"
 
     schema = WebhookEditSchema
-    custom_widget_event_types = LabeledMultiCheckBoxWidget
+    custom_widget_event_types = WebhookCheckboxWidget
     next_url = None
 
     @property
@@ -199,7 +161,7 @@ class WebhookView(LaunchpadEditFormView):
     label = "Manage webhook"
 
     schema = WebhookEditSchema
-    custom_widget_event_types = LabeledMultiCheckBoxWidget
+    custom_widget_event_types = WebhookCheckboxWidget
 
     @property
     def field_names(self):
