@@ -66,6 +66,12 @@ class GitRepositoryTestHelpers:
         ("ci:build:0.1", "CI build"),
         ("git:push:0.1", "Git push"),
         ("merge-proposal:0.1", "Merge proposal"),
+        ("merge-proposal:0.1::create", "Merge proposal Created"),
+        ("merge-proposal:0.1::edit", "Merge proposal Edited"),
+        ("merge-proposal:0.1::status-change", "Merge proposal Status Changed"),
+        ("merge-proposal:0.1::delete", "Merge proposal Deleted"),
+        ("merge-proposal:0.1::push", "Merge proposal Pushed"),
+        ("merge-proposal:0.1::review", "Merge proposal Reviewed"),
     ]
 
     def makeTarget(self):
@@ -80,6 +86,12 @@ class BranchTestHelpers:
     expected_event_types = [
         ("bzr:push:0.1", "Bazaar push"),
         ("merge-proposal:0.1", "Merge proposal"),
+        ("merge-proposal:0.1::create", "Merge proposal Created"),
+        ("merge-proposal:0.1::edit", "Merge proposal Edited"),
+        ("merge-proposal:0.1::status-change", "Merge proposal Status Changed"),
+        ("merge-proposal:0.1::delete", "Merge proposal Deleted"),
+        ("merge-proposal:0.1::push", "Merge proposal Pushed"),
+        ("merge-proposal:0.1::review", "Merge proposal Reviewed"),
     ]
 
     def makeTarget(self):

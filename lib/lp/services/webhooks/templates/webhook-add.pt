@@ -1,0 +1,25 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad">
+
+  <head>
+    <metal:script fill-slot="head_epilogue">
+      <script tal:content="structure string:
+        LPJS.use('base','node','event','lp.services.webhooks.event_types',
+          function (Y) {
+             Y.lp.services.webhooks.event_types.initScopeCheckboxes();
+          });
+      "/>
+    </metal:script>
+  </head>
+
+  <body>
+    <div metal:fill-slot="main">
+      <div metal:use-macro="context/@@launchpad_form/form" />
+    </div>
+  </body>
+</html>

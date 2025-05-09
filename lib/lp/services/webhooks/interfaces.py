@@ -92,6 +92,18 @@ class AnyWebhookEventTypeVocabulary(SimpleVocabulary):
 
 
 class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
+    """Vocabulary that returns the valid webhook event types in
+    parent-subscopes order.
+
+    This ensures that top-level parent event types are always listed before
+    their corresponding sub-scopes, which is particularly important for UI
+    rendering where an ordered display improves usability.
+    """
+
+    def _createTerm(self, scope):
+        """Shorthand for creating a schema term for a scope."""
+        return self.createTerm(scope, scope, WEBHOOK_EVENT_TYPES[scope])
+
     def __init__(self, context):
         # When creating a webhook, the context is the target; when editing
         # an existing webhook, the context is the webhook itself.
@@ -99,10 +111,21 @@ class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
             target = context.target
         else:
             target = context
-        terms = [
-            self.createTerm(key, key, WEBHOOK_EVENT_TYPES[key])
-            for key in target.valid_webhook_event_types
-        ]
+        subscopes_by_parent = {}
+        top_level = []
+        for key in target.valid_webhook_event_types:
+            # Group subscopes under their parent
+            if "::" in key:
+                parent = key.split("::")[0]
+                subscopes_by_parent.setdefault(parent, []).append(key)
+            else:
+                top_level.append(key)
+        terms = []
+        # Create terms for parents and for their corresponding subscopes
+        for parent in top_level:
+            terms.append(self._createTerm(parent))
+            for subscope in subscopes_by_parent.get(parent, []):
+                terms.append(self._createTerm(subscope))
         super().__init__(terms)
 
 

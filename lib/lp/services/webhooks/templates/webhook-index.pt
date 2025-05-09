@@ -52,6 +52,10 @@
                   deliveries_widget.render();
               });
           });
+      LPJS.use('base','node','event','lp.services.webhooks.event_types',
+        function (Y) {
+           Y.lp.services.webhooks.event_types.initScopeCheckboxes();
+        });
     "/>
   </metal:block>
 </head>

@@ -205,9 +205,14 @@ class Webhook(StormBase):
         self.secret = secret
 
     @staticmethod
-    def is_subscope(event_type):
+    def is_event_subscope(event_type):
         """Return True if the event_type is a subscope (contains '::')."""
         return "::" in event_type
+
+    @staticmethod
+    def event_parent_scope(event_type: str) -> str:
+        """Return the top‑level parent of a subscope event type."""
+        return event_type.split("::", 1)[0]
 
 
 @implementer(IWebhookSet)

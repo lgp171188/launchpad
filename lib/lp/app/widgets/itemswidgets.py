@@ -10,6 +10,7 @@ __all__ = [
     "LaunchpadDropdownWidget",
     "LaunchpadRadioWidget",
     "LaunchpadRadioWidgetWithDescription",
+    "WebhookCheckboxWidget",
     "PlainMultiCheckBoxWidget",
 ]
 
@@ -23,6 +24,7 @@ from zope.schema.interfaces import IChoice
 from zope.schema.vocabulary import SimpleVocabulary
 
 from lp.services.webapp.escaping import html_escape
+from lp.services.webhooks.model import Webhook
 
 
 class LaunchpadDropdownWidget(DropdownWidget):
@@ -109,6 +111,53 @@ class LabeledMultiCheckBoxWidget(PlainMultiCheckBoxWidget):
         )
         option_id = "%s.%s" % (self.name, index)
         return self._joinButtonToMessageTemplate % (option_id, elem, text)
+
+
+class WebhookCheckboxWidget(PlainMultiCheckBoxWidget):
+    """A checkbox widget that indents subscopes event types.
+
+    This widget adds indentation styling (via a CSS class 'indentation') for
+    event types that are subscopes (i.e. contain '::').
+
+    It also injects a 'data-parent' attribute to subscope checkboxes to link
+    them to their parent scope, allowing JavaScript to enforce
+    the desired parent-subscope behaviour.
+    """
+
+    SUBSCOPE_CSS = "indentation"
+
+    def _renderItem(self, index, text, value, name, cssClass, checked=False):
+        """Render a checkbox and text in a label with a style attribute."""
+
+        kw = {}
+
+        label_class = ""
+        if Webhook.is_event_subscope(value):
+            label_class = f' class="{self.SUBSCOPE_CSS}"'
+            kw["data-parent"] = Webhook.event_parent_scope(value)
+
+        _label = (
+            '<label for="%s"%s style="font-weight: normal">%s&nbsp;%s</label> '
+        )
+
+        if checked:
+            kw["checked"] = "checked"
+        if value in self.disabled_items:
+            kw["disabled"] = "disabled"
+        value = html_escape(value)
+        text = html_escape(text)
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            type="checkbox",
+            **kw,
+        )
+        option_id = "%s.%s" % (self.name, index)
+        return _label % (option_id, label_class, elem, text)
 
 
 # XXX Brad Bollenbach 2006-08-10 bugs=56062: This is a hack to
