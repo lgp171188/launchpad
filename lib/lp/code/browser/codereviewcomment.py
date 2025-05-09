@@ -147,7 +147,7 @@ class CodeReviewCommentContextMenu(ContextMenu):
     links = ["reply"]
 
     def reply(self):
-        enabled = self.context.branch_merge_proposal.isMergable()
+        enabled = self.context.branch_merge_proposal.isInProgress()
         return Link("+reply", "Reply", icon="add", enabled=enabled)
 
 

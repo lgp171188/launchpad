@@ -580,11 +580,11 @@ class IBranchMergeProposalView(Interface):
     def isValidTransition(next_state, user=None):
         """True if it is valid for user update the proposal to next_state."""
 
-    def isMergable():
-        """Is the proposal in a state that allows it to being merged?
+    def isInProgress():
+        """Is the proposal still in progress?
 
-        As long as the proposal isn't in one of the end states, it is valid
-        to be merged.
+        As long as the proposal isn't in one of the end states, it is active
+        and can eventually be merged.
         """
 
     def getUnlandedSourceBranchRevisions():
