@@ -318,6 +318,8 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
 
     _store_channels = JSON("store_channels", allow_none=True)
 
+    use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
+
     def __init__(
         self,
         registrant,
@@ -336,6 +338,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """Construct a `CharmRecipe`."""
         if not getFeatureFlag(CHARM_RECIPE_ALLOW_CREATE):
@@ -361,6 +364,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         self.store_name = store_name
         self.store_secrets = store_secrets
         self.store_channels = store_channels
+        self.use_fetch_service = use_fetch_service
 
     def __repr__(self):
         return "<CharmRecipe ~%s/%s/+charm/%s>" % (
@@ -957,6 +961,7 @@ class CharmRecipeSet:
         store_secrets=None,
         store_channels=None,
         date_created=DEFAULT,
+        use_fetch_service=False,
     ):
         """See `ICharmRecipeSet`."""
         if not registrant.inTeam(owner):
@@ -1002,6 +1007,7 @@ class CharmRecipeSet:
             store_secrets=store_secrets,
             store_channels=store_channels,
             date_created=date_created,
+            use_fetch_service=use_fetch_service,
         )
         store.add(recipe)
 

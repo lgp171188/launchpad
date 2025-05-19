@@ -467,6 +467,18 @@ class TestCharmRecipe(TestCaseWithFactory):
             build = recipe.requestBuild(build_request, das)
             self.assertEqual(build_virt, build.virtualized)
 
+    def test_requestBuild_fetch_service(self):
+        # Activate fetch service for a charm recipe.
+        recipe = self.factory.makeCharmRecipe(use_fetch_service=True)
+        self.assertEqual(True, recipe.use_fetch_service)
+        distro_series = self.factory.makeDistroSeries()
+        das = self.makeBuildableDistroArchSeries(
+            distroseries=distro_series,
+        )
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(build_request, das)
+        self.assertEqual(True, build.recipe.use_fetch_service)
+
     def test_requestBuild_nonvirtualized(self):
         # A non-virtualized processor can build a charm recipe iff the
         # recipe has require_virtualized set to False.
@@ -1685,6 +1697,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         self.assertIsNone(recipe.store_name)
         self.assertIsNone(recipe.store_secrets)
         self.assertEqual([], recipe.store_channels)
+        self.assertFalse(recipe.use_fetch_service)
 
     def test_creation_no_source(self):
         # Attempting to create a charm recipe without a Git repository
@@ -2127,6 +2140,48 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             self.assertSqlAttributeEqualsDate(
                 recipe, "date_last_modified", UTC_NOW
             )
+
+    def test_admins_can_update_admin_only_fields(self):
+        # Test the admin fields can be updated by an admin
+
+        [ref] = self.factory.makeGitRefs()
+        charm = self.factory.makeCharmRecipe(
+            git_ref=ref, use_fetch_service=True
+        )
+
+        admin_fields = [
+            "require_virtualized",
+            "use_fetch_service",
+        ]
+
+        for field_name in admin_fields:
+            # exception is not raised when an admin does the same
+            with admin_logged_in():
+                setattr(charm, field_name, True)
+
+    def test_non_admins_cannot_update_admin_only_fields(self):
+        # The admin fields cannot be updated by a non admin
+
+        [ref] = self.factory.makeGitRefs()
+        charm = self.factory.makeCharmRecipe(
+            git_ref=ref, use_fetch_service=True
+        )
+        person = self.factory.makePerson()
+        admin_fields = [
+            "require_virtualized",
+            "use_fetch_service",
+        ]
+
+        for field_name in admin_fields:
+            # exception is raised when a non admin updates the fields
+            with person_logged_in(person):
+                self.assertRaises(
+                    Unauthorized,
+                    setattr,
+                    charm,
+                    field_name,
+                    True,
+                )
 
 
 class TestCharmRecipeWebservice(TestCaseWithFactory):
