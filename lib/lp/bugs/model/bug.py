@@ -27,6 +27,7 @@ from email.utils import make_msgid
 from functools import wraps
 from io import BytesIO
 from itertools import chain
+from typing import List
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
@@ -82,6 +83,7 @@ from lp.bugs.adapters.bug import convert_to_information_type
 from lp.bugs.adapters.bugchange import (
     BranchLinkedToBug,
     BranchUnlinkedFromBug,
+    BugAttachmentChange,
     BugConvertedToQuestion,
     BugDuplicateChange,
     BugLocked,
@@ -1623,6 +1625,19 @@ class Bug(StormBase, InformationTypeMixin):
         self.addChange(BugWatchRemoved(UTC_NOW, user, bug_watch))
         bug_watch.destroySelf()
 
+    def removeAttachment(self, bug_attachment, user):
+        """See `IBug`."""
+        self.addChange(
+            BugAttachmentChange(
+                UTC_NOW,
+                user,
+                "attachment",
+                bug_attachment,
+                None,
+            )
+        )
+        bug_attachment.destroySelf()
+
     def addAttachment(
         self,
         owner,
@@ -1634,6 +1649,7 @@ class Bug(StormBase, InformationTypeMixin):
         content_type=None,
         description=None,
         from_api=False,
+        vulnerability_patches: List[dict] = None,
     ):
         """See `IBug`."""
         # XXX: StevenK 2013-02-06 bug=1116954: We should not need to refetch
@@ -1673,6 +1689,7 @@ class Bug(StormBase, InformationTypeMixin):
             comment=comment,
             is_patch=is_patch,
             description=description,
+            vulnerability_patches=vulnerability_patches,
         )
 
     def linkAttachment(
@@ -1684,6 +1701,7 @@ class Bug(StormBase, InformationTypeMixin):
         is_patch=False,
         description=None,
         send_notifications=True,
+        vulnerability_patches: List[dict] = None,
     ):
         """See `IBug`.
 
@@ -1717,6 +1735,7 @@ class Bug(StormBase, InformationTypeMixin):
             title=description,
             message=message,
             send_notifications=send_notifications,
+            vulnerability_patches=vulnerability_patches,
         )
 
     def linkBranch(self, branch, registrant):
@@ -2618,6 +2637,7 @@ class Bug(StormBase, InformationTypeMixin):
                 BugAttachment.bug == self,
                 Or(
                     BugAttachment.url != None,
+                    BugAttachment.vulnerability_patches != None,
                     LibraryFileAlias.content_id != None,
                 ),
             )

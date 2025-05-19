@@ -3,7 +3,10 @@
 
 __all__ = ["BugAttachment", "BugAttachmentSet"]
 
+from typing import List
+
 from lazr.lifecycle.event import ObjectCreatedEvent, ObjectDeletedEvent
+from storm.databases.postgres import JSON
 from storm.locals import Int, Reference, Store, Unicode
 from zope.event import notify
 from zope.interface import implementer
@@ -42,6 +45,7 @@ class BugAttachment(StormBase):
     url = Unicode(allow_none=True)
     _message_id = Int(name="message", allow_none=False)
     _message = Reference(_message_id, "Message.id")
+    vulnerability_patches = JSON(allow_none=True)
 
     def __init__(
         self,
@@ -51,6 +55,7 @@ class BugAttachment(StormBase):
         url,
         message,
         type=IBugAttachment["type"].default,
+        vulnerability_patches: List[dict] = None,
     ):
         super().__init__()
         self.bug = bug
@@ -59,6 +64,7 @@ class BugAttachment(StormBase):
         self.url = url
         self._message = message
         self.type = type
+        self.vulnerability_patches = vulnerability_patches
 
     @property
     def title(self) -> str:
@@ -109,6 +115,9 @@ class BugAttachment(StormBase):
 
     @property
     def displayed_url(self):
+        if self.vulnerability_patches:
+            return [patch.get("value") for patch in self.vulnerability_patches]
+
         return (
             self.url
             or ProxiedLibraryFileAlias(self.libraryfile, self).http_url
@@ -139,13 +148,20 @@ class BugAttachmentSet:
         message,
         attach_type=None,
         send_notifications=False,
+        vulnerability_patches: List[dict] = None,
     ):
         """See `IBugAttachmentSet`."""
-        if not filealias and not url:
-            raise ValueError("Either filealias or url must be provided")
+        if not filealias and not url and not vulnerability_patches:
+            raise ValueError(
+                "Either filealias, url or vulnerability_patches "
+                "must be provided"
+            )
 
-        if filealias and url:
-            raise ValueError("Only one of filealias or url may be provided")
+        if sum([bool(filealias), bool(url), bool(vulnerability_patches)]) != 1:
+            raise ValueError(
+                "Only one of filealias, url or vulnerability_patches may be "
+                "provided"
+            )
 
         if attach_type is None:
             # XXX kiko 2005-08-03 bug=1659: this should use DEFAULT.
@@ -157,6 +173,7 @@ class BugAttachmentSet:
             type=attach_type,
             title=title,
             message=message,
+            vulnerability_patches=vulnerability_patches,
         )
         # canonial_url(attachment) (called by notification subscribers
         # to generate the download URL of the attachments) blows up if

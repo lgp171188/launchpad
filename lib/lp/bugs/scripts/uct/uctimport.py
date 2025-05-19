@@ -25,6 +25,7 @@ Three types of bug tasks are created:
    status of the package in upstream.
 """
 import logging
+from collections import defaultdict
 from datetime import timezone
 from itertools import chain
 from pathlib import Path
@@ -460,27 +461,44 @@ class UCTImporter:
             bug_watch_set.fromText(external_bug_url, bug, self.bug_importer)
 
     def _update_patches(self, bug: BugModel, patch_urls: List[CVE.PatchURL]):
-        attachments_by_url = {a.url: a for a in bug.attachments if a.url}
-        for patch_url in patch_urls:
-            title = f"{patch_url.package_name.name}/{patch_url.type}"
-            if patch_url.notes:
-                title = f"{title}/{patch_url.notes}"
-            if patch_url in attachments_by_url:
-                attachment = removeSecurityProxy(
-                    attachments_by_url[patch_url.url]
-                )
-                attachment.title = title
+        # Map current attachments by package name
+        existing_attachments = {att.title: att for att in bug.attachments}
+
+        # Group new patch data by package name, as we only have one attachment
+        # for each package
+        new_patches_by_pkg = defaultdict(list)
+        for patch in patch_urls:
+            new_patches_by_pkg[patch.package_name.name].append(
+                {
+                    "name": patch.type,
+                    "value": patch.url,
+                    "comment": patch.notes,
+                }
+            )
+
+        # Update existing attachments or add new ones
+        for package_name, patches in new_patches_by_pkg.items():
+            attachment = existing_attachments.pop(package_name, None)
+
+            if attachment:
+                attachment = removeSecurityProxy(attachment)
                 attachment.type = BugAttachmentType.PATCH
+                attachment.vulnerability_patches = patches
             else:
                 bug.addAttachment(
                     owner=bug.owner,
                     data=None,
                     comment=None,
                     filename=None,
-                    url=patch_url.url,
+                    url=None,
                     is_patch=True,
-                    description=title,
+                    description=package_name,
+                    vulnerability_patches=patches,
                 )
+
+        # Remove obsolete attachments
+        for obsolete_attachment in existing_attachments.values():
+            bug.removeAttachment(obsolete_attachment, self.bug_importer)
 
     def _make_bug_description(self, cve: CVE) -> str:
         """
