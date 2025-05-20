@@ -93,7 +93,15 @@
         factory="lp.crafts.model.craftrecipebuildbehaviour.CraftRecipeBuildBehaviour"
         permission="zope.Public" />
 
-    <!-- craft-related jobs -->
+    <!-- CraftRecipeBuildMacaroonIssuer -->
+    <lp:securedutility
+        class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildMacaroonIssuer"
+        provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
+        name="craft-recipe-build">
+        <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
+    </lp:securedutility>
+
+    <!-- CraftRecipeJob, aka builds -->
     <class class="lp.crafts.model.craftrecipejob.CraftRecipeJob">
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
     </class>
@@ -106,24 +114,21 @@
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
         <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeRequestBuildsJob" />
     </class>
+
+    <!-- CraftRecipeBuildJob, aka publishing -->
+    <class class="lp.crafts.model.craftrecipebuildjob.CraftRecipeBuildJob">
+        <allow interface="lp.crafts.interfaces.craftrecipebuildjob.ICraftRecipeBuildJob" />
+    </class>
+    <lp:securedutility
+        component="lp.crafts.model.craftrecipebuildjob.CraftPublishingJob"
+        provides="lp.crafts.interfaces.craftrecipebuildjob.ICraftPublishingJobSource">
+        <allow interface="lp.crafts.interfaces.craftrecipebuildjob.ICraftPublishingJobSource" />
+    </lp:securedutility>
+    <class class="lp.crafts.model.craftrecipebuildjob.CraftPublishingJob">
+        <allow interface="lp.crafts.interfaces.craftrecipebuildjob.ICraftRecipeBuildJob" />
+        <allow interface="lp.crafts.interfaces.craftrecipebuildjob.ICraftPublishingJob" />
+    </class>
+
     <webservice:register module="lp.crafts.interfaces.webservice" />
 
-    <!-- CraftRecipeBuildMacaroonIssuer -->
-    <lp:securedutility
-        class="lp.crafts.model.craftrecipebuild.CraftRecipeBuildMacaroonIssuer"
-        provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
-        name="craft-recipe-build">
-        <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
-    </lp:securedutility>
-
-    <!-- CraftPublishingJob -->
-    <lp:securedutility
-        component="lp.crafts.model.craftrecipejob.CraftPublishingJob"
-        provides="lp.crafts.interfaces.craftrecipejob.ICraftPublishingJobSource">
-        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftPublishingJobSource" />
-    </lp:securedutility>
-    <class class="lp.crafts.model.craftrecipejob.CraftPublishingJob">
-        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftRecipeJob" />
-        <allow interface="lp.crafts.interfaces.craftrecipejob.ICraftPublishingJob" />
-    </class>
 </configure>
