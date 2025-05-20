@@ -41,7 +41,6 @@
     <class class="lp.services.webhooks.interfaces.ValidWebhookEventTypeVocabulary">
         <allow interface="zope.schema.interfaces.IVocabularyTokenized"/>
     </class>
-
     <lp:securedutility
         component="lp.services.webhooks.model.WebhookJob"
         provides="lp.services.webhooks.interfaces.IWebhookJobSource">
@@ -97,7 +96,7 @@
         name="+new-webhook"
         permission="launchpad.Edit"
         class="lp.services.webhooks.browser.WebhookAddView"
-        template="../../app/templates/generic-edit.pt" />
+        template="templates/webhook-add.pt" />
 
     <adapter
         provides="lp.services.webapp.interfaces.IBreadcrumb"

@@ -9,7 +9,7 @@ from testtools.matchers import HasLength, MatchesException, Raises
 from lp.snappy.adapters.buildarch import (
     AllConflictInBuildForError,
     AllConflictInBuildOnError,
-    BadPropertyError,
+    CraftPlatformsBuildPlanError,
     DuplicateBuildOnError,
     SnapArchitecture,
     SnapBuildInstance,
@@ -209,25 +209,29 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
 
     scenarios = [
         (
-            "none",
+            "no architectures, build one per supported architecture",
             {
                 "architectures": None,
                 "supported_architectures": ["amd64", "i386", "armhf"],
+                "base": "core18",
                 "expected": [
                     {
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "i386",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "armhf",
                         "target_architectures": ["armhf"],
                         "required": True,
+                        "platform_name": None,
                     },
                 ],
             },
@@ -244,6 +248,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "i386",
                         "target_architectures": ["amd64", "i386"],
                         "required": True,
+                        "platform_name": None,
                     }
                 ],
             },
@@ -258,6 +263,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["all"],
                         "required": True,
+                        "platform_name": None,
                     }
                 ],
             },
@@ -275,11 +281,13 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "i386",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": None,
                     },
                 ],
             },
@@ -297,11 +305,13 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "i386",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": None,
                     },
                 ],
             },
@@ -324,16 +334,19 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "i386",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "armhf",
                         "target_architectures": ["armhf"],
                         "required": False,
+                        "platform_name": None,
                     },
                 ],
             },
@@ -350,6 +363,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["all"],
                         "required": True,
+                        "platform_name": None,
                     }
                 ],
             },
@@ -366,6 +380,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "i386",
                         "target_architectures": ["all"],
                         "required": True,
+                        "platform_name": None,
                     }
                 ],
             },
@@ -380,6 +395,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "i386",
                         "target_architectures": ["amd64", "i386"],
                         "required": True,
+                        "platform_name": None,
                     }
                 ],
             },
@@ -394,6 +410,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64", "i386"],
                         "required": True,
+                        "platform_name": None,
                     }
                 ],
             },
@@ -412,11 +429,13 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "i386",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": None,
                     },
                 ],
             },
@@ -459,11 +478,13 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": None,
                     },
                     {
                         "architecture": "amd64",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": None,
                     },
                 ],
             },
@@ -485,6 +506,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
         (
             "platforms with configuration",
             {
+                "base": "core24",
                 "platforms": {
                     "ubuntu-amd64": {
                         "build-on": ["amd64"],
@@ -501,11 +523,13 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": "ubuntu-amd64",
                     },
                     {
                         "architecture": "i386",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": "ubuntu-i386",
                     },
                 ],
             },
@@ -513,9 +537,10 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
         (
             "platforms with shorthand configuration",
             {
+                "base": "core24",
                 "platforms": {
-                    "amd64": {},
-                    "i386": {},
+                    "amd64": None,
+                    "i386": None,
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
                 "expected": [
@@ -523,11 +548,13 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": "amd64",
                     },
                     {
                         "architecture": "i386",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": "i386",
                     },
                 ],
             },
@@ -535,20 +562,27 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
         (
             "platforms with unsupported architecture",
             {
+                "base": "core24",
                 "platforms": {
-                    "ubuntu-unsupported": {},
+                    "ubuntu-unsupported": None,
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
                 "expected_exception": MatchesException(
-                    BadPropertyError,
-                    r"\'ubuntu-unsupported\' is not a supported platform for "
-                    r"\'snap-base-name-.*\'",
+                    CraftPlatformsBuildPlanError,
+                    "Failed to compute the build plan for the snapcraft "
+                    r"file with error*",
                 ),
             },
         ),
         (
+            # multiple architecture values in "build-for" and "build-on"
+            # are not allowed by snapcraft and such configs are invalid.
+            # As craft_platforms is a separate, generalized API, it still
+            # returns a build plan which we then filter and pair a native
+            # build with native architecture to run on.
             "platforms with multiple architectures",
             {
+                "base": "core24",
                 "platforms": {
                     "ubuntu-amd64-i386": {
                         "build-on": ["amd64", "i386"],
@@ -559,8 +593,9 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                 "expected": [
                     {
                         "architecture": "amd64",
-                        "target_architectures": ["amd64", "i386"],
+                        "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": "ubuntu-amd64-i386",
                     },
                 ],
             },
@@ -568,6 +603,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
         (
             "platforms with conflict in build-on",
             {
+                "base": "core24",
                 "platforms": {
                     "ubuntu-conflict": {
                         "build-on": ["all", "amd64"],
@@ -575,13 +611,16 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
                 "expected_exception": MatchesException(
-                    AllConflictInBuildOnError
+                    CraftPlatformsBuildPlanError,
+                    "Failed to compute the build plan for the snapcraft "
+                    "file with error: 'all' is not a valid DebianArchitecture",
                 ),
             },
         ),
         (
             "platforms with conflict in build-for",
             {
+                "base": "core24",
                 "platforms": {
                     "ubuntu-conflict": {
                         "build-on": ["amd64"],
@@ -590,41 +629,55 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
                 "expected_exception": MatchesException(
-                    AllConflictInBuildForError, r".*"
+                    CraftPlatformsBuildPlanError,
+                    "Failed to compute the build plan for the snapcraft "
+                    "file with error: build-for: all must be the only "
+                    "build-for architecture Resolution: Provide only one "
+                    "platform with only build-for: all or remove 'all' from "
+                    "build-for options.",
                 ),
             },
         ),
         (
-            "platforms with unsupported architecture in build-on",
+            "platforms with invalid architecture in build-on",
             {
+                "base": "core24",
                 "platforms": {
                     "ubuntu-amd64": {
-                        "build-on": ["unsupported"],
+                        "build-on": ["invalid"],
                         "build-for": ["amd64"],
                     },
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                # Launchpad ignores architectures that it does not know about
-                "expected": [],
+                "expected_exception": MatchesException(
+                    CraftPlatformsBuildPlanError,
+                    (
+                        "Failed to compute the build plan for the snapcraft "
+                        "file with error: 'invalid' is not a valid "
+                        "DebianArchitecture"
+                    ),
+                ),
             },
         ),
         (
-            "platforms with 1/2 unsupported architectures in build-on",
+            "platforms with invalid architecture in build-for",
             {
+                "base": "core24",
                 "platforms": {
                     "ubuntu-amd64": {
-                        "build-on": ["unsupported", "amd64"],
-                        "build-for": ["amd64"],
+                        "build-on": ["amd64"],
+                        "build-for": ["invalid"],
                     },
                 },
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected": [
-                    {
-                        "architecture": "amd64",
-                        "target_architectures": ["amd64"],
-                        "required": True,
-                    },
-                ],
+                "expected_exception": MatchesException(
+                    CraftPlatformsBuildPlanError,
+                    (
+                        "Failed to compute the build plan for the snapcraft "
+                        "file with error: 'invalid' is not a valid "
+                        "DebianArchitecture"
+                    ),
+                ),
             },
         ),
         (
@@ -633,6 +686,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                 "snap_base_features": {
                     SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: False
                 },
+                "base": "core24",
                 "platforms": {
                     "ubuntu-amd64": {
                         "build-on": ["amd64"],
@@ -653,6 +707,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                 "snap_base_features": {
                     SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: True
                 },
+                "base": "core24",
                 "platforms": {
                     "ubuntu-amd64": {
                         "build-on": ["amd64"],
@@ -669,21 +724,42 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["amd64"],
                         "required": True,
+                        "platform_name": "ubuntu-amd64",
                     },
                     {
                         "architecture": "amd64",
                         "target_architectures": ["i386"],
                         "required": True,
+                        "platform_name": "ubuntu-amd64-i386",
                     },
                 ],
             },
         ),
         (
-            "platforms with all keyword",
+            "platforms with 'all' keyword in 'build-on'",
             {
+                "base": "core24",
                 "platforms": {
                     "ubuntu-all": {
                         "build-on": ["all"],
+                        "build-for": ["all"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": MatchesException(
+                    CraftPlatformsBuildPlanError,
+                    "Failed to compute the build plan for the snapcraft "
+                    "file with error: 'all' is not a valid DebianArchitecture",
+                ),
+            },
+        ),
+        (
+            "platforms with 'all' keyword in 'build-for'",
+            {
+                "base": "core24",
+                "platforms": {
+                    "ubuntu-all": {
+                        "build-on": ["amd64"],
                         "build-for": ["all"],
                     },
                 },
@@ -693,6 +769,72 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "architecture": "amd64",
                         "target_architectures": ["all"],
                         "required": True,
+                        "platform_name": "ubuntu-all",
+                    },
+                ],
+            },
+        ),
+        (
+            "no platforms entry",
+            {
+                "base": "core24",
+                "supported_architectures": ["amd64", "i386"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                        "platform_name": None,
+                    },
+                    {
+                        "architecture": "i386",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                        "platform_name": None,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with shorthand and unsupported architecture skipped",
+            {
+                "base": "core24",
+                "platforms": {
+                    "amd64": None,
+                    "arm64": None,
+                },
+                "supported_architectures": ["amd64", "i386"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                        "platform_name": "amd64",
+                    }
+                ],
+            },
+        ),
+        (
+            "platforms with shorthand and supported architectures",
+            {
+                "base": "core24",
+                "platforms": {
+                    "amd64": None,
+                    "arm64": None,
+                },
+                "supported_architectures": ["amd64", "arm64"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                        "platform_name": "amd64",
+                    },
+                    {
+                        "architecture": "arm64",
+                        "target_architectures": ["arm64"],
+                        "required": True,
+                        "platform_name": "arm64",
                     },
                 ],
             },
@@ -705,6 +847,8 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
             snapcraft_data["architectures"] = self.architectures
         if hasattr(self, "platforms"):
             snapcraft_data["platforms"] = self.platforms
+        if hasattr(self, "base"):
+            snapcraft_data["base"] = self.base
         snap_base_features = getattr(self, "snap_base_features", {})
         snap_base = self.factory.makeSnapBase(features=snap_base_features)
         if hasattr(self, "expected_exception"):

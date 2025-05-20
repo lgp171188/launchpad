@@ -15,7 +15,7 @@ For each entry in UCT we:
 4. Update the statuses of Bug Tasks based on the information in the CVE entry
 5. Update the information the related Launchpad's `Cve` model, if necessary
 
-Three types of bug tags are created:
+Three types of bug tasks are created:
 
 1. Bug tasks with a distribution package as a target - they represent
    importance of the package
@@ -28,7 +28,7 @@ import logging
 from datetime import timezone
 from itertools import chain
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import transaction
 from zope.component import getUtility
@@ -68,6 +68,8 @@ class UCTImporter:
     """
     `UCTImporter` is used to import UCT CVE files to Launchpad database.
     """
+
+    TAG_SEPARATOR = "."
 
     def __init__(self, dry_run=False):
         self.dry_run = dry_run
@@ -176,6 +178,7 @@ class UCTImporter:
 
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
+        self._update_tags(bug, cve.global_tags, cve.distro_packages)
 
         self._create_bug_tasks(
             bug,
@@ -233,6 +236,7 @@ class UCTImporter:
         self._assign_bug_tasks(bug, cve.assignee)
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
+        self._update_tags(bug, cve.global_tags, cve.distro_packages)
 
         # Update or add new Vulnerabilities
         vulnerabilities_by_distro = {
@@ -244,6 +248,19 @@ class UCTImporter:
                 self._create_vulnerability(bug, cve, lp_cve, distro)
             else:
                 self._update_vulnerability(vulnerability, cve)
+
+    def _update_tags(
+        self, bug: BugModel, global_tags: Set, distro_packages: List
+    ):
+        tags = global_tags.copy()
+        for distro_package in distro_packages:
+            for tag in distro_package.tags:
+                tags.add(
+                    f"{distro_package.package_name.name}"
+                    f"{self.TAG_SEPARATOR}{tag}"
+                )
+
+        bug.tags = tags
 
     def _find_existing_bug(
         self, cve: CVE, lp_cve: CveModel

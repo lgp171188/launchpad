@@ -201,6 +201,8 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         args["target_architectures"] = removeSecurityProxy(
             build.target_architectures
         )
+        if build.craft_platform:
+            args["craft_platform"] = build.craft_platform
         return args
 
     def verifySuccessfulBuild(self):

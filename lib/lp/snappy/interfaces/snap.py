@@ -471,6 +471,7 @@ class ISnapView(Interface):
         channels=None,
         build_request=None,
         target_architectures=None,
+        craft_platfrom=None,
     ):
         """Request that the snap package be built.
 
@@ -484,7 +485,8 @@ class ISnapView(Interface):
         :param build_request: The `ISnapBuildRequest` job being processed,
             if any.
         :param target_architectures: The optional list of target architectures
-            to build the snap for.
+            that the snap is intended to run on (from 'build-for').
+        :param craft_platform: The platform name to build for.
         :return: `ISnapBuild`.
         """
 

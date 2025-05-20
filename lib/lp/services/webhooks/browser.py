@@ -18,7 +18,7 @@ from lp.app.browser.launchpadform import (
     LaunchpadFormView,
     action,
 )
-from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.app.widgets.itemswidgets import WebhookCheckboxWidget
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -104,8 +104,8 @@ class WebhookEditSchema(Interface):
         IWebhook,
         include=[
             "delivery_url",
-            "event_types",
             "active",
+            "event_types",
             "secret",
             "git_ref_pattern",
         ],
@@ -116,7 +116,7 @@ class WebhookAddView(LaunchpadFormView):
     page_title = label = "Add webhook"
 
     schema = WebhookEditSchema
-    custom_widget_event_types = LabeledMultiCheckBoxWidget
+    custom_widget_event_types = WebhookCheckboxWidget
     next_url = None
 
     @property
@@ -161,7 +161,7 @@ class WebhookView(LaunchpadEditFormView):
     label = "Manage webhook"
 
     schema = WebhookEditSchema
-    custom_widget_event_types = LabeledMultiCheckBoxWidget
+    custom_widget_event_types = WebhookCheckboxWidget
 
     @property
     def field_names(self):

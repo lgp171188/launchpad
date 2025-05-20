@@ -1,0 +1,13 @@
+name: launchpad-native-publisher
+display-name: launchpad-native-publisher
+summary: Launchpad Native publisher
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+    This charm provides Celery workers and a cron job for publishing artifacts with native tools.
+    For example, it can be used to publish Rust crates and Maven artifacts.
+tags:
+  - applications
+  - network
+series:
+  - focal
+subordinate: false

@@ -17,6 +17,7 @@ from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.cve import Cve as CveModel
 from lp.bugs.model.vulnerability import Vulnerability
 from lp.bugs.scripts.uct.models import CVE, CVSS
+from lp.bugs.scripts.uct.uctimport import UCTImporter
 from lp.registry.model.distributionsourcepackage import (
     DistributionSourcePackage,
 )
@@ -28,7 +29,7 @@ __all__ = [
     "UCTExporter",
 ]
 
-
+TAG_SEPARATOR = UCTImporter.TAG_SEPARATOR
 logger = logging.getLogger(__name__)
 
 
@@ -109,6 +110,16 @@ class UCTExporter:
 
         cve_importance = vulnerability.importance
 
+        tags_by_pkg = defaultdict(set)
+        global_tags = set()
+        for tag in bug.tags:
+            if TAG_SEPARATOR in tag:
+                tags_by_pkg[tag.split(TAG_SEPARATOR)[0]].add(
+                    tag.split(TAG_SEPARATOR)[1]
+                )
+            else:
+                global_tags.add(tag)
+
         # When exporting, we shouldn't output the importance value if it
         # hasn't been specified in the original UCT file.
         # So, the following logic is used:
@@ -136,6 +147,11 @@ class UCTExporter:
                 package_name_by_product[product] = target.sourcepackagename
             dp_importance = bug_task.importance
             package_importances[target.sourcepackagename] = dp_importance
+
+            tags = set()
+            if target.sourcepackagename.name in tags_by_pkg:
+                tags = tags.union(tags_by_pkg[target.sourcepackagename.name])
+
             distro_packages.append(
                 CVE.DistroPackage(
                     target=target,
@@ -145,6 +161,7 @@ class UCTExporter:
                         if dp_importance != cve_importance
                         else None
                     ),
+                    tags=tags,
                 )
             )
 
@@ -249,6 +266,7 @@ class UCTExporter:
                 for authority in lp_cve.cvss
                 for vector_string in lp_cve.cvss[authority]
             ],
+            global_tags=global_tags,
             patch_urls=patch_urls,
         )
 

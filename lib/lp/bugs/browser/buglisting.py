@@ -654,6 +654,7 @@ class BugTaskListingItem:
             or self.bugtask.date_inprogress
             or self.bugtask.date_left_new
             or self.bugtask.datecreated
+            or self.bugtask.date_deferred
         )
 
     @property

@@ -198,6 +198,7 @@
                     date_inprogress
                     date_left_new
                     date_triaged
+                    date_deferred
                     date_fix_committed
                     date_fix_released
                     date_left_closed

@@ -13,6 +13,7 @@ from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
 )
+from lp.crafts.interfaces.craftrecipe import CRAFT_RECIPE_ALLOW_CREATE
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.enums import BranchSharingPolicy
 from lp.services.database.interfaces import IStore
@@ -557,6 +558,19 @@ class TestWebhookSetCharmRecipe(TestWebhookSetBase, TestCaseWithFactory):
             }
         ):
             return self.factory.makeCharmRecipe(
+                registrant=owner, owner=owner, **kwargs
+            )
+
+
+class TestWebhookSetCraftRecipe(TestWebhookSetBase, TestCaseWithFactory):
+    event_type = "craft-recipe:build:0.1"
+
+    def makeTarget(self, owner=None, **kwargs):
+        if owner is None:
+            owner = self.factory.makePerson()
+
+        with FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}):
+            return self.factory.makeCraftRecipe(
                 registrant=owner, owner=owner, **kwargs
             )
 

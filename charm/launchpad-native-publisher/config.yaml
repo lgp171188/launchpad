@@ -1,0 +1,31 @@
+options:
+  active:
+    type: boolean
+    description: Should the cron jobs and the celery services be active?
+    default: true
+  rust-version:
+    type: string
+    default: "1.80"
+    description: >
+      Rust version to install, cargo will be installed with the same version.
+  java-version:
+    type: string
+    default: "21"
+    description: >
+      Java JDK version to install, the maven version will be the version in the
+      Ubuntu archive for the series of the charm.
+  craftbuild_config:
+    type: string
+    default: ""
+    description: >
+      YAML-encoded dictionary mapping pillars to dictionaries of
+      configuration items to set for Craft builds of those pillars.
+      This should include environment variables needed for publishing
+      Rust crates and Maven artifacts.
+      Example:
+        soss:
+          environment_variables:
+            CARGO_PUBLISH_URL: "https://canonical.example.com/artifactory/api/cargo/cargo-testing-local/"
+            CARGO_PUBLISH_AUTH: "%(write_auth)s"
+            MAVEN_PUBLISH_URL: "https://canonical.example.com/artifactory/api/maven/maven-testing-local/"
+            MAVEN_PUBLISH_AUTH: "%(write_auth)s"

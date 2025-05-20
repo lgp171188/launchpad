@@ -11,6 +11,8 @@ from testtools.matchers import MatchesAll, Not
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.tests.helpers import GitHostingFixture
+from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.product import IProduct
 from lp.services.database.constants import ONE_DAY_AGO, SEVEN_DAYS_AGO, UTC_NOW
 from lp.services.webapp import canonical_url
 from lp.testing import (
@@ -43,7 +45,14 @@ class TestSnapListing(BrowserTestCase):
                 attrs={"href": expected_href},
             )
         )
-        self.assertThat(self.getViewBrowser(context).contents, Not(matcher))
+
+        if IPerson.providedBy(context) or IProduct.providedBy(context):
+            self.assertThat(self.getViewBrowser(context).contents, matcher)
+        else:
+            self.assertThat(
+                self.getViewBrowser(context).contents, Not(matcher)
+            )
+
         login(ANONYMOUS)
         self.factory.makeSnap(**kwargs)
         self.factory.makeSnap(**kwargs)

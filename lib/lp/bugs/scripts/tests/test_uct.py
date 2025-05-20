@@ -29,6 +29,8 @@ from lp.services.propertycache import clear_property_cache
 from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
+TAG_SEPARATOR = UCTImporter.TAG_SEPARATOR
+
 
 class TestUCTRecord(TestCase):
     maxDiff = None
@@ -160,6 +162,7 @@ class TestUCTRecord(TestCase):
                         patches=[],
                     ),
                 ],
+                global_tags={"cisa-kev"},
             ).__dict__,
             uct_record.__dict__,
         )
@@ -248,6 +251,7 @@ class TestUCTRecord(TestCase):
                         patches=[],
                     ),
                 ],
+                global_tags=set(),
             ).__dict__,
             uct_record.__dict__,
         )
@@ -353,7 +357,7 @@ class TestCVE(TestCaseWithFactory):
                         ),
                     ],
                     priority=None,
-                    tags=set(),
+                    tags={"not-ue", "universe-binary"},
                     patches=[
                         UCTRecord.Patch(
                             patch_type="upstream",
@@ -404,6 +408,7 @@ class TestCVE(TestCaseWithFactory):
                     patches=[],
                 ),
             ],
+            global_tags={"cisa-kev"},
         )
 
         self.cve = CVE(
@@ -420,11 +425,13 @@ class TestCVE(TestCaseWithFactory):
                     target=dsp1,
                     importance=None,
                     package_name=dsp1.sourcepackagename,
+                    tags={"not-ue", "universe-binary"},
                 ),
                 CVE.DistroPackage(
                     target=dsp2,
                     importance=BugTaskImportance.HIGH,
                     package_name=dsp2.sourcepackagename,
+                    tags=set(),
                 ),
             ],
             series_packages=[
@@ -539,6 +546,7 @@ class TestCVE(TestCaseWithFactory):
                     notes=None,
                 ),
             ],
+            global_tags={"cisa-kev"},
         )
 
     def test_make_from_uct_record(self):
@@ -673,11 +681,13 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     target=self.ubuntu_package,
                     importance=BugTaskImportance.LOW,
                     package_name=self.ubuntu_package.sourcepackagename,
+                    tags={"review-break-fix"},
                 ),
                 CVE.DistroPackage(
                     target=self.esm_package,
                     importance=None,
                     package_name=self.esm_package.sourcepackagename,
+                    tags={"universe-binary"},
                 ),
             ],
             series_packages=[
@@ -781,6 +791,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     notes=None,
                 ),
             ],
+            global_tags={"cisa-kev"},
         )
         self.importer = UCTImporter()
         self.exporter = UCTExporter()
@@ -801,7 +812,17 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual(len(cve.bug_urls), len(watches))
         self.assertEqual(sorted(cve.bug_urls), sorted(w.url for w in watches))
 
+        self.checkBugTags(bug, cve)
         self.checkBugAttachments(bug, cve)
+
+    def checkBugTags(self, bug: Bug, cve: CVE):
+        tags = cve.global_tags.copy()
+        for distro_package in cve.distro_packages:
+            for tag in distro_package.tags:
+                tags.add(
+                    f"{distro_package.package_name.name}{TAG_SEPARATOR}{tag}"
+                )
+        self.assertEqual(sorted(bug.tags), sorted(list(tags)))
 
     def checkBugTasks(self, bug: Bug, cve: CVE):
         bug_tasks: List[BugTask] = bug.bugtasks
@@ -815,6 +836,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         bug_tasks_by_target = {t.target: t for t in bug_tasks}
 
         package_importances = {}
+
+        tags = set()
 
         for distro_package in cve.distro_packages:
             self.assertIn(distro_package.target, bug_tasks_by_target)
@@ -830,9 +853,16 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             else:
                 expected_importance = package_importance
                 expected_status = BugTaskStatus.NEW
+
+            for tag in distro_package.tags:
+                tags.add(f"{distro_package.package_name.name}.{tag}")
+
             self.assertEqual(expected_importance, t.importance)
             self.assertEqual(expected_status, t.status)
             self.assertIsNone(t.status_explanation)
+
+        distro_package_tags = {tag for tag in bug.tags if TAG_SEPARATOR in tag}
+        self.assertEqual(tags, distro_package_tags)
 
         for series_package in cve.series_packages:
             self.assertIn(series_package.target, bug_tasks_by_target)
@@ -951,6 +981,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual(expected.mitigation, actual.mitigation)
         self.assertListEqual(expected.cvss, actual.cvss)
         self.assertListEqual(expected.patch_urls, actual.patch_urls)
+        self.assertEqual(expected.global_tags, actual.global_tags)
 
     def test_create_bug(self):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
@@ -1002,6 +1033,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     target=affected_package,
                     importance=BugTaskImportance.LOW,
                     package_name=affected_package.sourcepackagename,
+                    tags={"universe-binary", "not-ue"},
                 ),
             ],
             series_packages=[
@@ -1047,6 +1079,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 ),
             ],
             patch_urls=[],
+            global_tags={"cisa-kev"},
         )
         lp_cve = self.factory.makeCVE(sequence="2022-1234")
         bug = self.importer.create_bug(cve, lp_cve)
@@ -1097,6 +1130,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 target=package,
                 package_name=package.sourcepackagename,
                 importance=BugTaskImportance.HIGH,
+                tags={"review-break-fix"},
             )
         )
         cve.series_packages.append(
@@ -1169,6 +1203,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 target=new_dsp,
                 package_name=new_dsp.sourcepackagename,
                 importance=BugTaskImportance.HIGH,
+                tags={"not-ue"},
             )
         )
         cve.series_packages.append(
@@ -1260,6 +1295,14 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 
+    def test_update_bug_global_tags_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        cve.global_tags.add("another-tag")
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
     def test_update_bug_ubuntu_description_changed(self):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
         cve = self.cve
@@ -1295,6 +1338,18 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 notes=None,
             )
         )
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+    def test_update_tags(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        # Add new tags
+        cve.global_tags.add("global-test-tag")
+        cve.distro_packages[0].tags.add("package-test-tag")
+        cve.distro_packages[0].tags.add("another-package-test-tag")
+
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 

@@ -12,6 +12,8 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
 from lp.code.tests.helpers import GitHostingFixture
+from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.product import IProduct
 from lp.services.database.constants import ONE_DAY_AGO, UTC_NOW
 from lp.services.features.testing import MemoryFeatureFixture
 from lp.services.webapp import canonical_url
@@ -45,7 +47,14 @@ class TestCharmRecipeListing(BrowserTestCase):
                 attrs={"href": expected_href},
             )
         )
-        self.assertThat(self.getViewBrowser(context).contents, Not(matcher))
+
+        if IPerson.providedBy(context) or IProduct.providedBy(context):
+            self.assertThat(self.getViewBrowser(context).contents, matcher)
+        else:
+            self.assertThat(
+                self.getViewBrowser(context).contents, Not(matcher)
+            )
+
         login(ANONYMOUS)
         with MemoryFeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}):
             self.factory.makeCharmRecipe(**kwargs)

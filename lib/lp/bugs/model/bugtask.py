@@ -470,6 +470,7 @@ class BugTask(StormBase):
         "date_fix_committed",
         "date_fix_released",
         "date_left_closed",
+        "date_deferred",
     )
     _NON_CONJOINED_STATUSES = (BugTaskStatus.WONTFIX,)
 
@@ -591,6 +592,12 @@ class BugTask(StormBase):
         validator=validate_conjoined_attribute,
     )
     date_left_closed = DateTime(
+        tzinfo=timezone.utc,
+        allow_none=True,
+        default=None,
+        validator=validate_conjoined_attribute,
+    )
+    date_deferred = DateTime(
         tzinfo=timezone.utc,
         allow_none=True,
         default=None,
@@ -1073,6 +1080,7 @@ class BugTask(StormBase):
             self.date_triaged = None
             self.date_fix_committed = None
             self.date_fix_released = None
+            self.date_deferred = None
             return
 
         if when is None:
@@ -1115,6 +1123,13 @@ class BugTask(StormBase):
         ):
             # This task is now marked as TRIAGED
             self.date_triaged = when
+
+        if (
+            old_status < BugTaskStatus.DEFERRED
+            and new_status == BugTaskStatus.DEFERRED
+        ):
+            # This task is now marked as DEFERRED
+            self.date_deferred = when
 
         # If the new status is equal to or higher
         # than FIXCOMMITTED, we record a `date_fixcommitted`
@@ -1172,6 +1187,9 @@ class BugTask(StormBase):
 
         if new_status < BugTaskStatus.TRIAGED:
             self.date_triaged = None
+
+        if new_status < BugTaskStatus.DEFERRED:
+            self.date_deferred = None
 
         if new_status < BugTaskStatus.FIXCOMMITTED:
             self.date_fix_committed = None

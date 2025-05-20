@@ -38,6 +38,7 @@ from zope.schema import Bool, Choice, Datetime, Dict, Int, List, TextLine
 from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
+from lp.app.validators import LaunchpadValidationError
 from lp.registry.interfaces.person import IPerson
 from lp.services.fields import URIField
 from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
@@ -56,6 +57,13 @@ WEBHOOK_EVENT_TYPES = {
     "git:push:0.1": "Git push",
     "livefs:build:0.1": "Live filesystem build",
     "merge-proposal:0.1": "Merge proposal",
+    # Merge proposal subscopes
+    "merge-proposal:0.1::create": "Merge proposal Created",
+    "merge-proposal:0.1::push": "Merge proposal Pushed",
+    "merge-proposal:0.1::review": "Merge proposal Reviewed",
+    "merge-proposal:0.1::edit": "Merge proposal Edited",
+    "merge-proposal:0.1::status-change": "Merge proposal Status Changed",
+    "merge-proposal:0.1::delete": "Merge proposal Deleted",
     "oci-recipe:build:0.1": "OCI recipe build",
     "snap:build:0.1": "Snap build",
     "craft-recipe:build:0.1": "Craft recipe build",
@@ -84,6 +92,18 @@ class AnyWebhookEventTypeVocabulary(SimpleVocabulary):
 
 
 class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
+    """Vocabulary that returns the valid webhook event types in
+    parent-subscopes order.
+
+    This ensures that top-level parent event types are always listed before
+    their corresponding sub-scopes, which is particularly important for UI
+    rendering where an ordered display improves usability.
+    """
+
+    def _createTerm(self, scope):
+        """Shorthand for creating a schema term for a scope."""
+        return self.createTerm(scope, scope, WEBHOOK_EVENT_TYPES[scope])
+
     def __init__(self, context):
         # When creating a webhook, the context is the target; when editing
         # an existing webhook, the context is the webhook itself.
@@ -91,11 +111,36 @@ class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
             target = context.target
         else:
             target = context
-        terms = [
-            self.createTerm(key, key, WEBHOOK_EVENT_TYPES[key])
-            for key in target.valid_webhook_event_types
-        ]
+        subscopes_by_parent = {}
+        top_level = []
+        for key in target.valid_webhook_event_types:
+            # Group subscopes under their parent
+            if "::" in key:
+                parent = key.split("::")[0]
+                subscopes_by_parent.setdefault(parent, []).append(key)
+            else:
+                top_level.append(key)
+        terms = []
+        # Create terms for parents and for their corresponding subscopes
+        for parent in top_level:
+            terms.append(self._createTerm(parent))
+            for subscope in subscopes_by_parent.get(parent, []):
+                terms.append(self._createTerm(subscope))
         super().__init__(terms)
+
+
+def validate_event_type_parent_subscope(event_types):
+    """Validator to handle parent and its subscopes selection."""
+    # Subscopes are identified by the presence of '::' in the event type
+    # string.
+    parents = {et.split("::")[0] for et in event_types if "::" in et}
+    for parent in parents:
+        if parent in event_types:
+            raise LaunchpadValidationError(
+                f"Please, select either the parent event type ({parent}) "
+                "or its subscopes - not both."
+            )
+    return True
 
 
 @exported_as_webservice_entry(as_of="beta")
@@ -119,6 +164,7 @@ class IWebhook(Interface):
             title=_("Event types"),
             required=True,
             readonly=False,
+            constraint=validate_event_type_parent_subscope,
         )
     )
     registrant = exported(

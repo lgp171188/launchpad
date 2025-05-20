@@ -40,6 +40,8 @@ class TestCeleryWorkerConfiguration(TestCase):
             "celerybeat",
             "launchpad_job",
             "launchpad_job_slow",
+            "native_publisher_job",
+            "native_publisher_job_slow",
         ]
         queues = config["task_queues"]
         self.assertEqual(queue_names, sorted(queues))

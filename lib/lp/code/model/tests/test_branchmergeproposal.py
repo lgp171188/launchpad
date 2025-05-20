@@ -68,6 +68,7 @@ from lp.code.model.branchmergeproposaljob import (
     MergeProposalNeedsReviewEmailJob,
     UpdatePreviewDiffJob,
 )
+from lp.code.model.tests.test_diff import DiffTestCase
 from lp.code.tests.helpers import (
     GitHostingFixture,
     add_revision_to_branch,
@@ -79,6 +80,7 @@ from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.runner import JobRunner
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.services.xref.interfaces import IXRefSet
@@ -96,7 +98,11 @@ from lp.testing import (
 )
 from lp.testing.dbuser import dbuser
 from lp.testing.factory import LaunchpadObjectFactory
-from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    LaunchpadZopelessLayer,
+)
 
 
 class WithVCSScenarios(WithScenarios):
@@ -1235,11 +1241,13 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         }
         return {k: Equals(v) for k, v in payload.items()}
 
-    def assertCorrectDelivery(self, expected_payload, hook, delivery):
+    def assertCorrectDelivery(
+        self, expected_payload, hook, delivery, event_type
+    ):
         self.assertThat(
             delivery,
             MatchesStructure(
-                event_type=Equals("merge-proposal:0.1"),
+                event_type=Equals(event_type),
                 payload=MatchesDict(expected_payload),
             ),
         )
@@ -1250,7 +1258,9 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
                 repr(delivery),
             )
 
-    def assertCorrectLogging(self, expected_redacted_payload, hook, logger):
+    def assertCorrectLogging(
+        self, expected_redacted_payload, hook, logger, event_type
+    ):
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             self.assertThat(
                 logger.output,
@@ -1258,7 +1268,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
                     [
                         (
                             hook,
-                            "merge-proposal:0.1",
+                            event_type,
                             MatchesDict(expected_redacted_payload),
                         )
                     ]
@@ -1279,7 +1289,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
             registrant = self.factory.makePerson()
             hook = self.factory.makeWebhook(
                 target=self.getWebhookTarget(target),
-                event_types=["merge-proposal:0.1"],
+                event_types=["merge-proposal:0.1::create"],
             )
             proposal = source.addLandingTarget(
                 registrant, target, needs_review=True
@@ -1297,8 +1307,13 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
             expected_payload,
             new=MatchesDict(self.getExpectedPayload(proposal, redact=True)),
         )
-        self.assertCorrectDelivery(expected_payload, hook, delivery)
-        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
+        expected_event = "merge-proposal:0.1"
+        self.assertCorrectDelivery(
+            expected_payload, hook, delivery, expected_event
+        )
+        self.assertCorrectLogging(
+            expected_redacted_payload, hook, logger, expected_event
+        )
 
     def test_create_triggers_webhooks(self):
         # When a merge proposal is created, any relevant webhooks are
@@ -1309,7 +1324,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         registrant = self.factory.makePerson()
         hook = self.factory.makeWebhook(
             target=self.getWebhookTarget(target),
-            event_types=["merge-proposal:0.1"],
+            event_types=["merge-proposal:0.1::create"],
         )
         proposal = source.addLandingTarget(
             registrant, target, needs_review=True
@@ -1325,8 +1340,13 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
             expected_payload,
             new=MatchesDict(self.getExpectedPayload(proposal, redact=True)),
         )
-        self.assertCorrectDelivery(expected_payload, hook, delivery)
-        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
+        expected_event = "merge-proposal:0.1"
+        self.assertCorrectDelivery(
+            expected_payload, hook, delivery, expected_event
+        )
+        self.assertCorrectLogging(
+            expected_redacted_payload, hook, logger, expected_event
+        )
 
     def test_modify_triggers_webhooks(self):
         logger = self.useFixture(FakeLogger())
@@ -1340,7 +1360,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         )
         hook = self.factory.makeWebhook(
             target=self.getWebhookTarget(target),
-            event_types=["merge-proposal:0.1"],
+            event_types=["merge-proposal:0.1::status-change"],
         )
         login_person(target.owner)
         expected_payload = {
@@ -1363,9 +1383,14 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         expected_redacted_payload["new"] = MatchesDict(
             self.getExpectedPayload(proposal, redact=True)
         )
+        expected_event = "merge-proposal:0.1"
         delivery = hook.deliveries.one()
-        self.assertCorrectDelivery(expected_payload, hook, delivery)
-        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
+        self.assertCorrectDelivery(
+            expected_payload, hook, delivery, expected_event
+        )
+        self.assertCorrectLogging(
+            expected_redacted_payload, hook, logger, expected_event
+        )
 
     def test_delete_triggers_webhooks(self):
         # When an existing merge proposal is deleted, any relevant webhooks
@@ -1379,7 +1404,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         )
         hook = self.factory.makeWebhook(
             target=self.getWebhookTarget(target),
-            event_types=["merge-proposal:0.1"],
+            event_types=["merge-proposal:0.1::delete"],
         )
         login_person(target.owner)
         expected_payload = {
@@ -1393,8 +1418,13 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         )
         proposal.deleteProposal()
         delivery = hook.deliveries.one()
-        self.assertCorrectDelivery(expected_payload, hook, delivery)
-        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
+        expected_event = "merge-proposal:0.1"
+        self.assertCorrectDelivery(
+            expected_payload, hook, delivery, expected_event
+        )
+        self.assertCorrectLogging(
+            expected_redacted_payload, hook, logger, expected_event
+        )
 
     def _create_for_webhook_with_git_ref_pattern(
         self, git_ref_pattern, expect_delivery
@@ -1406,7 +1436,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         registrant = self.factory.makePerson()
         hook = self.factory.makeWebhook(
             target=self.getWebhookTarget(target),
-            event_types=["merge-proposal:0.1"],
+            event_types=["merge-proposal:0.1::create"],
             git_ref_pattern=git_ref_pattern,
         )
         source.addLandingTarget(registrant, target, needs_review=True)
@@ -1447,7 +1477,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         )
         hook = self.factory.makeWebhook(
             target=self.getWebhookTarget(target),
-            event_types=["merge-proposal:0.1"],
+            event_types=["merge-proposal:0.1::status-change"],
             git_ref_pattern=git_ref_pattern,
         )
 
@@ -1495,7 +1525,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         )
         hook = self.factory.makeWebhook(
             target=self.getWebhookTarget(target),
-            event_types=["merge-proposal:0.1"],
+            event_types=["merge-proposal:0.1::delete"],
             git_ref_pattern=git_ref_pattern,
         )
         with person_logged_in(target.owner):
@@ -1522,6 +1552,260 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         self._delete_for_webhook_with_git_ref_pattern(
             git_ref_pattern="not-matching-test", expect_delivery=False
         )
+
+
+class TestMergeProposalWebhookGranularity(
+    WithVCSScenarios,
+    DiffTestCase,
+):
+    """Webhook subscopes behaviour for merge-proposals."""
+
+    layer = LaunchpadZopelessLayer
+
+    valid_diff = (
+        "diff --git a/foo b/foo\n"
+        "new file mode 100644\n"
+        "index 0000000..e69de29\n"
+        "--- /dev/null\n"
+        "+++ b/foo\n"
+        "@@ -0,0 +1 @@\n"
+        "+dummy\n"
+    )
+
+    def _make_mp_and_hook(self, event_types):
+        source = self.makeBranch()
+        target = self.makeBranch(same_target_as=source)
+        mp = source.addLandingTarget(
+            self.factory.makePerson(), target, needs_review=True
+        )
+        hook = self.factory.makeWebhook(
+            target=target.repository if self.git else target,
+            event_types=event_types,
+        )
+        return mp, hook, target
+
+    def _latest_delivery(self, hook):
+        with admin_logged_in():
+            return hook.deliveries.one()
+
+    def test_edit_description_triggers_webhook(self):
+        """Updating the description triggers the merge proposal webhook
+        with subscope ::edit."""
+        mp, hook, target = self._make_mp_and_hook(["merge-proposal:0.1::edit"])
+
+        login_person(target.owner)
+        with BranchMergeProposalNoPreviewDiffDelta.monitor(mp):
+            mp.description = "New description"
+
+        self.assertEqual(
+            "merge-proposal:0.1", self._latest_delivery(hook).event_type
+        )
+        self.assertEqual(1, hook.deliveries.count())
+        delivery = self._latest_delivery(hook)
+        self.assertEqual("modified", delivery.payload["action"])
+
+    def test_edit_commit_message_triggers_webhook(self):
+        """Updating the commit message triggers the merge proposal webhook
+        with subscope ::edit."""
+        mp, hook, target = self._make_mp_and_hook(["merge-proposal:0.1::edit"])
+
+        login_person(target.owner)
+        with BranchMergeProposalNoPreviewDiffDelta.monitor(mp):
+            mp.commit_message = "New description"
+
+        self.assertEqual(
+            "merge-proposal:0.1", self._latest_delivery(hook).event_type
+        )
+        self.assertEqual(1, hook.deliveries.count())
+        delivery = self._latest_delivery(hook)
+        self.assertEqual("modified", delivery.payload["action"])
+
+    def test_review_without_inlines_always_triggers(self):
+        """A main comment without inline comments triggers exactly once
+        ::review webhook."""
+        mp, hook, target = self._make_mp_and_hook(
+            ["merge-proposal:0.1::review"]
+        )
+
+        login_person(target.owner)
+        preview = mp.updatePreviewDiff(self.valid_diff, "a", "b")
+        transaction.commit()
+
+        author = self.factory.makePerson()
+        login_person(author)
+        mp.createComment(
+            author,
+            subject="LGTM",
+            content="All good!",
+            previewdiff_id=preview.id,
+            vote=CodeReviewVote.APPROVE,
+            inline_comments={},
+        )
+        transaction.commit()
+
+        with admin_logged_in():
+            self.assertEqual(1, hook.deliveries.count())
+            self.assertEqual(
+                "merge-proposal:0.1",
+                self._latest_delivery(hook).event_type,
+            )
+            delivery = self._latest_delivery(hook)
+            self.assertEqual("reviewed", delivery.payload["action"])
+
+    def test_review_with_main_and_inline_comments_trigger_once(self):
+        """A main comment and inline comments triggers exactly one
+        ::review webhook."""
+        mp, hook, target = self._make_mp_and_hook(
+            ["merge-proposal:0.1::review"]
+        )
+        login_person(target.owner)
+
+        preview = mp.updatePreviewDiff(self.valid_diff, "a", "b")
+        transaction.commit()
+
+        author = self.factory.makePerson()
+        login_person(author)
+        mp.createComment(
+            author,
+            subject="LGTM-with-inline",
+            content="Looks fine with a couple of remarks.",
+            previewdiff_id=preview.id,
+            vote=CodeReviewVote.APPROVE,
+            inline_comments={"10": "one remark", "20": "another remark"},
+        )
+        transaction.commit()
+
+        with admin_logged_in():
+            self.assertEqual(1, hook.deliveries.count())
+            self.assertEqual(
+                "merge-proposal:0.1",
+                self._latest_delivery(hook).event_type,
+            )
+            delivery = self._latest_delivery(hook)
+            self.assertEqual("reviewed", delivery.payload["action"])
+
+    def test_parent_scope_still_receives_create(self):
+        """A hook with only 'merge-proposal:0.1' event type still triggers
+        when a merge proposal is created."""
+        target = self.makeBranch()
+        hook = self.factory.makeWebhook(
+            target=target.repository if self.git else target,
+            event_types=["merge-proposal:0.1"],
+        )
+
+        # Creating the MP should schedule the webhook.
+        login_person(target.owner)
+        source = self.makeBranch(same_target_as=target)
+        source.addLandingTarget(
+            self.factory.makePerson(), target, needs_review=True
+        )
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertEqual(
+            "merge-proposal:0.1", self._latest_delivery(hook).event_type
+        )
+        delivery = self._latest_delivery(hook)
+        payload = delivery.payload
+        self.assertEqual("created", payload["action"])
+
+    def test_subscope_does_not_leak_to_other_subscope(self):
+        """A hook for ::status-change is not triggered by ::edit."""
+        mp, hook, target = self._make_mp_and_hook(
+            ["merge-proposal:0.1::status-change"]
+        )
+
+        # Change something that is not the status (description).
+        login_person(target.owner)
+        mp.description = "just a wording tweak"
+        transaction.commit()
+        with admin_logged_in():
+            self.assertEqual(0, hook.deliveries.count())
+
+    def test_push_webhook_triggered_git(self):
+        """UpdatePreviewDiffJob triggers a 'push' webhook with
+        action 'modified'."""
+        if not self.git:
+            self.skipTest("Only relevant for Git MPs.")
+
+        # Create merge proposal and hook
+        mp = self.createExampleGitMerge()[0]
+        hook = self.factory.makeWebhook(
+            target=mp.target_git_repository,
+            event_types=[
+                "merge-proposal:0.1::push",
+            ],
+        )
+        # Simulate the push
+        job = UpdatePreviewDiffJob.create(mp)
+        with dbuser("merge-proposal-jobs"):
+            JobRunner([job]).runAll()
+        transaction.commit()
+
+        # Assert webhook triggered
+        with admin_logged_in():
+            self.assertEqual(1, hook.deliveries.count())
+            delivery = self._latest_delivery(hook)
+            self.assertEqual("merge-proposal:0.1", delivery.event_type)
+            self.assertEqual("modified", delivery.payload["action"])
+            self.assertIsNotNone(mp.preview_diff)
+
+    def test_push_webhook_triggered_bzr(self):
+        """UpdatePreviewDiffJob triggers a 'push' webhook with
+        action 'modified' for Bzr MPs."""
+        if self.git:
+            self.skipTest("Only relevant for Bzr MPs.")
+
+        # Create merge proposal and hook
+        mp = self.createExampleBzrMerge()[0]
+        hook = self.factory.makeWebhook(
+            target=mp.target_branch,
+            event_types=["merge-proposal:0.1::push"],
+        )
+
+        # Add revisions
+        self.factory.makeRevisionsForBranch(mp.source_branch, count=1)
+        mp.source_branch.next_mirror_time = None
+        transaction.commit()
+
+        # Simulate the push
+        job = UpdatePreviewDiffJob.create(mp)
+        with dbuser("merge-proposal-jobs"):
+            JobRunner([job]).runAll()
+        transaction.commit()
+
+        # Assert webhook triggered
+        with admin_logged_in():
+            self.assertEqual(1, hook.deliveries.count())
+            delivery = self._latest_delivery(hook)
+            self.assertEqual("merge-proposal:0.1", delivery.event_type)
+            self.assertEqual("modified", delivery.payload["action"])
+            self.assertIsNotNone(mp.preview_diff)
+
+    def test_create_webhook_triggered(self):
+        """Creating a merge proposal triggers only one webhook
+        with action 'created'."""
+        target = self.makeBranch()
+        hook = self.factory.makeWebhook(
+            target=target.repository if self.git else target,
+            event_types=[
+                "merge-proposal:0.1::create",
+                "merge-proposal:0.1::push",
+                "merge-proposal:0.1::edit",
+                "merge-proposal:0.1::review",
+                "merge-proposal:0.1::status-change",
+            ],
+        )
+
+        login_person(target.owner)
+        source = self.makeBranch(same_target_as=target)
+        source.addLandingTarget(
+            self.factory.makePerson(), target, needs_review=True
+        )
+
+        with admin_logged_in():
+            self.assertEqual(1, hook.deliveries.count())
+            delivery = self._latest_delivery(hook)
+            self.assertEqual("merge-proposal:0.1", delivery.event_type)
+            self.assertEqual("created", delivery.payload["action"])
 
 
 class TestGetAddress(TestCaseWithFactory):
