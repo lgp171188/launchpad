@@ -807,6 +807,7 @@
                 permission="launchpad.Append"
                 interface="lp.bugs.interfaces.bug.IBugAppend"
                 attributes="
+                    presences
                     linkBranch
                     unlinkBranch"/>
             <require
@@ -932,6 +933,42 @@
     <subscriber
         for="lp.bugs.interfaces.bugsubscription.IBugSubscription                     lazr.lifecycle.interfaces.IObjectModifiedEvent"
         handler="lp.bugs.subscribers.bugactivity.record_bugsubscription_edited"/>
+
+        <!-- BugPresence -->
+
+        <class
+            class="lp.bugs.model.bugpresence.BugPresence">
+            <implements
+                interface="lp.bugs.interfaces.bugpresence.IBugPresence"/>
+            <require
+                permission="launchpad.View"
+                set_schema="lp.bugs.interfaces.bugpresence.IBugPresence"
+                attributes="
+                    id
+                    bug
+                    product
+                    distribution
+                    source_package_name
+                    git_repository
+                    break_fix_data"/>
+            <require
+                permission="launchpad.Edit"
+                attributes="destroySelf"/>
+        </class>
+
+        <!-- BugPresenceSet -->
+
+        <class
+            class="lp.bugs.model.bugpresence.BugPresenceSet">
+            <allow
+                interface="lp.bugs.interfaces.bugpresence.IBugPresenceSet"/>
+        </class>
+        <lp:securedutility
+            class="lp.bugs.model.bugpresence.BugPresenceSet"
+            provides="lp.bugs.interfaces.bugpresence.IBugPresenceSet">
+            <allow
+                interface="lp.bugs.interfaces.bugpresence.IBugPresenceSet"/>
+        </lp:securedutility>
 
         <!-- BugWatch -->
 
