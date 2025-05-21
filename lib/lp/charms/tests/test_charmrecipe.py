@@ -38,6 +38,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildQueueStatus,
@@ -478,6 +479,9 @@ class TestCharmRecipe(TestCaseWithFactory):
         build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
         build = recipe.requestBuild(build_request, das)
         self.assertEqual(True, build.recipe.use_fetch_service)
+        self.assertEqual(
+            FetchServicePolicy.STRICT, recipe.fetch_service_policy
+        )
 
     def test_requestBuild_nonvirtualized(self):
         # A non-virtualized processor can build a charm recipe iff the
@@ -1698,6 +1702,9 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         self.assertIsNone(recipe.store_secrets)
         self.assertEqual([], recipe.store_channels)
         self.assertFalse(recipe.use_fetch_service)
+        self.assertEqual(
+            FetchServicePolicy.STRICT, recipe.fetch_service_policy
+        )
 
     def test_creation_no_source(self):
         # Attempting to create a charm recipe without a Git repository
@@ -2149,15 +2156,16 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             git_ref=ref, use_fetch_service=True
         )
 
-        admin_fields = [
-            "require_virtualized",
-            "use_fetch_service",
-        ]
+        admin_fields = {
+            "require_virtualized": True,
+            "use_fetch_service": True,
+            "fetch_service_policy": FetchServicePolicy.PERMISSIVE,
+        }
 
-        for field_name in admin_fields:
+        for field_name, field_value in admin_fields.items():
             # exception is not raised when an admin does the same
             with admin_logged_in():
-                setattr(charm, field_name, True)
+                setattr(charm, field_name, field_value)
 
     def test_non_admins_cannot_update_admin_only_fields(self):
         # The admin fields cannot be updated by a non admin
@@ -2167,12 +2175,13 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             git_ref=ref, use_fetch_service=True
         )
         person = self.factory.makePerson()
-        admin_fields = [
-            "require_virtualized",
-            "use_fetch_service",
-        ]
+        admin_fields = {
+            "require_virtualized": True,
+            "use_fetch_service": True,
+            "fetch_service_policy": FetchServicePolicy.PERMISSIVE,
+        }
 
-        for field_name in admin_fields:
+        for field_name, field_value in admin_fields.items():
             # exception is raised when a non admin updates the fields
             with person_logged_in(person):
                 self.assertRaises(
@@ -2180,7 +2189,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
                     setattr,
                     charm,
                     field_name,
-                    True,
+                    field_value,
                 )
 
 

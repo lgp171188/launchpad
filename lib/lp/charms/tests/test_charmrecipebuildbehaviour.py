@@ -36,6 +36,10 @@ from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
+from lp.buildmaster.builderproxy import (
+    FetchServicePolicy,
+    ProxyServiceException,
+)
 from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
 from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
@@ -712,6 +716,61 @@ class TestAsyncCharmRecipeBuildBehaviourFetchService(
         )
 
     @defer.inlineCallbacks
+    def test_requestFetchServiceSession_permissive(self):
+        """Create a charm recipe build request with a successful fetch service
+        configuration.
+
+        `proxy_url` and `revocation_endpoint` are correctly populated.
+        """
+        job = self.makeJob(
+            use_fetch_service=True,
+            fetch_service_policy=FetchServicePolicy.PERMISSIVE,
+        )
+        args = yield job.extraBuildArgs()
+        request_matcher = MatchesDict(
+            {
+                "method": Equals(b"POST"),
+                "uri": Equals(b"/session"),
+                "headers": ContainsDict(
+                    {
+                        b"Authorization": MatchesListwise(
+                            [
+                                Equals(
+                                    b"Basic "
+                                    + base64.b64encode(
+                                        b"admin-launchpad.test:admin-secret"
+                                    )
+                                )
+                            ]
+                        ),
+                        b"Content-Type": MatchesListwise(
+                            [
+                                Equals(b"application/json"),
+                            ]
+                        ),
+                    }
+                ),
+                "json": MatchesDict(
+                    {
+                        "policy": Equals("permissive"),
+                    }
+                ),
+            }
+        )
+        self.assertThat(
+            self.fetch_service_api.sessions.requests,
+            MatchesListwise([request_matcher]),
+        )
+        self.assertIn("proxy_url", args)
+        self.assertIn("revocation_endpoint", args)
+        self.assertTrue(args["use_fetch_service"])
+        self.assertIn("secrets", args)
+        self.assertIn("fetch_service_mitm_certificate", args["secrets"])
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
+
+    @defer.inlineCallbacks
     def test_requestFetchServiceSession_mitm_certficate_redacted(self):
         """The `fetch_service_mitm_certificate` field in the build arguments
         is redacted in the build logs."""
@@ -806,6 +865,7 @@ class TestAsyncCharmRecipeBuildBehaviourFetchService(
         # The expected file is created in the `tem_upload_path`
         expected_filename = f"{job.build.build_cookie}_metadata.json"
         expected_file_path = os.path.join(tem_upload_path, expected_filename)
+        self.assertTrue(os.path.exists(expected_file_path))
         with open(expected_file_path) as f:
             self.assertEqual(
                 json.dumps(self.fetch_service_api.sessions.responses[1]),
@@ -831,6 +891,22 @@ class TestAsyncCharmRecipeBuildBehaviourFetchService(
 
         # No calls go through to the fetch service
         self.assertEqual(0, len(self.fetch_service_api.sessions.requests))
+
+    @defer.inlineCallbacks
+    def test_endProxySession_bad_revocation_endpoint(self):
+        """When `revocation_endpoint` is not properly set, it should raise
+        an exception."""
+
+        job = self.makeJob(use_fetch_service=True)
+        job._worker.proxy_info = MagicMock(
+            return_value={
+                "use_fetch_service": True,
+                "revocation_endpoint": "http://bad/endpoint",
+            }
+        )
+        yield job.extraBuildArgs()
+        with ExpectedException(ProxyServiceException):
+            yield job.endProxySession(upload_path="ignored")
 
 
 class MakeCharmRecipeBuildMixin:
