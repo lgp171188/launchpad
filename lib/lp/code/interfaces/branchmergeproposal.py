@@ -56,7 +56,7 @@ from zope.schema import (
 from lp import _
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.bugs.interfaces.buglink import IBugLinkTarget
-from lp.code.enums import BranchMergeProposalStatus, CodeReviewVote
+from lp.code.enums import BranchMergeProposalStatus, CodeReviewVote, MergeType
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.diff import IPreviewDiff
 from lp.code.interfaces.gitref import IGitRef
@@ -267,6 +267,13 @@ class IBranchMergeProposalPublic(IPrivacy):
 
     merge_prerequisite = Attribute(
         "The branch that the source branch branched from (VCS-agnostic)."
+    )
+
+    merge_type = Choice(
+        title=_("Merge type"),
+        vocabulary=MergeType,
+        required=True,
+        readonly=True,
     )
 
     parent = Attribute(
