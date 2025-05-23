@@ -912,6 +912,9 @@ class IBugAppend(Interface):
         :is_patch: A boolean.
         """
 
+    def removeAttachment(bug_attachment, user):
+        """Remove a bug attachment from the bug."""
+
     def addCommentNotification(
         message,
         recipients=None,

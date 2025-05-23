@@ -22,7 +22,7 @@ from lazr.restful.declarations import (
 )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import URI, Bool, Bytes, Choice, Int, TextLine
+from zope.schema import URI, Bool, Bytes, Choice, Int, List, TextLine
 
 from lp import _
 from lp.bugs.interfaces.hasbug import IHasBug
@@ -117,6 +117,9 @@ class IBugAttachmentView(IHasBug):
             "Download URL of the files or the external URL of the attachment"
         ),
         readonly=True,
+    )
+    vulnerability_patches = List(
+        title=_("Vulnerability patches"), readonly=True
     )
 
     def getFileByName(filename):
