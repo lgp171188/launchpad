@@ -4,13 +4,15 @@
 """Test charm recipe build behaviour."""
 
 import base64
+import json
 import os.path
 import time
 import uuid
 from datetime import datetime
+from unittest.mock import MagicMock
 from urllib.parse import urlsplit
 
-from fixtures import MockPatch
+from fixtures import MockPatch, TempDir
 from pymacaroons import Macaroon
 from testtools import ExpectedException
 from testtools.matchers import (
@@ -45,6 +47,9 @@ from lp.buildmaster.tests.builderproxy import (
     InProcessProxyAuthAPIFixture,
     ProxyURLMatcher,
     RevocationEndpointMatcher,
+)
+from lp.buildmaster.tests.fetchservice import (
+    InProcessFetchServiceAuthAPIFixture,
 )
 from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
@@ -559,6 +564,273 @@ class TestAsyncCharmRecipeBuildBehaviour(
         self.assertEqual(
             ("ensurepresent", chroot_lfa.http_url, "", ""), worker.call_log[0]
         )
+
+
+class TestAsyncCharmRecipeBuildBehaviourFetchService(
+    StatsMixin,
+    TestCharmRecipeBuildBehaviourBase,
+):
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=30
+    )
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        super().setUp()
+        self.session = {
+            "id": "1",
+            "token": uuid.uuid4().hex,
+        }
+        self.fetch_service_url = (
+            "http://{session_id}:{token}@{host}:{port}".format(
+                session_id=self.session["id"],
+                token=self.session["token"],
+                host=config.builddmaster.fetch_service_host,
+                port=config.builddmaster.fetch_service_port,
+            )
+        )
+        self.fetch_service_api = self.useFixture(
+            InProcessFetchServiceAuthAPIFixture()
+        )
+        yield self.fetch_service_api.start()
+        self.now = time.time()
+        self.useFixture(MockPatch("time.time", return_value=self.now))
+        self.addCleanup(shut_down_default_process_pool)
+        self.setUpStats()
+
+    def makeJob(self, **kwargs):
+        # We need a builder worker in these tests, in order that requesting
+        # a proxy token can piggyback on its reactor and pool.
+        job = super().makeJob(**kwargs)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        worker = self.useFixture(WorkerTestHelpers()).getClientWorker()
+        job.setBuilder(builder, worker)
+        self.addCleanup(worker.pool.closeCachedConnections)
+        return job
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_unconfigured(self):
+        """Create a charm recipe build request with an incomplete fetch service
+        configuration.
+
+        If `fetch_service_host` is not provided the function will return
+        without populating `proxy_url` and `revocation_endpoint`.
+        """
+        self.pushConfig("builddmaster", fetch_service_host=None)
+        job = self.makeJob(use_fetch_service=True)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual([], self.fetch_service_api.sessions.requests)
+        self.assertNotIn("proxy_url", args)
+        self.assertNotIn("revocation_endpoint", args)
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_no_certificate(self):
+        """Create a charm recipe build request with an incomplete fetch service
+        configuration.
+
+        If `fetch_service_mitm_certificate` is not provided
+        the function raises a `CannotBuild` error.
+        """
+        self.pushConfig("builddmaster", fetch_service_mitm_certificate=None)
+        job = self.makeJob(use_fetch_service=True)
+        expected_exception_msg = (
+            "fetch_service_mitm_certificate is not configured."
+        )
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.extraBuildArgs()
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_no_secret(self):
+        """Create a charm recipe build request with an incomplete fetch service
+        configuration.
+
+        If `fetch_service_control_admin_secret` is not provided
+        the function raises a `CannotBuild` error.
+        """
+        self.pushConfig(
+            "builddmaster", fetch_service_control_admin_secret=None
+        )
+        job = self.makeJob(use_fetch_service=True)
+        expected_exception_msg = (
+            "fetch_service_control_admin_secret is not configured."
+        )
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.extraBuildArgs()
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession(self):
+        """Create a charm recipe build request with a successful fetch service
+        configuration.
+
+        `proxy_url` and `revocation_endpoint` are correctly populated.
+        """
+        job = self.makeJob(use_fetch_service=True)
+        args = yield job.extraBuildArgs()
+        request_matcher = MatchesDict(
+            {
+                "method": Equals(b"POST"),
+                "uri": Equals(b"/session"),
+                "headers": ContainsDict(
+                    {
+                        b"Authorization": MatchesListwise(
+                            [
+                                Equals(
+                                    b"Basic "
+                                    + base64.b64encode(
+                                        b"admin-launchpad.test:admin-secret"
+                                    )
+                                )
+                            ]
+                        ),
+                        b"Content-Type": MatchesListwise(
+                            [
+                                Equals(b"application/json"),
+                            ]
+                        ),
+                    }
+                ),
+                "json": MatchesDict(
+                    {
+                        "policy": Equals("strict"),
+                    }
+                ),
+            }
+        )
+        self.assertThat(
+            self.fetch_service_api.sessions.requests,
+            MatchesListwise([request_matcher]),
+        )
+        self.assertIn("proxy_url", args)
+        self.assertIn("revocation_endpoint", args)
+        self.assertTrue(args["use_fetch_service"])
+        self.assertIn("secrets", args)
+        self.assertIn("fetch_service_mitm_certificate", args["secrets"])
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_mitm_certficate_redacted(self):
+        """The `fetch_service_mitm_certificate` field in the build arguments
+        is redacted in the build logs."""
+
+        job = self.makeJob(use_fetch_service=True)
+        args = yield job.extraBuildArgs()
+
+        chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            chroot_lfa, image_type=BuildBaseImageType.CHROOT
+        )
+        lxd_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            lxd_lfa, image_type=BuildBaseImageType.LXD
+        )
+        deferred = defer.Deferred()
+        deferred.callback(None)
+        job._worker.sendFileToWorker = MagicMock(return_value=deferred)
+        job._worker.build = MagicMock(return_value=(None, None))
+
+        logger = BufferLogger()
+        yield job.dispatchBuildToWorker(logger)
+
+        # Secrets exist within the arguments
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
+        # But are redacted in the log output
+        self.assertIn(
+            "'fetch_service_mitm_certificate': '<redacted>'",
+            logger.getLogBuffer(),
+        )
+
+    @defer.inlineCallbacks
+    def test_endProxySession(self):
+        """By ending a fetch service session, metadata is retrieved from the
+        fetch service and saved to a file; and call to end the session and
+        removing resources are made.
+        """
+        tem_upload_path = self.useFixture(TempDir()).path
+
+        job = self.makeJob(use_fetch_service=True)
+
+        host = config.builddmaster.fetch_service_host
+        port = config.builddmaster.fetch_service_port
+        session_id = self.fetch_service_api.sessions.session_id
+        revocation_endpoint = (
+            f"http://{host}:{port}/session/{session_id}/token"
+        )
+
+        job._worker.proxy_info = MagicMock(
+            return_value={
+                "revocation_endpoint": revocation_endpoint,
+                "use_fetch_service": True,
+            }
+        )
+        yield job.extraBuildArgs()
+
+        # End the session
+        yield job.endProxySession(upload_path=tem_upload_path)
+
+        # We expect 4 calls made to the fetch service API, in this order
+        self.assertEqual(4, len(self.fetch_service_api.sessions.requests))
+
+        # Request start a session
+        start_session_request = self.fetch_service_api.sessions.requests[0]
+        self.assertEqual(b"POST", start_session_request["method"])
+        self.assertEqual(b"/session", start_session_request["uri"])
+
+        # Request retrieve metadata
+        retrieve_metadata_request = self.fetch_service_api.sessions.requests[1]
+        self.assertEqual(b"GET", retrieve_metadata_request["method"])
+        self.assertEqual(
+            f"/session/{session_id}".encode(), retrieve_metadata_request["uri"]
+        )
+
+        # Request end session
+        end_session_request = self.fetch_service_api.sessions.requests[2]
+        self.assertEqual(b"DELETE", end_session_request["method"])
+        self.assertEqual(
+            f"/session/{session_id}".encode(), end_session_request["uri"]
+        )
+
+        # Request removal of resources
+        remove_resources_request = self.fetch_service_api.sessions.requests[3]
+        self.assertEqual(b"DELETE", remove_resources_request["method"])
+        self.assertEqual(
+            f"/resources/{session_id}".encode(),
+            remove_resources_request["uri"],
+        )
+
+        # The expected file is created in the `tem_upload_path`
+        expected_filename = f"{job.build.build_cookie}_metadata.json"
+        expected_file_path = os.path.join(tem_upload_path, expected_filename)
+        with open(expected_file_path) as f:
+            self.assertEqual(
+                json.dumps(self.fetch_service_api.sessions.responses[1]),
+                f.read(),
+            )
+
+    @defer.inlineCallbacks
+    def test_endProxySession_fetch_Service_false(self):
+        """When `use_fetch_service` is False, we don't make any calls to the
+        fetch service API."""
+
+        job = self.makeJob(use_fetch_service=False)
+
+        job._worker.proxy_info = MagicMock(
+            return_value={
+                "revocation_endpoint": "https://builder-proxy.test/revoke",
+                "use_fetch_service": False,
+            }
+        )
+
+        yield job.extraBuildArgs()
+        yield job.endProxySession(upload_path="test_path")
+
+        # No calls go through to the fetch service
+        self.assertEqual(0, len(self.fetch_service_api.sessions.requests))
 
 
 class MakeCharmRecipeBuildMixin:

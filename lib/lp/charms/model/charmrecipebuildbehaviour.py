@@ -79,7 +79,10 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         """
         build = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
-        yield self.startProxySession(args)
+        yield self.startProxySession(
+            args,
+            use_fetch_service=build.recipe.use_fetch_service,
+        )
         args["name"] = build.recipe.store_name or build.recipe.name
         channels = build.channels or {}
         # We have to remove the security proxy that Zope applies to this

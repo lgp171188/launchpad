@@ -2,7 +2,6 @@
 #  GNU Affero General Public License version 3 (see the file LICENSE).
 
 import logging
-import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional
@@ -42,13 +41,6 @@ class UCTExporter:
     class ParsedDescription(NamedTuple):
         description: str
         references: List[str]
-
-    # Example:
-    # linux/upstream
-    # linux/upstream/5.19.1
-    BUG_ATTACHMENT_TITLE_RE = re.compile(
-        "^(?P<package_name>.+?)/(?P<patch_type>.+?)(/(?P<notes>.+?))?$"
-    )
 
     def export_bug_to_uct_file(
         self, bug_id: int, output_dir: Path
@@ -219,25 +211,29 @@ class UCTExporter:
         }
         patch_urls = []
         for attachment in bug.attachments:
+            if attachment.url:
+                # We should not get an url as we are only using
+                # vulnerability_patches
+                logger.warning(
+                    f"Got {attachment.url} url for {attachment.title} "
+                    "attachment"
+                )
+
             if (
-                not attachment.url
+                not attachment.vulnerability_patches
                 or not attachment.type == BugAttachmentType.PATCH
             ):
                 continue
-            title_match = self.BUG_ATTACHMENT_TITLE_RE.match(attachment.title)
-            if not title_match:
-                continue
-            spn = packages_by_name.get(title_match.groupdict()["package_name"])
-            if not spn:
-                continue
-            patch_urls.append(
-                CVE.PatchURL(
-                    package_name=spn,
-                    type=title_match.groupdict()["patch_type"],
-                    url=attachment.url,
-                    notes=title_match.groupdict().get("notes"),
+
+            for patch in attachment.vulnerability_patches:
+                patch_urls.append(
+                    CVE.PatchURL(
+                        package_name=packages_by_name.get(attachment.title),
+                        type=patch["name"],
+                        url=patch["value"],
+                        notes=patch["comment"],
+                    )
                 )
-            )
 
         return CVE(
             sequence=f"CVE-{lp_cve.sequence}",
