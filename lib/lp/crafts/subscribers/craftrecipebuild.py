@@ -8,7 +8,7 @@ from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
 from lp.crafts.interfaces.craftrecipebuild import ICraftRecipeBuild
-from lp.crafts.interfaces.craftrecipejob import ICraftPublishingJobSource
+from lp.crafts.interfaces.craftrecipebuildjob import ICraftPublishingJobSource
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
