@@ -843,7 +843,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
             # Clear out any reviewed values.
             self._mark_unreviewed()
 
-    def isMergable(self):
+    def isInProgress(self):
         """See `IBranchMergeProposal`."""
         # As long as the source branch has not been merged, rejected
         # or superseded, then it is valid to be merged.
