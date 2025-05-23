@@ -7,8 +7,6 @@ __all__ = [
     "ICraftRecipeJob",
     "ICraftRecipeRequestBuildsJob",
     "ICraftRecipeRequestBuildsJobSource",
-    "ICraftPublishingJob",
-    "ICraftPublishingJobSource",
 ]
 
 from lazr.restful.fields import Reference
@@ -137,28 +135,4 @@ class ICraftRecipeRequestBuildsJobSource(IJobSource):
         :raises: `NotFoundError` if there is no job with the specified
             recipe and ID, or its `job_type` is not
             `CraftRecipeJobType.REQUEST_BUILDS`.
-        """
-
-
-class ICraftPublishingJob(IRunnableJob):
-    """
-    A job that publishes craft recipe build artifacts to external repositories.
-    """
-
-    build_id = Attribute("The ID of the build to publish.")
-    build = Attribute("The build to publish.")
-    error_message = Attribute("The error message if the publishing failed.")
-
-    def create(build):
-        """Create a new CraftPublishingJob."""
-
-
-class ICraftPublishingJobSource(IJobSource):
-    """A source for creating and finding CraftPublishingJobs."""
-
-    def create(build):
-        """
-        Publish artifacts from a craft recipe build to external repositories.
-
-        :param build: The build to publish.
         """
