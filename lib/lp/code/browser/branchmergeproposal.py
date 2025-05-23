@@ -211,7 +211,7 @@ class BranchMergeProposalMenuMixin:
     @enabled_with_permission("launchpad.Edit")
     def edit(self):
         text = "Edit details"
-        enabled = self.context.isMergable()
+        enabled = self.context.isInProgress()
         return Link("+edit", text, icon="edit", enabled=enabled)
 
     @enabled_with_permission("launchpad.Edit")
@@ -222,7 +222,7 @@ class BranchMergeProposalMenuMixin:
     @enabled_with_permission("launchpad.Edit")
     def set_commit_message(self):
         text = "Set commit message"
-        enabled = self.context.isMergable()
+        enabled = self.context.isInProgress()
         return Link("+edit-commit-message", text, icon="add", enabled=enabled)
 
     @enabled_with_permission("launchpad.Edit")
@@ -991,7 +991,7 @@ class BranchMergeProposalVoteView(LaunchpadView):
         # the menu link is now shown in the table itself.
         can_request_review = (
             check_permission("launchpad.Edit", self.context)
-            and self.context.isMergable()
+            and self.context.isInProgress()
         )
 
         # Show the table if there are review to show, or the user can review,
@@ -1107,7 +1107,7 @@ class BranchMergeProposalRequestReviewView(LaunchpadEditFormView):
 
     def validate(self, data):
         """Ensure that the proposal is in an appropriate state."""
-        if not self.context.isMergable():
+        if not self.context.isInProgress():
             self.addError(
                 "The merge proposal is not an a valid state to "
                 "mark as 'Needs review'."
