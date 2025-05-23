@@ -74,6 +74,7 @@ from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
+from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.person import IPerson
@@ -783,6 +784,20 @@ class ICharmRecipeAdminAttributes(Interface):
         )
     )
 
+    fetch_service_policy = exported(
+        Choice(
+            title=_("Fetch service policy"),
+            vocabulary=FetchServicePolicy,
+            required=False,
+            readonly=False,
+            default=FetchServicePolicy.STRICT,
+            description=_(
+                "Which policy to use when using the fetch service. Ignored if "
+                "`use_fetch_service` flag is False."
+            ),
+        )
+    )
+
 
 # XXX cjwatson 2021-09-15 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
@@ -843,6 +858,7 @@ class ICharmRecipeSet(Interface):
         store_channels=None,
         date_created=None,
         use_fetch_service=False,
+        fetch_service_policy=FetchServicePolicy.STRICT,
     ):
         """Create an `ICharmRecipe`."""
 
