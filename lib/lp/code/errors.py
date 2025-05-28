@@ -19,6 +19,7 @@ __all__ = [
     "BranchTypeError",
     "BuildAlreadyPending",
     "BuildNotAllowedForDistro",
+    "BranchMergeProposalConflicts",
     "BranchMergeProposalExists",
     "CannotDeleteBranch",
     "CannotDeleteGitRepository",
@@ -259,6 +260,13 @@ class BranchMergeProposalExists(InvalidBranchMergeProposal):
             )
         )
         self.existing_proposal = existing_proposal
+
+
+@error_status(http.client.CONFLICT)
+class BranchMergeProposalConflicts(Exception):
+    """Raised if merge proposal merge failed due to conflicts."""
+
+    pass
 
 
 class InvalidNamespace(Exception):

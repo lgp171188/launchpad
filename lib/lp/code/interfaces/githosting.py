@@ -169,3 +169,28 @@ class IGitHostingClient(Interface):
             service.
         :param logger: An optional logger.
         """
+
+    def merge(
+        repo,
+        target_branch,
+        target_commit_sha1,
+        source_branch,
+        source_commit_sha1,
+        commiter,
+        commit_message,
+        source_repo=None,
+        logger=None,
+    ):
+        """Request a merge from source_branch to target_branch
+
+        :param repo: name of the target repository on the hosting service.
+        :param target_branch: name of target branch.
+        :param target_commit_sha1: commit set as target in target branch
+        :param source_branch: name of source branch, to be merged into target
+        :param source_commit_sha1: latest commit in source branch
+        :param committer: person that requests the merge
+        :param commit_message: custom message for merge commit
+        :param source_repo: name of the source repository on the hosting
+        service (if any)
+        :param logger: An optional logger.
+        """
