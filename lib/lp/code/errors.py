@@ -19,7 +19,11 @@ __all__ = [
     "BranchTypeError",
     "BuildAlreadyPending",
     "BuildNotAllowedForDistro",
+    "BranchMergeProposalConflicts",
     "BranchMergeProposalExists",
+    "BranchMergeProposalFeatureDisabled",
+    "BranchMergeProposalMergeFailed",
+    "BranchMergeProposalNotMergeable",
     "CannotDeleteBranch",
     "CannotDeleteGitRepository",
     "CannotHaveLinkedBranch",
@@ -259,6 +263,34 @@ class BranchMergeProposalExists(InvalidBranchMergeProposal):
             )
         )
         self.existing_proposal = existing_proposal
+
+
+@error_status(http.client.CONFLICT)
+class BranchMergeProposalConflicts(Exception):
+    """Raised if merge proposal merge failed due to conflicts."""
+
+    pass
+
+
+@error_status(http.client.UNAUTHORIZED)
+class BranchMergeProposalFeatureDisabled(NotImplementedError):
+    """Raised if merge method is called while feature flag is disabled."""
+
+    pass
+
+
+@error_status(http.client.BAD_REQUEST)
+class BranchMergeProposalNotMergeable(Exception):
+    """Raised if merge proposal is not mergeable."""
+
+    pass
+
+
+@error_status(http.client.BAD_REQUEST)
+class BranchMergeProposalMergeFailed(Exception):
+    """Raised if merge proposal merge failed."""
+
+    pass
 
 
 class InvalidNamespace(Exception):
