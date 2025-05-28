@@ -322,6 +322,14 @@ flag_info = sorted(
             "",
             "",
         ),
+        (
+            "merge_proposal.merge.enabled",
+            "boolean",
+            "If true, users can merge their merge proposals using the API",
+            "",
+            "",
+            "",
+        ),
     ]
 )
 

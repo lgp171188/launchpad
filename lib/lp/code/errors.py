@@ -21,6 +21,9 @@ __all__ = [
     "BuildNotAllowedForDistro",
     "BranchMergeProposalConflicts",
     "BranchMergeProposalExists",
+    "BranchMergeProposalFeatureDisabled",
+    "BranchMergeProposalMergeFailed",
+    "BranchMergeProposalNotMergeable",
     "CannotDeleteBranch",
     "CannotDeleteGitRepository",
     "CannotHaveLinkedBranch",
@@ -265,6 +268,27 @@ class BranchMergeProposalExists(InvalidBranchMergeProposal):
 @error_status(http.client.CONFLICT)
 class BranchMergeProposalConflicts(Exception):
     """Raised if merge proposal merge failed due to conflicts."""
+
+    pass
+
+
+@error_status(http.client.UNAUTHORIZED)
+class BranchMergeProposalFeatureDisabled(NotImplementedError):
+    """Raised if merge method is called while feature flag is disabled."""
+
+    pass
+
+
+@error_status(http.client.BAD_REQUEST)
+class BranchMergeProposalNotMergeable(Exception):
+    """Raised if merge proposal is not mergeable."""
+
+    pass
+
+
+@error_status(http.client.BAD_REQUEST)
+class BranchMergeProposalMergeFailed(Exception):
+    """Raised if merge proposal merge failed."""
 
     pass
 
