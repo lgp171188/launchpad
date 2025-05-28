@@ -35,6 +35,7 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     CodeReviewVote,
+    MergeType,
 )
 from lp.code.errors import (
     BadStateTransition,
@@ -544,6 +545,7 @@ class TestBranchMergeProposalSetStatus(TestCaseWithFactory):
             proposal.queue_status, BranchMergeProposalStatus.MERGED
         )
         self.assertEqual(proposal.merged_revision_id, "1000")
+        self.assertEqual(proposal.merge_type, MergeType.UNKNOWN)
 
     def test_set_status_invalid_status(self):
         # IBranchMergeProposal.setStatus doesn't work in the case of

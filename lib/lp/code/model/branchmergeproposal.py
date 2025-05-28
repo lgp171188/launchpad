@@ -38,6 +38,7 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     CodeReviewVote,
+    MergeType,
 )
 from lp.code.errors import (
     BadBranchMergeProposalSearchContext,
@@ -216,6 +217,10 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
     )
     prerequisite_git_commit_sha1 = Unicode(
         name="dependent_git_commit_sha1", default=None, allow_none=True
+    )
+
+    merge_type = DBEnum(
+        enum=MergeType, allow_none=False, default=MergeType.UNKNOWN
     )
 
     @property
@@ -890,6 +895,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         merged_revision_id=None,
         date_merged=None,
         merge_reporter=None,
+        merge_type=MergeType.UNKNOWN,
     ):
         """See `IBranchMergeProposal`."""
         old_state = self.queue_status
@@ -899,6 +905,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         self.merged_revno = merged_revno
         self.merged_revision_id = merged_revision_id
         self.merge_reporter = merge_reporter
+        self.merge_type = merge_type
 
         # The reviewer of a merged proposal is assumed to have approved, if
         # they rejected it remove the review metadata to avoid confusion.
