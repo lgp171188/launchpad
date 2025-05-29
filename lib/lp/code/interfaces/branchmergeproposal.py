@@ -56,7 +56,7 @@ from zope.schema import (
 from lp import _
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.bugs.interfaces.buglink import IBugLinkTarget
-from lp.code.enums import BranchMergeProposalStatus, CodeReviewVote
+from lp.code.enums import BranchMergeProposalStatus, CodeReviewVote, MergeType
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.diff import IPreviewDiff
 from lp.code.interfaces.gitref import IGitRef
@@ -267,6 +267,13 @@ class IBranchMergeProposalPublic(IPrivacy):
 
     merge_prerequisite = Attribute(
         "The branch that the source branch branched from (VCS-agnostic)."
+    )
+
+    merge_type = Choice(
+        title=_("Merge type"),
+        vocabulary=MergeType,
+        required=True,
+        readonly=True,
     )
 
     parent = Attribute(
@@ -587,6 +594,49 @@ class IBranchMergeProposalView(Interface):
         and can eventually be merged.
         """
 
+    def isApproved():
+        """Check if the merge proposal has been approved.
+
+        A merge proposal is considered approved if it has at least one approval
+        vote from a trusted reviewer and no disapproval votes.
+        """
+
+    def CIChecksPassed():
+        """Check if all CI checks have passed for the latest pushed commit."""
+
+    def hasNoConflicts():
+        """Check if the merge proposal has any conflicts."""
+
+    def hasNoPendingPrerequisite():
+        """Check if the prerequisite branch has been merged into the target.
+
+        :raises NotImplementedError: If using Bazaar branches.
+        """
+
+    def diffIsUpToDate():
+        """Check if the preview diff is up to date, i.e., that there are no
+        pending diff update jobs.
+        """
+
+    def checkMergeCriteria():
+        """Check if the merge proposal meets all criteria for merging.
+
+        The hard criteria are:
+        - Is in progress (not merged, nor superseded, nor rejected)
+        - Has no conflicts
+        - Has no pending prerequisite
+        - Has no pending preview diff
+
+        The criteria skipped by using force=True tag:
+        - Has at least one approval from a trusted reviewer
+        - CI checks have passed
+
+        :param force: Whether to skip approval and CI checks
+
+        :return: A tuple of (bool, list) where the bool indicates if all
+            criteria are met, and the list contains failed criteria.
+        """
+
     def getUnlandedSourceBranchRevisions():
         """Return a sequence of `BranchRevision` objects.
 
@@ -821,6 +871,36 @@ class IBranchMergeProposalEdit(Interface):
 
         If they are not already a reviewer, a vote is created.  Otherwise,
         the details are updated.
+        """
+
+    def personCanMerge(person):
+        """Check if a person has permission to merge this proposal.
+
+        We assume that a person can merge a proposal if they can push to the
+        target ref, as that would mean they have the necessary permissions
+        to manually merge.
+        """
+
+    @operation_parameters(
+        commit_message=Text(title="Override commit message"),
+        force=Bool(title="Whether to skip checks"),
+    )
+    @call_with(person=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def merge(person, commit_message=None, force=False):
+        """Request to merge this proposal.
+
+        :param person: The person requesting the merge.
+        :param commit_message: Allows overriding the commit message. If empty,
+            the existing commit_message is used (if any).
+        :param force: Whether to skip acceptance criteria.
+
+        :raises NotImplementedError: If using Bazaar branches.
+        :raises Unauthorized: If the person doesn't have permission to merge.
+        :raises BranchMergeProposalNotMergeable: If the proposal doesn't meet
+            all merge criteria.
+        :raises BranchMergeProposalMergeFailed: If the merge fails.
         """
 
 

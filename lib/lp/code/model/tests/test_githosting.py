@@ -26,6 +26,7 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.errors import (
+    BranchMergeProposalConflicts,
     CannotRepackRepository,
     CannotRunGitGC,
     GitReferenceDeletionFault,
@@ -37,6 +38,7 @@ from lp.code.errors import (
 )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.model.githosting import RefCopyOperation
+from lp.code.tests.helpers import GitHostingFixture
 from lp.services.job.interfaces.job import IRunnableJob, JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob, JobRunner
@@ -46,7 +48,7 @@ from lp.services.timeout import (
     set_default_timeout_function,
 )
 from lp.services.webapp.url import urlappend
-from lp.testing import TestCase
+from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
@@ -704,3 +706,131 @@ class TestGitHostingClient(TestCase):
                 self.client.collectGarbage,
                 "/repo/123",
             )
+
+
+class TestGitHostingClientMerge(TestCaseWithFactory):
+    """Test the merge method of GitHostingClient."""
+
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self):
+        super().setUp()
+        self.client = getUtility(IGitHostingClient)
+        self.requests = []
+
+    @contextmanager
+    def mockRequests(self, method, set_default_timeout=True, **kwargs):
+        with responses.RequestsMock() as requests_mock:
+            requests_mock.add(method, re.compile(r".*"), **kwargs)
+            original_timeout_function = get_default_timeout_function()
+            if set_default_timeout:
+                set_default_timeout_function(lambda: 60.0)
+            try:
+                yield
+            finally:
+                set_default_timeout_function(original_timeout_function)
+            self.requests = [call.request for call in requests_mock.calls]
+
+    def test_merge_success(self):
+        """Test successful merge"""
+        person = self.factory.makePerson()
+
+        with self.mockRequests("POST", json={"merge_commit": "dummy commit"}):
+            response = self.client.merge(
+                1,  # repository id
+                "target-branch",
+                "target_commit_sha1",
+                "source-branch",
+                "source_commit_sha1",
+                person,
+                "Test commit message",
+            )
+
+        self.assertIn("merge_commit", response)
+        self.assertEqual(
+            "http://git.launchpad.test:19417/repo/1/merge/"
+            "target-branch:source-branch",
+            self.requests[0].url,
+        )
+
+    def test_cross_repo_merge_success(self):
+        """Test successful merge for cross repo branches"""
+        person = self.factory.makePerson()
+
+        with self.mockRequests("POST", json={"merge_commit": "dummy commit"}):
+            response = self.client.merge(
+                1,  # repository id
+                "target-branch",
+                "target_commit_sha1",
+                "source-branch",
+                "source_commit_sha1",
+                person,
+                "Test commit message",
+                source_repo=2,  # source repository id
+            )
+
+        self.assertIn("merge_commit", response)
+        self.assertEqual(
+            "http://git.launchpad.test:19417/repo/1:2/merge/"
+            "target-branch:source-branch",
+            self.requests[0].url,
+        )
+
+    def test_merge_conflict(self):
+        """Test merge with conflicts"""
+
+        repository = self.factory.makeGitRepository()
+        person = self.factory.makePerson()
+
+        with self.mockRequests("POST", status=409):
+            self.assertRaises(
+                BranchMergeProposalConflicts,
+                self.client.merge,
+                repository.id,
+                "target-branch",
+                "target_commit_sha1",
+                "source-branch",
+                "source_commit_sha1",
+                person,
+                "Test commit message",
+            )
+
+    def test_merge_not_found(self):
+        """Test merge with non-existent repository"""
+
+        person = self.factory.makePerson()
+        with self.mockRequests("POST", status=404):
+            self.assertRaises(
+                GitRepositoryScanFault,
+                self.client.merge,
+                "non-existent",
+                "target-branch",
+                "target_commit_sha1",
+                "source-branch",
+                "source_commit_sha1",
+                person,
+                "Test commit message",
+            )
+
+    def test_merge_network_error(self):
+        """Test merge with network error"""
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+        self.hosting_fixture.merge.failure = GitRepositoryScanFault(
+            "Network error"
+        )
+        self.client = getUtility(IGitHostingClient)
+
+        repository = self.factory.makeGitRepository()
+        person = self.factory.makePerson()
+
+        self.assertRaises(
+            GitRepositoryScanFault,
+            self.client.merge,
+            repository.id,
+            "target-branch",
+            "target_commit_sha1",
+            "source-branch",
+            "source_commit_sha1",
+            person,
+            "Test commit message",
+        )

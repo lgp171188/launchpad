@@ -35,10 +35,15 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     CodeReviewVote,
+    MergeType,
+    RevisionStatusResult,
 )
 from lp.code.errors import (
     BadStateTransition,
     BranchMergeProposalExists,
+    BranchMergeProposalFeatureDisabled,
+    BranchMergeProposalMergeFailed,
+    BranchMergeProposalNotMergeable,
     DiffNotFound,
     WrongBranchMergeProposal,
 )
@@ -59,6 +64,7 @@ from lp.code.interfaces.branchmergeproposal import (
     IBranchMergeProposalJobSource,
 )
 from lp.code.model.branchmergeproposal import (
+    PROPOSAL_MERGE_ENABLED_FEATURE_FLAG,
     BranchMergeProposal,
     BranchMergeProposalGetter,
     is_valid_transition,
@@ -79,6 +85,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.webapp import canonical_url
@@ -544,6 +551,7 @@ class TestBranchMergeProposalSetStatus(TestCaseWithFactory):
             proposal.queue_status, BranchMergeProposalStatus.MERGED
         )
         self.assertEqual(proposal.merged_revision_id, "1000")
+        self.assertEqual(proposal.merge_type, MergeType.UNKNOWN)
 
     def test_set_status_invalid_status(self):
         # IBranchMergeProposal.setStatus doesn't work in the case of
@@ -3603,6 +3611,517 @@ class TestWebservice(WebServiceTestCase):
         self.assertEqual("foo", inline_comment.get("text"))
         comment_date = review_comment.date_created.isoformat()
         self.assertEqual(comment_date, inline_comment.get("date"))
+
+
+class TestBranchMergeProposalApproval(WithVCSScenarios, TestCaseWithFactory):
+    """Test the isApproved method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        team = self.factory.makeTeam()
+        target = self.makeBranch(owner=team)
+
+        self.registrant = self.factory.makePerson(member_of=[team])
+        self.reviewer = self.factory.makePerson(member_of=[team])
+
+        self.proposal = self.makeBranchMergeProposal(
+            target=target, registrant=self.registrant
+        )
+
+    def test_isApproved_no_votes(self):
+        # A proposal with no votes is not approved
+        self.assertFalse(self.proposal.isApproved())
+
+    def test_isApproved_with_untrusted_approval(self):
+        # A proposal with one untrusted approval is not approved
+        untrusted_reviewer = self.factory.makePerson()
+        with person_logged_in(untrusted_reviewer):
+            self.proposal.createComment(
+                owner=untrusted_reviewer,
+                vote=CodeReviewVote.APPROVE,
+            )
+        self.assertFalse(self.proposal.isApproved())
+
+    def test_isApproved_with_trusted_approval(self):
+        # A proposal with one trusted approval is approved
+        with person_logged_in(self.reviewer):
+            self.proposal.createComment(
+                owner=self.reviewer,
+                vote=CodeReviewVote.APPROVE,
+            )
+        self.assertTrue(self.proposal.isApproved())
+
+    def test_isApproved_approval_after_disapproval(self):
+        # If a person approves after disapproving a proposal, it counts having
+        # approved it
+        with person_logged_in(self.reviewer):
+            self.proposal.createComment(
+                owner=self.reviewer,
+                vote=CodeReviewVote.DISAPPROVE,
+            )
+            self.proposal.createComment(
+                owner=self.reviewer,
+                vote=CodeReviewVote.APPROVE,
+            )
+        self.assertTrue(self.proposal.isApproved())
+
+    def test_isApproved_disapproval_after_approval(self):
+        # If a person disapproves after approving a proposal, it counts having
+        # disapproved it
+        with person_logged_in(self.reviewer):
+            self.proposal.createComment(
+                owner=self.reviewer,
+                vote=CodeReviewVote.APPROVE,
+            )
+            self.proposal.createComment(
+                owner=self.reviewer,
+                vote=CodeReviewVote.DISAPPROVE,
+            )
+        self.assertFalse(self.proposal.isApproved())
+
+
+class TestBranchMergeProposalCIChecks(TestCaseWithFactory):
+    """Test the CIChecksPassed method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.proposal = self.factory.makeBranchMergeProposalForGit()
+
+    def test_CIChecksPassed_bazaar_repo(self):
+        # No CI checks on bazaar repos
+        proposal = self.factory.makeBranchMergeProposal()
+        self.assertTrue(proposal.CIChecksPassed())
+
+    def test_CIChecksPassed_no_reports(self):
+        # If there are no CI reports, checks are considered passed
+        self.assertTrue(self.proposal.CIChecksPassed())
+
+    def test_CIChecksPassed_success(self):
+        # If the latest CI report is successful, checks are passed
+        self.factory.makeRevisionStatusReport(
+            git_repository=self.proposal.source_git_repository,
+            commit_sha1=self.proposal.source_git_commit_sha1,
+            result=RevisionStatusResult.SUCCEEDED,
+        )
+        self.assertTrue(self.proposal.CIChecksPassed())
+
+    def test_CIChecksPassed_failure(self):
+        # If the latest CI report is a failure, checks are not passed
+        self.factory.makeRevisionStatusReport(
+            git_repository=self.proposal.source_git_repository,
+            commit_sha1=self.proposal.source_git_commit_sha1,
+            result=RevisionStatusResult.FAILED,
+        )
+        self.assertFalse(self.proposal.CIChecksPassed())
+
+    def test_CIChecksPassed_running(self):
+        # If the latest CI report is a failure, checks are not passed
+        self.factory.makeRevisionStatusReport(
+            git_repository=self.proposal.source_git_repository,
+            commit_sha1=self.proposal.source_git_commit_sha1,
+            result=RevisionStatusResult.RUNNING,
+        )
+        self.assertFalse(self.proposal.CIChecksPassed())
+
+
+class TestBranchMergeProposalConflicts(WithVCSScenarios, TestCaseWithFactory):
+    """Test the hasNoConflicts method of BranchMergeProposal."""
+
+    # layer = DatabaseFunctionalLayer
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.proposal = self.makeBranchMergeProposal()
+
+    def test_hasNoConflicts_no_diff(self):
+        # If there is no preview diff, there are no conflicts
+        self.assertTrue(self.proposal.hasNoConflicts())
+
+    def test_hasNoConflicts_no_conflicts(self):
+        # If the preview diff has no conflicts, hasNoConflicts returns False
+        self.factory.makePreviewDiff(merge_proposal=self.proposal)
+        transaction.commit()
+        self.assertTrue(self.proposal.hasNoConflicts())
+
+    def test_hasNoConflicts_with_conflicts(self):
+        # If the preview diff has conflicts, hasNoConflicts returns False
+        self.factory.makePreviewDiff(
+            merge_proposal=self.proposal,
+            conflicts="Merge conflicts found",
+        )
+        transaction.commit()
+        self.assertFalse(self.proposal.hasNoConflicts())
+
+
+class TestBranchMergeProposalPrerequisites(TestCaseWithFactory):
+    """Test hasNoPendingPrerequisite method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+
+    def test_hasNoPendingPrerequisite_no_prerequisite(self):
+        # If there is no prerequisite branch, there are no pending
+        # prerequisites
+        proposal = self.factory.makeBranchMergeProposalForGit()
+        self.assertTrue(proposal.hasNoPendingPrerequisite())
+
+    def test_hasNoPendingPrerequisite_merged(self):
+        # If the prerequisite has been merged, there are no pending
+        # prerequisites
+        merged_prerequisite = self.factory.makeGitRefs()[0]
+        proposal = self.factory.makeBranchMergeProposalForGit(
+            prerequisite_ref=merged_prerequisite
+        )
+
+        mock_requestMergesResponse = {
+            proposal.target_git_commit_sha1: merged_prerequisite.commit_sha1
+        }
+        self.useFixture(GitHostingFixture(merges=mock_requestMergesResponse))
+        self.assertTrue(proposal.hasNoPendingPrerequisite())
+
+    def test_hasNoPendingPrerequisite_not_merged(self):
+        # If the prerequisite has not been merged, there are pending
+        # prerequisites
+        prerequisite = self.factory.makeGitRefs()[0]
+        proposal = self.factory.makeBranchMergeProposalForGit(
+            prerequisite_ref=prerequisite
+        )
+
+        self.useFixture(GitHostingFixture())
+        self.assertFalse(proposal.hasNoPendingPrerequisite())
+
+    def test_hasNoPendingPrerequisite_no_prerequisits_bazaar(self):
+        # If there is no prerequisite branch, there are no pending
+        # prerequisites
+        proposal = self.factory.makeBranchMergeProposal()
+        self.assertTrue(proposal.hasNoPendingPrerequisite())
+
+    def test_hasNoPendingPrerequisite_bazaar(self):
+        # If there is a prerequisite branch in a bazaar MP, raise not
+        # Implemented
+        prerequisite = self.factory.makeBranch()
+        proposal = self.factory.makeBranchMergeProposal(
+            prerequisite_branch=prerequisite
+        )
+        self.assertRaises(
+            NotImplementedError,
+            proposal.hasNoPendingPrerequisite,
+        )
+
+
+class TestBranchMergeProposalDiffStatus(WithVCSScenarios, TestCaseWithFactory):
+    """Test the diffIsUpToDate method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.proposal = self.makeBranchMergeProposal()
+
+    def test_diffIsUpToDate_no_job(self):
+        # If there is no pending diff job, the diff is up to date
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        self.assertTrue(self.proposal.diffIsUpToDate())
+
+    def test_diffIsUpToDate_with_job(self):
+        # If there is a pending diff job, the diff is not up to date
+        self.assertFalse(self.proposal.diffIsUpToDate())
+
+
+class TestBranchMergeProposalMergeCriteria(
+    WithVCSScenarios, TestCaseWithFactory
+):
+    """Test the checkMergeCriteria method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+
+        team = self.factory.makeTeam()
+        target = self.makeBranch(owner=team)
+        self.reviewer = self.factory.makePerson(member_of=[team])
+
+        self.proposal = self.makeBranchMergeProposal(target=target)
+        self.useFixture(GitHostingFixture())
+
+    def test_checkMergeCriteria_all_passed(self):
+        # If all criteria are met, checkMergeCriteria returns (True, [])
+        with person_logged_in(self.reviewer):
+            self.proposal.createComment(
+                owner=self.reviewer,
+                vote=CodeReviewVote.APPROVE,
+            )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        result, failed_checks = self.proposal.checkMergeCriteria()
+        self.assertTrue(result)
+        self.assertEqual([], failed_checks)
+
+    def test_checkMergeCriteria_some_failed(self):
+        # If some criteria are not met, checkMergeCriteria returns (False,
+        # [failed_checks])
+        result, failed_checks = self.proposal.checkMergeCriteria()
+        self.assertFalse(result)
+        self.assertTrue(len(failed_checks) > 0)
+
+
+class TestBranchMergeProposalMergePermissions(TestCaseWithFactory):
+    """Test the personCanMerge method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.proposal = self.factory.makeBranchMergeProposalForGit()
+        self.useFixture(GitHostingFixture())
+
+    def test_personCanMerge_no_permission(self):
+        # A person without push permission cannot merge
+        person = self.factory.makePerson()
+        proposal = removeSecurityProxy(self.proposal)
+        self.assertFalse(proposal.personCanMerge(person))
+
+    def test_personCanMerge_with_permission(self):
+        # A person with push permission can merge
+        person = self.factory.makePerson()
+        proposal = removeSecurityProxy(self.proposal)
+        rule = removeSecurityProxy(
+            self.factory.makeGitRule(repository=proposal.target_git_repository)
+        )
+        self.factory.makeGitRuleGrant(
+            rule=rule, grantee=person, can_create=True, can_push=True
+        )
+        self.assertTrue(proposal.personCanMerge(person))
+
+    def test_personCanMerge_bazaar(self):
+        # Check checking permissions for merging bazaar repo raises error
+        person = self.factory.makePerson()
+        proposal = removeSecurityProxy(self.factory.makeBranchMergeProposal())
+        self.assertRaises(
+            NotImplementedError,
+            proposal.personCanMerge,
+            person,
+        )
+
+
+class TestBranchMergeProposalMerge(TestCaseWithFactory):
+    """Test the requestMerge method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+        self.useFixture(
+            FeatureFixture({PROPOSAL_MERGE_ENABLED_FEATURE_FLAG: "on"})
+        )
+
+        self.proposal = removeSecurityProxy(
+            self.factory.makeBranchMergeProposalForGit()
+        )
+
+        self.person = self.factory.makePerson()
+        self.reviewer = self.proposal.target_git_repository.owner
+
+        rule = removeSecurityProxy(
+            self.factory.makeGitRule(
+                repository=self.proposal.target_git_repository
+            )
+        )
+        self.factory.makeGitRuleGrant(
+            rule=rule, grantee=self.person, can_create=True, can_push=True
+        )
+
+    def test_merge_feature_flag(self):
+        # Without feature flag enabled, merge fails
+
+        self.useFixture(
+            FeatureFixture({PROPOSAL_MERGE_ENABLED_FEATURE_FLAG: ""})
+        )
+
+        self.assertRaises(
+            BranchMergeProposalFeatureDisabled,
+            self.proposal.merge,
+            self.person,
+        )
+
+    def test_merge_success(self):
+        # Same repo merges work similarly to cross-repo merges
+
+        repository = self.proposal.target_git_repository
+        [source_ref, target_ref] = self.factory.makeGitRefs(
+            paths=["refs/heads/source", "refs/heads/target"],
+            repository=repository,
+        )
+        proposal = removeSecurityProxy(
+            self.factory.makeBranchMergeProposalForGit(
+                source_ref=source_ref,
+                target_ref=target_ref,
+            )
+        )
+
+        proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        proposal.next_preview_diff_job.start()
+        proposal.next_preview_diff_job.complete()
+
+        with person_logged_in(self.person):
+            proposal.merge(self.person)
+            self.assertEqual(
+                BranchMergeProposalStatus.MERGED,
+                proposal.queue_status,
+            )
+
+    def test_cross_repo_merge_success(self):
+        # A successful merge request updates the proposal status
+
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+
+        with person_logged_in(self.person):
+            self.proposal.merge(self.person)
+            self.assertEqual(
+                BranchMergeProposalStatus.MERGED,
+                self.proposal.queue_status,
+            )
+
+    def test_force_merge(self):
+        # Force merge skips checking for certain criteria (e.g. approval)
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+
+        with person_logged_in(self.person):
+            # Fails without force=True
+            self.assertRaises(
+                BranchMergeProposalNotMergeable,
+                self.proposal.merge,
+                self.person,
+            )
+
+            # Succeeds with force=True
+            self.proposal.merge(self.person, force=True)
+            self.assertEqual(
+                BranchMergeProposalStatus.MERGED,
+                self.proposal.queue_status,
+            )
+
+    def test_merge_success_commit_message(self):
+        # Successful merge with an commit message
+
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        self.proposal.commit_message = "Old commit message"
+
+        with person_logged_in(self.person):
+            self.proposal.merge(
+                self.person,
+                commit_message="New commit message",
+            )
+            self.assertEqual(
+                BranchMergeProposalStatus.MERGED,
+                self.proposal.queue_status,
+            )
+
+        # Refresh from the database to ensure we are checking the latest state
+        self.proposal = Store.of(self.proposal).get(
+            BranchMergeProposal, self.proposal.id
+        )
+        self.assertEqual("New commit message", self.proposal.commit_message)
+
+    def test_merge_unsuccessful_commit_message(self):
+        # Unsuccessful merge with an commit message doesn't override message
+
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        self.proposal.commit_message = "Old commit message"
+
+        self.hosting_fixture.merge.failure = BranchMergeProposalMergeFailed(
+            "Merge proposal failed to merge"
+        )
+
+        with person_logged_in(self.person):
+            self.assertRaises(
+                BranchMergeProposalMergeFailed,
+                self.proposal.merge,
+                self.person,
+                commit_message="New commit message",
+            )
+
+        # Refresh from the database to ensure we are checking the latest state
+        self.proposal = Store.of(self.proposal).get(
+            BranchMergeProposal, self.proposal.id
+        )
+        self.assertEqual(self.proposal.commit_message, "Old commit message")
+
+    def test_merge_no_permission(self):
+        # A person without permission cannot request a merge
+        person = self.factory.makePerson()
+        self.assertRaises(
+            Unauthorized,
+            self.proposal.merge,
+            person,
+        )
+
+    def test_merge_not_mergeable(self):
+        # A proposal that doesn't meet merge criteria cannot be merged
+        self.assertRaises(
+            BranchMergeProposalNotMergeable,
+            self.proposal.merge,
+            self.person,
+        )
+
+    def test_merge_bazaar_not_supported(self):
+        # Bazaar branches are not supported
+        proposal = removeSecurityProxy(self.factory.makeBranchMergeProposal())
+        self.assertRaises(
+            NotImplementedError,
+            proposal.merge,
+            self.person,
+        )
+
+    def test_merge_turnip_failure(self):
+        # Test merge failed from git hosting system
+
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+
+        self.hosting_fixture.merge.failure = BranchMergeProposalMergeFailed(
+            "Merge proposal failed to merge"
+        )
+
+        with person_logged_in(self.person):
+            self.assertRaises(
+                BranchMergeProposalMergeFailed,
+                self.proposal.merge,
+                self.person,
+            )
 
 
 load_tests = load_tests_apply_scenarios

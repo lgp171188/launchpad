@@ -7,6 +7,7 @@ __all__ = [
     "BranchMergeProposal",
     "BranchMergeProposalGetter",
     "is_valid_transition",
+    "PROPOSAL_MERGE_ENABLED_FEATURE_FLAG",
 ]
 
 import sys
@@ -38,11 +39,17 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     CodeReviewVote,
+    GitPermissionType,
+    MergeType,
+    RevisionStatusResult,
 )
 from lp.code.errors import (
     BadBranchMergeProposalSearchContext,
     BadStateTransition,
     BranchMergeProposalExists,
+    BranchMergeProposalFeatureDisabled,
+    BranchMergeProposalMergeFailed,
+    BranchMergeProposalNotMergeable,
     DiffNotFound,
     UserNotBranchReviewer,
     WrongBranchMergeProposal,
@@ -65,6 +72,7 @@ from lp.code.interfaces.codereviewcomment import ICodeReviewComment
 from lp.code.interfaces.codereviewinlinecomment import (
     ICodeReviewInlineCommentSet,
 )
+from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.mail.branch import RecipientReason
 from lp.code.model.branchrevision import BranchRevision
@@ -87,6 +95,7 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import quote
 from lp.services.database.stormbase import StormBase
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
@@ -97,6 +106,8 @@ from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.errorlog import ScriptRequest
 from lp.services.xref.interfaces import IXRefSet
 from lp.soyuz.enums import re_bug_numbers, re_lp_closes
+
+PROPOSAL_MERGE_ENABLED_FEATURE_FLAG = "merge_proposal.merge.enabled"
 
 
 def is_valid_transition(proposal, from_state, next_state, user=None):
@@ -216,6 +227,10 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
     )
     prerequisite_git_commit_sha1 = Unicode(
         name="dependent_git_commit_sha1", default=None, allow_none=True
+    )
+
+    merge_type = DBEnum(
+        enum=MergeType, allow_none=False, default=MergeType.UNKNOWN
     )
 
     @property
@@ -849,6 +864,182 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         # or superseded, then it is valid to be merged.
         return self.queue_status not in FINAL_STATES
 
+    def isApproved(self):
+        """See `IBranchMergeProposal`."""
+
+        # TODO ines-almeida 2025-05-09: the criteria for a merge proposal to
+        # be 'approved' should eventually be defined by the repository owners.
+        # For now we enforce that we need at least one approval from a trusted
+        # reviewer
+
+        for vote in self.votes:
+            if (
+                vote.comment
+                and vote.comment.vote == CodeReviewVote.APPROVE
+                and self.merge_target.isPersonTrustedReviewer(vote.reviewer)
+            ):
+                return True
+        return False
+
+    def CIChecksPassed(self):
+        """See `IBranchMergeProposal`."""
+
+        # We don't run CI checks on bazaar repos
+        if self.source_branch is not None:
+            return True
+
+        reports = self.getStatusReports(self.source_git_commit_sha1)
+        if reports.is_empty():
+            return True
+
+        return reports.last().result == RevisionStatusResult.SUCCEEDED
+
+    def hasNoConflicts(self):
+        """See `IBranchMergeProposal`."""
+
+        if self.preview_diff is None:
+            return True
+
+        return (
+            self.preview_diff.conflicts is None
+            or self.preview_diff.conflicts == ""
+        )
+
+    def hasNoPendingPrerequisite(self):
+        """See `IBranchMergeProposal`."""
+
+        if self.merge_prerequisite is None:
+            return True
+
+        if self.target_branch:
+            raise NotImplementedError("Bazaar branches are not supported")
+
+        # Check if prerequisite has been merged into the target branch
+        # The response returns a list of commits that were merged, meaning
+        # that if the list is empty, the merge hasn't occured
+        hosting_client = getUtility(IGitHostingClient)
+        response = hosting_client.detectMerges(
+            self.target_git_repository_id,
+            self.target_git_commit_sha1,
+            [self.prerequisite_git_commit_sha1],
+        )
+        return bool(response)
+
+    def diffIsUpToDate(self):
+        """See `IBranchMergeProposal`."""
+
+        return self.next_preview_diff_job is None
+
+    def checkMergeCriteria(self, force=False):
+        """See `IBranchMergeProposal`."""
+
+        # TODO ines-almeida 2025-05-05: the mergeability criteria should be
+        # to some extent defined by the repository owner. While that
+        # capability is not in place, we will set a few hard rules for one
+        # to merge a MP from Launchpad
+
+        # List of hard rule criteria (defined by Launchpad)
+        criteria = [
+            (self.isInProgress, "Invalid status for merging"),
+            (self.hasNoConflicts, "Diff contains conflicts"),
+            (self.hasNoPendingPrerequisite, "Prerequisit branch not merged"),
+            (self.diffIsUpToDate, "New changes were pushed too recently"),
+        ]
+
+        # Criteria defined by project owners (skipped if 'force' merge)
+        if not force:
+            criteria.extend(
+                [
+                    (self.isApproved, "Proposal has not been approved"),
+                    (self.CIChecksPassed, "CI checks failed"),
+                ]
+            )
+
+        result = True
+        failed_checks = []
+        for check, error_message in criteria:
+            if not check():
+                failed_checks.append(error_message)
+                result = False
+
+        return result, failed_checks
+
+    def personCanMerge(self, person):
+        """See `IBranchMergeProposal`."""
+
+        if self.source_branch is not None:
+            raise NotImplementedError(
+                "Merging Bazaar branches is not supported"
+            )
+
+        permissions = self.target_git_repository.checkRefPermissions(
+            person, [self.target_git_path]
+        )
+        return GitPermissionType.CAN_PUSH in permissions[self.target_git_path]
+
+    def merge(self, person, commit_message=None, force=False):
+        """See `IBranchMergeProposal`."""
+
+        if not getFeatureFlag(PROPOSAL_MERGE_ENABLED_FEATURE_FLAG):
+            raise BranchMergeProposalFeatureDisabled(
+                "Merge API is currently disabled"
+            )
+
+        if self.source_branch is not None:
+            raise NotImplementedError(
+                "Merging Bazaar branches is not supported"
+            )
+
+        if not self.personCanMerge(person):
+            raise Unauthorized()
+
+        can_be_merged, failed_checks = self.checkMergeCriteria(force)
+        if not can_be_merged:
+            raise BranchMergeProposalNotMergeable(
+                "Merge proposal cannot be merged in its current state: %s"
+                % ", ".join(failed_checks)
+            )
+
+        if commit_message is None:
+            commit_message = self.commit_message
+
+        hosting_client = getUtility(IGitHostingClient)
+        response = hosting_client.merge(
+            self.target_git_repository_id,
+            self.target_git_ref.name,
+            self.target_git_commit_sha1,
+            self.source_git_ref.name,
+            self.source_git_commit_sha1,
+            person,
+            commit_message,
+            source_repo=self.source_git_repository_id,
+        )
+
+        # It shouldn't be possible for the `merge_commit` to not exist in the
+        # response given the request didn't raise, but we do a check anyways.
+        if "merge_commit" not in response:
+            raise BranchMergeProposalMergeFailed(
+                "Failed to merge the proposal."
+            )
+
+        merge_commit = response["merge_commit"]
+        # Edge case, if `merge_commit` is None it means the merge proposal had
+        # already been merged by the time this endpoint was run. Might happen
+        # in the odd case that someone changes the status of a proposal from
+        # 'merged' back to another state and then tries merging again.
+        if merge_commit is None:
+            return
+
+        # Update commit message in DB
+        self.commit_message = commit_message
+
+        self.markAsMerged(
+            merge_reporter=person,
+            merged_revision_id=merge_commit,
+            date_merged=UTC_NOW,
+            merge_type=MergeType.REGULAR_MERGE,
+        )
+
     def _reviewProposal(
         self, reviewer, next_state, revision_id, _date_reviewed=None
     ):
@@ -890,6 +1081,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         merged_revision_id=None,
         date_merged=None,
         merge_reporter=None,
+        merge_type=MergeType.UNKNOWN,
     ):
         """See `IBranchMergeProposal`."""
         old_state = self.queue_status
@@ -899,6 +1091,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         self.merged_revno = merged_revno
         self.merged_revision_id = merged_revision_id
         self.merge_reporter = merge_reporter
+        self.merge_type = merge_type
 
         # The reviewer of a merged proposal is assumed to have approved, if
         # they rejected it remove the review metadata to avoid confusion.

@@ -27,6 +27,7 @@ __all__ = [
     "GitPermissionType",
     "GitRepositoryStatus",
     "GitRepositoryType",
+    "MergeType",
     "NON_CVS_RCS_TYPES",
     "RevisionControlSystems",
     "RevisionStatusArtifactType",
@@ -640,6 +641,32 @@ class BranchMergeProposalStatus(DBEnumeratedType):
         Superseded
 
         This proposal has been superseded by anther proposal to merge.
+        """,
+    )
+
+
+class MergeType(DBEnumeratedType):
+    """Merge Proposal Merge Type.
+
+    The types of merges a merge proposal can be merged as using Launchpad's
+    API and UI.
+    """
+
+    UNKNOWN = DBItem(
+        0,
+        """
+        Unknown
+
+        Either unmerged or manually merged.
+        """,
+    )
+
+    REGULAR_MERGE = DBItem(
+        1,
+        """
+        Regular merge.
+
+        Default merge with a merge commit.
         """,
     )
 

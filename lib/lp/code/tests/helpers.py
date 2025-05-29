@@ -383,6 +383,9 @@ class GitHostingFixture(fixtures.Fixture):
         self.detectMerges = fake_method_factory(
             result=({} if merges is None else merges)
         )
+        self.merge = fake_method_factory(
+            result=({"merge_commit": "fake-sha1"})
+        )
         self.getBlob = fake_method_factory(result=blob)
         self.delete = fake_method_factory()
         self.disable_memcache = disable_memcache
