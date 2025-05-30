@@ -235,6 +235,17 @@ class UCTExporter:
                     )
                 )
 
+        break_fix_data = []
+        for bugpresence in bug.presences:
+            for break_fix in bugpresence.break_fix_data:
+                break_fix_data.append(
+                    CVE.BreakFix(
+                        package_name=bugpresence.source_package_name,
+                        break_=break_fix.get("break"),
+                        fix=break_fix.get("fix"),
+                    )
+                )
+
         return CVE(
             sequence=f"CVE-{lp_cve.sequence}",
             date_made_public=vulnerability.date_made_public,
@@ -264,6 +275,7 @@ class UCTExporter:
             ],
             global_tags=global_tags,
             patch_urls=patch_urls,
+            break_fix_data=break_fix_data,
         )
 
     def _parse_bug_description(

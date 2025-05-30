@@ -179,6 +179,7 @@ class UCTImporter:
 
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
+        self._update_break_fix(bug, cve.break_fix_data)
         self._update_tags(bug, cve.global_tags, cve.distro_packages)
 
         self._create_bug_tasks(
@@ -237,6 +238,7 @@ class UCTImporter:
         self._assign_bug_tasks(bug, cve.assignee)
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
+        self._update_break_fix(bug, cve.break_fix_data)
         self._update_tags(bug, cve.global_tags, cve.distro_packages)
 
         # Update or add new Vulnerabilities
@@ -499,6 +501,35 @@ class UCTImporter:
         # Remove obsolete attachments
         for obsolete_attachment in existing_attachments.values():
             bug.removeAttachment(obsolete_attachment, self.bug_importer)
+
+    def _update_break_fix(
+        self, bug: BugModel, break_fix_data: List[CVE.BreakFix]
+    ):
+        break_fix_by_pkg = defaultdict(list)
+        for break_fix in break_fix_data:
+            break_fix_by_pkg[break_fix.package_name].append(
+                {"break": break_fix.break_, "fix": break_fix.fix}
+            )
+
+        for presence in bug.presences:
+            if break_fix := break_fix_by_pkg.pop(
+                presence.source_package_name, None
+            ):
+                presence.break_fix_data = break_fix
+            else:
+                # Remove non existing
+                bug.removePresence(presence, self.bug_importer)
+
+        for package in break_fix_by_pkg:
+            # Create new presence
+            bug.addPresence(
+                product=None,
+                distribution=None,
+                source_package_name=package,
+                git_repository=None,
+                break_fix_data=break_fix_by_pkg[package],
+                user=self.bug_importer,
+            )
 
     def _make_bug_description(self, cve: CVE) -> str:
         """

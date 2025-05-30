@@ -466,6 +466,11 @@ class CVE:
         url: str
         notes: Optional[str]
 
+    class BreakFix(NamedTuple):
+        package_name: SourcePackageName
+        break_: str
+        fix: str
+
     # Example:
     # https://github.com/389ds/389-ds-base/commit/123 (1.4.4)
     # https://github.com/389ds/389-ds-base/commit/345
@@ -525,6 +530,7 @@ class CVE:
         mitigation: str,
         cvss: List[CVSS],
         global_tags: Set[str],
+        break_fix_data: List[BreakFix],
         patch_urls: Optional[List[PatchURL]] = None,
         importance_explanation: str = "",
     ):
@@ -549,6 +555,7 @@ class CVE:
         self.cvss = cvss
         self.global_tags = global_tags
         self.patch_urls: List[CVE.PatchURL] = patch_urls or []
+        self.break_fix_data: List[CVE.BreakFix] = break_fix_data or []
 
     @classmethod
     def make_from_uct_record(cls, uct_record: UCTRecord) -> "CVE":
@@ -561,6 +568,7 @@ class CVE:
         distro_packages = []
         series_packages = []
         patch_urls = []
+        break_fix_data = []
 
         spn_set = getUtility(ISourcePackageNameSet)
 
@@ -573,6 +581,10 @@ class CVE:
 
             patch_urls.extend(
                 cls.get_patch_urls(source_package_name, uct_package.patches)
+            )
+
+            break_fix_data.extend(
+                cls.get_break_fix(source_package_name, uct_package.patches)
             )
 
             package_importance = (
@@ -697,6 +709,7 @@ class CVE:
             cvss=uct_record.cvss,
             global_tags=uct_record.global_tags,
             patch_urls=patch_urls,
+            break_fix_data=break_fix_data,
         )
 
     def to_uct_record(self) -> UCTRecord:
@@ -794,6 +807,14 @@ class CVE:
                 UCTRecord.Patch(
                     patch_type=patch_url.type,
                     entry=entry,
+                )
+            )
+
+        for break_fix in self.break_fix_data:
+            packages_by_name[patch_url.package_name.name].patches.append(
+                UCTRecord.Patch(
+                    patch_type="break-fix",
+                    entry=f"{break_fix.break_} {break_fix.fix}",
                 )
             )
 
@@ -910,4 +931,30 @@ class CVE:
                 type=patch.patch_type,
                 url=url,
                 notes=notes,
+            )
+
+    @classmethod
+    def get_break_fix(
+        cls,
+        source_package_name: SourcePackageName,
+        patches: List[UCTRecord.Patch],
+    ) -> Iterable[PatchURL]:
+        for patch in patches:
+            if patch.patch_type != "break-fix":
+                continue
+
+            # patch.entry will always have 2 fields separated by 1 space
+            # <break> <fix>
+            if " " not in patch.entry:
+                logger.warning(
+                    "Could not parse the break-fix patch entry: %s",
+                    patch.entry,
+                )
+                continue
+
+            break_, fix = patch.entry.split(maxsplit=1)
+            yield cls.BreakFix(
+                package_name=source_package_name,
+                break_=break_,
+                fix=fix,
             )

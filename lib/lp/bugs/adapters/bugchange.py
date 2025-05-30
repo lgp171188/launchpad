@@ -19,6 +19,8 @@ __all__ = [
     "BugInformationTypeChange",
     "BugLocked",
     "BugLockReasonSet",
+    "BugPresenceAdded",
+    "BugPresenceRemoved",
     "BugTagsChange",
     "BugTaskAdded",
     "BugTaskAssigneeChange",
@@ -72,6 +74,8 @@ ATTACHMENT_ADDED = "attachment added"
 ATTACHMENT_REMOVED = "attachment removed"
 BRANCH_LINKED = "branch linked"
 BRANCH_UNLINKED = "branch unlinked"
+BUG_PRESENCE_ADDED = "bug presence added"
+BUG_PRESENCE_REMOVED = "bug presence removed"
 BUG_WATCH_ADDED = "bug watch added"
 BUG_WATCH_REMOVED = "bug watch removed"
 CHANGED_DUPLICATE_MARKER = "changed duplicate marker"
@@ -326,6 +330,60 @@ class SeriesNominated(BugChangeBase):
     def getBugNotification(self):
         """See `IBugChange`."""
         return None
+
+
+class BugPresenceAdded(BugChangeBase):
+    """A bug presence was added to the bug."""
+
+    def __init__(self, when, person, bug_presence):
+        super().__init__(when, person)
+        self.bug_presence = bug_presence
+
+    def getBugActivity(self):
+        """See `IBugChange`."""
+        return dict(
+            whatchanged=BUG_PRESENCE_ADDED,
+            newvalue=str(self.bug_presence.break_fix_data),
+        )
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        return {
+            "text": "** Bug presence added: \n"
+            f"   product: {self.bug_presence.product}\n"
+            f"   distribution: {self.bug_presence.distribution}\n"
+            "   source_package_name: "
+            f"{self.bug_presence.source_package_name}\n"
+            f"   gitrepository: {self.bug_presence.git_repository}\n"
+            f"   break_fix_data: {self.bug_presence.break_fix_data}"
+        }
+
+
+class BugPresenceRemoved(BugChangeBase):
+    """A bug presence was removed from the bug."""
+
+    def __init__(self, when, person, bug_presence):
+        super().__init__(when, person)
+        self.bug_presence = bug_presence
+
+    def getBugActivity(self):
+        """See `IBugChange`."""
+        return dict(
+            whatchanged=BUG_PRESENCE_REMOVED,
+            newvalue=str(self.bug_presence.break_fix_data),
+        )
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        return {
+            "text": "** Bug presence removed: \n"
+            f"   product: {self.bug_presence.product}\n"
+            f"   distribution: {self.bug_presence.distribution}\n"
+            "   source_package_name: "
+            f"{self.bug_presence.source_package_name}\n"
+            f"   gitrepository: {self.bug_presence.git_repository}\n"
+            f"   break_fix_data: {self.bug_presence.break_fix_data}"
+        }
 
 
 class BugWatchAdded(BugChangeBase):

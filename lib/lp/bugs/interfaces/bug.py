@@ -915,6 +915,39 @@ class IBugAppend(Interface):
     def removeAttachment(bug_attachment, user):
         """Remove a bug attachment from the bug."""
 
+    def addPresence(
+        product,
+        distribution,
+        source_package_name,
+        git_repository,
+        break_fix_data,
+        user,
+    ):
+        """Add a bug presence to this bug.
+
+        XXX enriqueesanchz 2025-05-29: we are not doing any validation in terms
+        of which target combinations make sense. If the endpoint is exposed, we
+        should add it, but for now this is only used internally within
+        Launchpad.
+
+        :product: The product where this BugPresence is related to.
+        :distribution: The distribution where this BugPresence is related to.
+        :source_package_name: The source_package_name where this BugPresence is
+            related to.
+        :git_repository: The git_repository where this BugPresence is related
+            to.
+        :break_fix_data: The dict of commits that caused the issue (break) and
+            commits that solved it (fix).
+        :user: The user that adds this bug presence.
+        """
+
+    def removePresence(bug_presence, user):
+        """Remove a bug presence from the bug.
+
+        :bug_presence: The bug presence to be removed.
+        :user: The user that removes the bug presence.
+        """
+
     def addCommentNotification(
         message,
         recipients=None,

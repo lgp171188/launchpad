@@ -88,6 +88,8 @@ from lp.bugs.adapters.bugchange import (
     BugDuplicateChange,
     BugLocked,
     BugLockReasonSet,
+    BugPresenceAdded,
+    BugPresenceRemoved,
     BugUnlocked,
     BugWatchAdded,
     BugWatchRemoved,
@@ -116,6 +118,7 @@ from lp.bugs.interfaces.bugnomination import (
     NominationSeriesObsoleteError,
 )
 from lp.bugs.interfaces.bugnotification import IBugNotificationSet
+from lp.bugs.interfaces.bugpresence import IBugPresenceSet
 from lp.bugs.interfaces.bugtarget import ISeriesBugTarget
 from lp.bugs.interfaces.bugtask import (
     UNRESOLVED_BUGTASK_STATUSES,
@@ -137,6 +140,7 @@ from lp.bugs.model.buglinktarget import ObjectLinkedEvent, ObjectUnlinkedEvent
 from lp.bugs.model.bugmessage import BugMessage
 from lp.bugs.model.bugnomination import BugNomination
 from lp.bugs.model.bugnotification import BugNotification
+from lp.bugs.model.bugpresence import BugPresence
 from lp.bugs.model.bugsubscription import BugSubscription
 from lp.bugs.model.bugtarget import OfficialBugTag
 from lp.bugs.model.bugtask import BugTask, bugtask_sort_key
@@ -836,6 +840,11 @@ class Bug(StormBase, InformationTypeMixin):
         load_something("sourcepackagename_id", SourcePackageName)
         list(store.find(BugWatch, BugWatch.bug == self))
         return sorted(tasks, key=bugtask_sort_key)
+
+    @property
+    def presences(self):
+        """See `IBug`."""
+        return Store.of(self).find(BugPresence, BugPresence.bug_id == self.id)
 
     @property
     def default_bugtask(self):
@@ -1737,6 +1746,34 @@ class Bug(StormBase, InformationTypeMixin):
             send_notifications=send_notifications,
             vulnerability_patches=vulnerability_patches,
         )
+
+    def addPresence(
+        self,
+        product,
+        distribution,
+        source_package_name,
+        git_repository,
+        break_fix_data,
+        user,
+    ):
+        """See `IBug`."""
+
+        # TODO: we are not doing any validation here. See `IBug`.
+        bug_presence = getUtility(IBugPresenceSet).create(
+            bug=self,
+            product=product,
+            distribution=distribution,
+            source_package_name=source_package_name,
+            git_repository=git_repository,
+            break_fix_data=break_fix_data,
+        )
+        self.addChange(BugPresenceAdded(UTC_NOW, user, bug_presence))
+        return bug_presence
+
+    def removePresence(self, bug_presence, user):
+        """See `IBug`."""
+        self.addChange(BugPresenceRemoved(UTC_NOW, user, bug_presence))
+        bug_presence.destroySelf()
 
     def linkBranch(self, branch, registrant):
         """See `IBug`."""
