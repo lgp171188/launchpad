@@ -840,7 +840,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     notes="1.4.4",
                 ),
                 CVE.PatchURL(
-                    package_name=self.ubuntu_package.sourcepackagename,
+                    package_name=self.esm_package.sourcepackagename,
                     type="upstream",
                     url="https://github.com/389ds/389-ds-base/" "commit/456",
                     notes=None,
@@ -849,6 +849,14 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             break_fix_data=[
                 CVE.BreakFix(
                     package_name=self.ubuntu_package.sourcepackagename,
+                    break_="457f44363a8894135c85b7a9afd2bd8196db24ab",
+                    fix=(
+                        "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
+                        "local-CVE-2022-23222-fix"
+                    ),
+                ),
+                CVE.BreakFix(
+                    package_name=self.esm_package.sourcepackagename,
                     break_="457f44363a8894135c85b7a9afd2bd8196db24ab",
                     fix=(
                         "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
@@ -1139,9 +1147,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         self.assertEqual([self.lp_cve], bug.cves)
 
-        # We only add 1 attachment since now it's a compound value per package
         activities = list(bug.activity)
-        self.assertEqual(6, len(activities))
+        self.assertEqual(8, len(activities))
         import_bug_activity = activities[-1]
         self.assertEqual(self.bug_importer, import_bug_activity.person)
         self.assertEqual("bug", import_bug_activity.whatchanged)
@@ -1509,7 +1516,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
         cve = self.cve
 
-        # Add new patch URL
+        # Add new break_fix
         cve.break_fix_data.append(
             CVE.BreakFix(
                 package_name=cve.distro_packages[0].package_name,

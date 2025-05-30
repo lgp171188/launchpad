@@ -811,7 +811,7 @@ class CVE:
             )
 
         for break_fix in self.break_fix_data:
-            packages_by_name[patch_url.package_name.name].patches.append(
+            packages_by_name[break_fix.package_name.name].patches.append(
                 UCTRecord.Patch(
                     patch_type="break-fix",
                     entry=f"{break_fix.break_} {break_fix.fix}",
