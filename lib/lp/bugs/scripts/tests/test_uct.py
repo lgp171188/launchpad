@@ -557,8 +557,8 @@ class TestCVE(TestCaseWithFactory):
             break_fix_data=[
                 CVE.BreakFix(
                     package_name=dsp1.sourcepackagename,
-                    break_="457f44363a8894135c85b7a9afd2bd8196db24ab",
-                    fix=(
+                    broken="457f44363a8894135c85b7a9afd2bd8196db24ab",
+                    fixed=(
                         "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
                         "local-CVE-2022-23222-fix"
                     ),
@@ -627,13 +627,13 @@ class TestCVE(TestCaseWithFactory):
             [
                 CVE.BreakFix(
                     package_name=spn,
-                    break_="d2406291483775ecddaee929231a39c70c08fda2",
-                    fix="f64e67e5d3a45a4a04286c47afade4b518acd47b",
+                    broken="d2406291483775ecddaee929231a39c70c08fda2",
+                    fixed="f64e67e5d3a45a4a04286c47afade4b518acd47b",
                 ),
                 CVE.BreakFix(
                     package_name=spn,
-                    break_="-",
-                    fix="f2ef6f7539c68c6bd6c32323d8845ee102b7c450",
+                    broken="-",
+                    fixed="f2ef6f7539c68c6bd6c32323d8845ee102b7c450",
                 ),
             ],
             list(
@@ -840,7 +840,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     notes="1.4.4",
                 ),
                 CVE.PatchURL(
-                    package_name=self.ubuntu_package.sourcepackagename,
+                    package_name=self.esm_package.sourcepackagename,
                     type="upstream",
                     url="https://github.com/389ds/389-ds-base/" "commit/456",
                     notes=None,
@@ -849,8 +849,16 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             break_fix_data=[
                 CVE.BreakFix(
                     package_name=self.ubuntu_package.sourcepackagename,
-                    break_="457f44363a8894135c85b7a9afd2bd8196db24ab",
-                    fix=(
+                    broken="457f44363a8894135c85b7a9afd2bd8196db24ab",
+                    fixed=(
+                        "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
+                        "local-CVE-2022-23222-fix"
+                    ),
+                ),
+                CVE.BreakFix(
+                    package_name=self.esm_package.sourcepackagename,
+                    broken="457f44363a8894135c85b7a9afd2bd8196db24ab",
+                    fixed=(
                         "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
                         "local-CVE-2022-23222-fix"
                     ),
@@ -994,12 +1002,12 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 break_fix_data, presence.break_fix_data
             ):
                 self.assertEqual(
-                    break_fix.break_,
+                    break_fix.broken,
                     presence_break_fix["break"],
                     f"Break mismatch for patch in package '{package}'",
                 )
                 self.assertEqual(
-                    break_fix.fix,
+                    break_fix.fixed,
                     presence_break_fix["fix"],
                     f"Fix mismatch for patch in package '{package}'",
                 )
@@ -1139,9 +1147,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         self.assertEqual([self.lp_cve], bug.cves)
 
-        # We only add 1 attachment since now it's a compound value per package
         activities = list(bug.activity)
-        self.assertEqual(6, len(activities))
+        self.assertEqual(8, len(activities))
         import_bug_activity = activities[-1]
         self.assertEqual(self.bug_importer, import_bug_activity.person)
         self.assertEqual("bug", import_bug_activity.whatchanged)
@@ -1509,12 +1516,12 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
         cve = self.cve
 
-        # Add new patch URL
+        # Add new break_fix
         cve.break_fix_data.append(
             CVE.BreakFix(
                 package_name=cve.distro_packages[0].package_name,
-                break_="d2406291483775ecddaee929231a39c70c08fda2",
-                fix=(
+                broken="d2406291483775ecddaee929231a39c70c08fda2",
+                fixed=(
                     "f64e67e5d3a45a4a04286c47afade4b518acd47b"
                     "|cc8c837cf1b2f714dda723541c04acd1b8922d92"
                 ),
@@ -1523,8 +1530,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         cve.break_fix_data.append(
             CVE.BreakFix(
                 package_name=cve.distro_packages[1].package_name,
-                break_="-",
-                fix="cffe487026be13eaf37ea28b783d9638ab147204",
+                broken="-",
+                fixed="cffe487026be13eaf37ea28b783d9638ab147204",
             ),
         )
         self.importer.update_bug(bug, cve, self.lp_cve)

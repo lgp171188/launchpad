@@ -241,8 +241,8 @@ class UCTExporter:
                 break_fix_data.append(
                     CVE.BreakFix(
                         package_name=bugpresence.source_package_name,
-                        break_=break_fix.get("break"),
-                        fix=break_fix.get("fix"),
+                        broken=break_fix.get("break"),
+                        fixed=break_fix.get("fix"),
                     )
                 )
 
