@@ -468,8 +468,8 @@ class CVE:
 
     class BreakFix(NamedTuple):
         package_name: SourcePackageName
-        break_: str
-        fix: str
+        broken: str
+        fixed: str
 
     # Example:
     # https://github.com/389ds/389-ds-base/commit/123 (1.4.4)
@@ -814,7 +814,7 @@ class CVE:
             packages_by_name[break_fix.package_name.name].patches.append(
                 UCTRecord.Patch(
                     patch_type="break-fix",
-                    entry=f"{break_fix.break_} {break_fix.fix}",
+                    entry=f"{break_fix.broken} {break_fix.fixed}",
                 )
             )
 
@@ -952,9 +952,9 @@ class CVE:
                 )
                 continue
 
-            break_, fix = patch.entry.split(maxsplit=1)
+            broken, fixed = patch.entry.split(maxsplit=1)
             yield cls.BreakFix(
                 package_name=source_package_name,
-                break_=break_,
-                fix=fix,
+                broken=broken,
+                fixed=fixed,
             )

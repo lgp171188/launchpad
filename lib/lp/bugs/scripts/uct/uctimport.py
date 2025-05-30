@@ -508,7 +508,7 @@ class UCTImporter:
         break_fix_by_pkg = defaultdict(list)
         for break_fix in break_fix_data:
             break_fix_by_pkg[break_fix.package_name].append(
-                {"break": break_fix.break_, "fix": break_fix.fix}
+                {"break": break_fix.broken, "fix": break_fix.fixed}
             )
 
         for presence in bug.presences:
