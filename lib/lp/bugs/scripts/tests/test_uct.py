@@ -373,6 +373,14 @@ class TestCVE(TestCaseWithFactory):
                                 "commit/456"
                             ),
                         ),
+                        UCTRecord.Patch(
+                            patch_type="break-fix",
+                            entry=(
+                                "457f44363a8894135c85b7a9afd2bd8196db24ab "
+                                "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
+                                "local-CVE-2022-23222-fix"
+                            ),
+                        ),
                     ],
                 ),
                 UCTRecord.Package(
@@ -546,6 +554,16 @@ class TestCVE(TestCaseWithFactory):
                     notes=None,
                 ),
             ],
+            break_fix_data=[
+                CVE.BreakFix(
+                    package_name=dsp1.sourcepackagename,
+                    break_="457f44363a8894135c85b7a9afd2bd8196db24ab",
+                    fix=(
+                        "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
+                        "local-CVE-2022-23222-fix"
+                    ),
+                ),
+            ],
             global_tags={"cisa-kev"},
         )
 
@@ -593,6 +611,43 @@ class TestCVE(TestCaseWithFactory):
                         UCTRecord.Patch("break-fix", "- -"),
                         UCTRecord.Patch(
                             "upstream", "https://github.com/repo/1"
+                        ),
+                        UCTRecord.Patch(
+                            "upstream", "https://github.com/repo/2 (1.2.3)"
+                        ),
+                        UCTRecord.Patch("other", "foo"),
+                    ],
+                )
+            ),
+        )
+
+    def test_get_break_fix(self):
+        spn = self.factory.makeSourcePackageName()
+        self.assertListEqual(
+            [
+                CVE.BreakFix(
+                    package_name=spn,
+                    break_="d2406291483775ecddaee929231a39c70c08fda2",
+                    fix="f64e67e5d3a45a4a04286c47afade4b518acd47b",
+                ),
+                CVE.BreakFix(
+                    package_name=spn,
+                    break_="-",
+                    fix="f2ef6f7539c68c6bd6c32323d8845ee102b7c450",
+                ),
+            ],
+            list(
+                CVE.get_break_fix(
+                    spn,
+                    [
+                        UCTRecord.Patch(
+                            "break-fix",
+                            "d2406291483775ecddaee929231a39c70c08fda2 "
+                            "f64e67e5d3a45a4a04286c47afade4b518acd47b",
+                        ),
+                        UCTRecord.Patch(
+                            "break-fix",
+                            "- f2ef6f7539c68c6bd6c32323d8845ee102b7c450",
                         ),
                         UCTRecord.Patch(
                             "upstream", "https://github.com/repo/2 (1.2.3)"
@@ -791,6 +846,16 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     notes=None,
                 ),
             ],
+            break_fix_data=[
+                CVE.BreakFix(
+                    package_name=self.ubuntu_package.sourcepackagename,
+                    break_="457f44363a8894135c85b7a9afd2bd8196db24ab",
+                    fix=(
+                        "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
+                        "local-CVE-2022-23222-fix"
+                    ),
+                ),
+            ],
             global_tags={"cisa-kev"},
         )
         self.importer = UCTImporter()
@@ -814,6 +879,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         self.checkBugTags(bug, cve)
         self.checkBugAttachments(bug, cve)
+        self.checkBugPresences(bug, cve)
 
     def checkBugTags(self, bug: Bug, cve: CVE):
         tags = cve.global_tags.copy()
@@ -892,6 +958,51 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         for t in bug_tasks:
             self.assertEqual(cve.assignee, t.assignee)
+
+    def checkBugPresences(self, bug: Bug, cve: CVE):
+        presences_by_pkg = {
+            presence.source_package_name: presence
+            for presence in bug.presences
+        }
+        break_fix_by_pkg = defaultdict(list)
+        for break_fix in cve.break_fix_data:
+            break_fix_by_pkg[break_fix.package_name].append(break_fix)
+
+        self.assertEqual(
+            len(list(bug.presences)),
+            len(break_fix_by_pkg),
+            "Mismatch in presences count and break_fix count",
+        )
+
+        for package, break_fix_data in break_fix_by_pkg.items():
+            presence = presences_by_pkg.get(package)
+
+            self.assertIsNotNone(
+                presence, f"Presence for package '{package}' not found"
+            )
+
+            self.assertEqual(package, presence.source_package_name)
+            self.assertEqual(
+                len(break_fix_data),
+                len(presence.break_fix_data),
+                "Number of break_fix_data don't match for package "
+                f"'{package}'",
+            )
+
+            # Check content and its order
+            for break_fix, presence_break_fix in zip(
+                break_fix_data, presence.break_fix_data
+            ):
+                self.assertEqual(
+                    break_fix.break_,
+                    presence_break_fix["break"],
+                    f"Break mismatch for patch in package '{package}'",
+                )
+                self.assertEqual(
+                    break_fix.fix,
+                    presence_break_fix["fix"],
+                    f"Fix mismatch for patch in package '{package}'",
+                )
 
     def checkBugAttachments(self, bug: Bug, cve: CVE):
         # attachment.title is the package name
@@ -1016,6 +1127,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual(expected.mitigation, actual.mitigation)
         self.assertListEqual(expected.cvss, actual.cvss)
         self.assertListEqual(expected.patch_urls, actual.patch_urls)
+        self.assertListEqual(expected.break_fix_data, actual.break_fix_data)
         self.assertEqual(expected.global_tags, actual.global_tags)
 
     def test_create_bug(self):
@@ -1029,7 +1141,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         # We only add 1 attachment since now it's a compound value per package
         activities = list(bug.activity)
-        self.assertEqual(5, len(activities))
+        self.assertEqual(6, len(activities))
         import_bug_activity = activities[-1]
         self.assertEqual(self.bug_importer, import_bug_activity.person)
         self.assertEqual("bug", import_bug_activity.whatchanged)
@@ -1115,6 +1227,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                 ),
             ],
             patch_urls=[],
+            break_fix_data=[],
             global_tags={"cisa-kev"},
         )
         lp_cve = self.factory.makeCVE(sequence="2022-1234")
@@ -1389,6 +1502,37 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         # Remove patch_url and check it removes from bug
         cve.patch_urls.pop()
 
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+    def test_update_break_fix(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        # Add new patch URL
+        cve.break_fix_data.append(
+            CVE.BreakFix(
+                package_name=cve.distro_packages[0].package_name,
+                break_="d2406291483775ecddaee929231a39c70c08fda2",
+                fix=(
+                    "f64e67e5d3a45a4a04286c47afade4b518acd47b"
+                    "|cc8c837cf1b2f714dda723541c04acd1b8922d92"
+                ),
+            ),
+        )
+        cve.break_fix_data.append(
+            CVE.BreakFix(
+                package_name=cve.distro_packages[1].package_name,
+                break_="-",
+                fix="cffe487026be13eaf37ea28b783d9638ab147204",
+            ),
+        )
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+        # Remove break_fix and check if it removes from bug
+        cve.break_fix_data.pop()
+        cve.break_fix_data.pop()
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 
