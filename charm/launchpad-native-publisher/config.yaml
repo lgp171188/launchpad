@@ -14,6 +14,12 @@ options:
     description: >
       Java JDK version to install, the maven version will be the version in the
       Ubuntu archive for the series of the charm.
+  artifactory_write_credentials:
+    type: string
+    default:
+    description: >
+      Credentials for writing to Artifactory repositories (formatted as
+      "user:token").
   craftbuild_config:
     type: string
     default: ""
