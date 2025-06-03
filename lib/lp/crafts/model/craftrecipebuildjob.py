@@ -16,6 +16,8 @@ import tempfile
 from configparser import NoSectionError
 
 import transaction
+import yaml
+from artifactory import ArtifactoryPath
 from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
 from storm.databases.postgres import JSON
@@ -37,6 +39,7 @@ from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.scripts import log
 
 
 class CraftRecipeBuildJobType(DBEnumeratedType):
@@ -149,6 +152,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
     task_queue = "native_publisher_job"
 
+    artifactory_base_url = config.artifactory.base_url
     config = config.ICraftPublishingJobSource
 
     @classmethod
@@ -273,7 +277,9 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                     )
 
                     # Publish the Rust crate
-                    self._publish_rust_crate(crate_dir, env_vars)
+                    self._publish_rust_crate(
+                        crate_dir, env_vars, crate_file.filename
+                    )
                 elif jar_file is not None and pom_file is not None:
                     # Download the jar file
                     jar_path = os.path.join(tmpdir, jar_file.filename)
@@ -297,6 +303,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                     self._publish_maven_artifact(
                         tmpdir,
                         env_vars,
+                        jar_file.filename,
                         jar_path,
                         pom_path,
                     )
@@ -312,7 +319,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
             transaction.commit()
             raise
 
-    def _publish_rust_crate(self, extract_dir, env_vars):
+    def _publish_rust_crate(self, extract_dir, env_vars, artifact_name):
         """Publish Rust crates from the extracted crate directory.
 
         :param extract_dir: Path to the extracted crate directory
@@ -373,8 +380,10 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         if result.returncode != 0:
             raise Exception(f"Failed to publish crate: {result.stderr}")
 
+        self._publish_properties(cargo_publish_url, artifact_name)
+
     def _publish_maven_artifact(
-        self, work_dir, env_vars, jar_path=None, pom_path=None
+        self, work_dir, env_vars, artifact_name, jar_path=None, pom_path=None
     ):
         """Publish Maven artifacts.
 
@@ -435,6 +444,8 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                 f"Failed to publish Maven artifact: {result.stderr}"
             )
 
+        self._publish_properties(maven_publish_url, artifact_name)
+
     def _get_maven_settings_xml(self, username, password):
         """Generate Maven settings.xml content.
 
@@ -488,3 +499,97 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
         # Combine all parts
         return header + schema + servers + profiles + active_profiles
+
+    def _publish_properties(
+        self, publish_url: str, artifact_name: str
+    ) -> None:
+        """Publish properties to the artifact in Artifactory."""
+
+        new_properties = {}
+
+        new_properties["soss.commit_id"] = (
+            [self.build.revision_id] if self.build.revision_id else ["unknown"]
+        )
+        new_properties["soss.source_url"] = [self._recipe_git_url()]
+        new_properties["soss.type"] = ["source"]
+        new_properties["soss.license"] = [self._get_license_metadata()]
+
+        # Repo name is derived from the URL
+        # We assume the URL ends with the repository name
+        repo_name = publish_url.rstrip("/").split("/")[-1]
+
+        # Search for the artifact in Artifactory using AQL
+        root_path = ArtifactoryPath(self.artifactory_base_url)
+        artifacts = root_path.aql(
+            "items.find",
+            {
+                "repo": repo_name,
+                "name": artifact_name,
+            },
+            ".include",
+            ["repo", "path", "name"],
+            ".limit(1)",
+        )
+
+        if not artifacts:
+            raise NotFoundError(
+                f"Artifact '{artifact_name}' not found in repository \
+                '{repo_name}'"
+            )
+
+        if len(artifacts) > 1:
+            log.info(
+                f"Multiple artifacts found for '{artifact_name}'"
+                + f"in repository '{repo_name}'. Using the first one."
+            )
+
+        # Get the first artifact that matches the name
+        artifact = artifacts[0]
+
+        artifact_path = ArtifactoryPath(
+            root_path, artifact["repo"], artifact["path"], artifact["name"]
+        )
+        artifact_path.set_properties(new_properties)
+
+    def _recipe_git_url(self):
+        """Get the recipe git URL."""
+
+        craft_recipe = self.build.recipe
+        if craft_recipe.git_repository is not None:
+            return craft_recipe.git_repository.git_https_url
+        elif craft_recipe.git_repository_url is not None:
+            return craft_recipe.git_repository_url
+        else:
+            log.info(
+                f"Recipe {craft_recipe.id} has no git repository URL defined."
+            )
+            return "unknown"
+
+    def _get_license_metadata(self) -> str:
+        """Get the license metadata from the build files."""
+        for _, lfa, _ in self.build.getFiles():
+            if lfa.filename == "metadata.yaml":
+                lfa.open()
+                try:
+                    content = lfa.read().decode("utf-8")
+                    metadata = yaml.safe_load(content)
+
+                    if "license" not in metadata:
+                        log.info(
+                            "No license found in metadata.yaml, returning \
+                            'unknown'."
+                        )
+                        return "unknown"
+
+                    return metadata.get("license")
+
+                except yaml.YAMLError as e:
+                    self.error_message = f"Failed to parse metadata.yaml: {e}"
+
+                    log.info(self.error_message)
+                    return "unknown"
+                finally:
+                    lfa.close()
+
+        log.info("No metadata.yaml file found in the build files.")
+        return "unknown"
