@@ -493,6 +493,53 @@ class TestAsyncCharmRecipeBuildBehaviour(
         self.assertTrue(args["private"])
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_git_url(self):
+        # extraBuildArgs returns appropriate arguments if asked to build a
+        # job for a Git branch backed by a URL for an external repository.
+        url = "https://git.example.org/foo"
+        ref = self.factory.makeGitRefRemote(
+            repository_url=url, path="refs/heads/master"
+        )
+        job = self.makeJob(git_ref=ref)
+        (
+            expected_archives,
+            expected_trusted_keys,
+        ) = yield get_sources_list_for_building(
+            job, job.build.distro_arch_series, None
+        )
+        for archive_line in expected_archives:
+            self.assertIn("universe", archive_line)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertThat(
+            args,
+            MatchesDict(
+                {
+                    "archive_private": Is(False),
+                    "archives": Equals(expected_archives),
+                    "arch_tag": Equals("i386"),
+                    "build_url": Equals(canonical_url(job.build)),
+                    "builder_constraints": Equals([]),
+                    "channels": Equals({}),
+                    "fast_cleanup": Is(True),
+                    "git_repository": Equals(url),
+                    "git_path": Equals("master"),
+                    "name": Equals("test-charm"),
+                    "private": Is(False),
+                    "proxy_url": ProxyURLMatcher(job, self.now),
+                    "revocation_endpoint": RevocationEndpointMatcher(
+                        job, self.now
+                    ),
+                    "series": Equals("unstable"),
+                    "trusted_keys": Equals(expected_trusted_keys),
+                    "use_fetch_service": Is(False),
+                    "launchpad_instance": Equals("devel"),
+                    "launchpad_server_url": Equals("launchpad.test"),
+                }
+            ),
+        )
+
+    @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):
         job = self.makeJob()
         build_request = yield job.composeBuildRequest(None)

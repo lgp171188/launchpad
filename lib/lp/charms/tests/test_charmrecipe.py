@@ -1706,6 +1706,17 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             FetchServicePolicy.STRICT, recipe.fetch_service_policy
         )
 
+    def test_creation_git_url(self):
+        # A charm recipe can be backed directly by a URL for an external Git
+        # repository, rather than a Git repository hosted in Launchpad.
+        ref = self.factory.makeGitRefRemote()
+        components = self.makeCharmRecipeComponents(git_ref=ref)
+        charm_recipe = getUtility(ICharmRecipeSet).new(**components)
+        self.assertIsNone(charm_recipe.git_repository)
+        self.assertEqual(ref.repository_url, charm_recipe.git_repository_url)
+        self.assertEqual(ref.path, charm_recipe.git_path)
+        self.assertEqual(ref, charm_recipe.git_ref)
+
     def test_creation_no_source(self):
         # Attempting to create a charm recipe without a Git repository
         # fails.

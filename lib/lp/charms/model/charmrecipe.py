@@ -43,6 +43,7 @@ from lp.app.enums import (
     PUBLIC_INFORMATION_TYPES,
     InformationType,
 )
+from lp.app.errors import IncompatibleArguments
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.builderproxy import FetchServicePolicy
 from lp.buildmaster.enums import BuildStatus
@@ -88,7 +89,7 @@ from lp.code.interfaces.gitcollection import (
     IAllGitRepositories,
     IGitCollection,
 )
-from lp.code.interfaces.gitref import IGitRef
+from lp.code.interfaces.gitref import IGitRef, IGitRefRemoteSet
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitref import GitRef
@@ -284,6 +285,8 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
     )
     git_repository = Reference(git_repository_id, "GitRepository.id")
 
+    git_repository_url = Unicode(name="git_repository_url", allow_none=True)
+
     git_path = Unicode(name="git_path", allow_none=True)
 
     build_path = Unicode(name="build_path", allow_none=True)
@@ -392,6 +395,10 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
     def _git_ref(self):
         if self.git_repository is not None:
             return self.git_repository.getRefByPath(self.git_path)
+        elif self.git_repository_url is not None:
+            return getUtility(IGitRefRemoteSet).new(
+                self.git_repository_url, self.git_path
+            )
         else:
             return None
 
@@ -405,9 +412,11 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         """See `ICharmRecipe`."""
         if value is not None:
             self.git_repository = value.repository
+            self.git_repository_url = value.repository_url
             self.git_path = value.path
         else:
             self.git_repository = None
+            self.git_repository_url = None
             self.git_path = None
         get_property_cache(self)._git_ref = value
 
@@ -960,6 +969,9 @@ class CharmRecipeSet:
         project,
         name,
         description=None,
+        git_repository=None,
+        git_repository_url=None,
+        git_path=None,
         git_ref=None,
         build_path=None,
         require_virtualized=True,
@@ -986,6 +998,33 @@ class CharmRecipeSet:
                     "%s cannot create charm recipes owned by %s."
                     % (registrant.displayname, owner.displayname)
                 )
+        if (
+            sum(
+                [
+                    git_repository is not None,
+                    git_repository_url is not None,
+                    git_ref is not None,
+                ]
+            )
+            > 1
+        ):
+            raise IncompatibleArguments(
+                "You cannot specify more than one of 'git_repository', "
+                "'git_repository_url', and 'git_ref'."
+            )
+        if (git_repository is None and git_repository_url is None) != (
+            git_path is None
+        ):
+            raise IncompatibleArguments(
+                "You must specify both or neither of "
+                "'git_repository'/'git_repository_url' and 'git_path'."
+            )
+        if git_repository is not None:
+            git_ref = git_repository.getRefByPath(git_path)
+        elif git_repository_url is not None:
+            git_ref = getUtility(IGitRefRemoteSet).new(
+                git_repository_url, git_path
+            )
 
         if git_ref is None:
             raise NoSourceForCharmRecipe
@@ -1073,7 +1112,12 @@ class CharmRecipeSet:
 
         git_collection = removeSecurityProxy(getUtility(IAllGitRepositories))
         git_recipes = _getRecipes(git_collection)
-        return git_recipes
+        git_url_recipes = IStore(CharmRecipe).find(
+            CharmRecipe,
+            CharmRecipe.owner == person,
+            CharmRecipe.git_repository_url != None,
+        )
+        return git_recipes.union(git_url_recipes)
 
     def findByProject(self, project, visible_by_user=None):
         """See `ICharmRecipeSet`."""

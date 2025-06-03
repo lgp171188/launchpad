@@ -83,6 +83,7 @@ from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     SnapBuildChannelsField,
+    URIField,
 )
 from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.snappy.validators.channels import channels_validator
@@ -622,22 +623,46 @@ class ICharmRecipeEditableAttributes(Interface):
         )
     )
 
-    git_repository = ReferenceChoice(
-        title=_("Git repository"),
-        schema=IGitRepository,
-        vocabulary="GitRepository",
-        required=False,
-        readonly=True,
-        description=_(
-            "A Git repository with a branch containing a charm recipe."
-        ),
+    git_repository = exported(
+        ReferenceChoice(
+            title=_("Git repository"),
+            schema=IGitRepository,
+            vocabulary="GitRepository",
+            required=False,
+            readonly=True,
+            description=_(
+                "A Git repository with a branch containing a charm recipe."
+            ),
+        )
     )
 
-    git_path = TextLine(
-        title=_("Git branch path"),
-        required=False,
-        readonly=True,
-        description=_("The path of the Git branch containing a charm recipe."),
+    git_path = exported(
+        TextLine(
+            title=_("Git branch path"),
+            required=False,
+            readonly=True,
+            description=_(
+                "The path of the Git branch containing a charm recipe."
+            ),
+        )
+    )
+
+    git_repository_url = exported(
+        URIField(
+            title=_("Git repository URL"),
+            required=False,
+            readonly=True,
+            description=_(
+                "The URL of a Git repository with a branch containing a "
+                "charmcraft.yaml at the top level."
+            ),
+            allowed_schemes=["git", "http", "https"],
+            allow_userinfo=True,
+            allow_port=True,
+            allow_query=False,
+            allow_fragment=False,
+            trailing_slash=False,
+        )
     )
 
     git_ref = exported(
@@ -830,6 +855,9 @@ class ICharmRecipeSet(Interface):
             "project",
             "name",
             "description",
+            "git_repository",
+            "git_repository_url",
+            "git_path",
             "git_ref",
             "build_path",
             "auto_build",
@@ -846,6 +874,9 @@ class ICharmRecipeSet(Interface):
         project,
         name,
         description=None,
+        git_repository=None,
+        git_repository_url=None,
+        git_path=None,
         git_ref=None,
         build_path=None,
         require_virtualized=True,
