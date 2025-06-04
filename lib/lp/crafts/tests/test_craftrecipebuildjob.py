@@ -3,13 +3,20 @@
 
 import io
 import json
+import os
 import tarfile
+import tempfile
+from pathlib import Path
 
-from fixtures import FakeLogger
+from artifactory import ArtifactoryPath
+from fixtures import FakeLogger, MonkeyPatch
 from testtools.matchers import Equals, Is, MatchesStructure
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.archivepublisher.tests.artifactory_fixture import (
+    FakeArtifactoryFixture,
+)
 from lp.crafts.interfaces.craftrecipe import CRAFT_RECIPE_ALLOW_CREATE
 from lp.crafts.interfaces.craftrecipebuildjob import (
     ICraftPublishingJob,
@@ -25,6 +32,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
+from lp.services.librarian.utils import copy_and_close
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import CeleryJobLayer, ZopelessDatabaseLayer
 
@@ -50,6 +58,13 @@ class TestCraftRecipeBuildJob(TestCaseWithFactory):
         )
 
 
+class MockBytesIO(io.BytesIO):
+    """A mock BytesIO class to simulate an artifact file."""
+
+    def open(self):
+        pass
+
+
 class TestCraftPublishingJob(TestCaseWithFactory):
     """Test the CraftPublishingJob."""
 
@@ -66,6 +81,72 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         self.useFixture(FeatureFixture({CRAFT_RECIPE_ALLOW_CREATE: "on"}))
         self.recipe = self.factory.makeCraftRecipe()
         self.build = self.factory.makeCraftRecipeBuild(recipe=self.recipe)
+
+        # Set up the Artifactory fixture
+        self.base_url = "https://example.com/artifactory"
+        self.repository_name = "repository"
+
+        self.artifactory = self.useFixture(
+            FakeArtifactoryFixture(self.base_url, self.repository_name)
+        )
+
+        self.useFixture(
+            MonkeyPatch(
+                "lp.crafts.model.craftrecipebuildjob."
+                + "CraftPublishingJob.artifactory_base_url",
+                self.base_url,
+            )
+        )
+
+    def _artifactory_search(self, repo_name, artifact_name):
+        """Helper to search for a file in the Artifactory fixture."""
+
+        root_path = ArtifactoryPath(self.base_url)
+        artifacts = root_path.aql(
+            "items.find",
+            {
+                "repo": repo_name,
+                "name": artifact_name,
+            },
+            ".include",
+            # We don't use "repo", but the AQL documentation says that
+            # non-admin users must include all of "name", "repo",
+            # and "path" in the include directive.
+            ["repo", "path", "name", "property"],
+            ".limit(1)",
+        )
+
+        if not artifacts:
+            return
+
+        artifact = artifacts[0]
+
+        properties = {}
+        for prop in artifact.get("properties", {}):
+            properties[prop["key"]] = prop.get("value", "")
+
+        artifact["properties"] = properties
+
+        return artifact
+
+    def _artifactory_put(
+        self, base_url, middle_path, artifact_name, artifact_file
+    ):
+        """Helper to put a file into the Artifactory fixture."""
+
+        fd, name = tempfile.mkstemp(prefix="temp-download.")
+        f = os.fdopen(fd, "wb")
+
+        targetpath = ArtifactoryPath(base_url, middle_path, artifact_name)
+        targetpath.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            artifact_file.open()
+            copy_and_close(artifact_file, f)
+            targetpath.deploy_file(name, parameters={"test": ["True"]})
+        finally:
+            f.close()
+            Path(name).unlink()
 
     def test_provides_interface(self):
         # CraftPublishingJob provides ICraftPublishingJob.
@@ -367,7 +448,7 @@ edition = "2018"
             "craftbuild.soss",
             environment_variables=json.dumps(
                 {
-                    "CARGO_PUBLISH_URL": "https://example.com/registry",
+                    "CARGO_PUBLISH_URL": f"{self.base_url}/repository",
                     "CARGO_PUBLISH_AUTH": "lp:token123",
                 }
             ),
@@ -431,6 +512,21 @@ edition = "2018"
 
         removeSecurityProxy(self.build).addFile(lfa)
 
+        # Add a metadata file with license information
+        license_value = "Apache-2.0"
+        metadata_yaml = f"license: {license_value}\n"
+        librarian = getUtility(ILibraryFileAliasSet)
+        metadata_lfa = librarian.create(
+            "metadata.yaml",
+            len(metadata_yaml),
+            MockBytesIO(metadata_yaml.encode("utf-8")),
+            "text/x-yaml",
+        )
+        removeSecurityProxy(self.build).addFile(metadata_lfa)
+
+        # Set a revision ID for the build
+        removeSecurityProxy(self.build).revision_id = "random-revision-id"
+
         # Create a mock return value for subprocess.run
         mock_completed_process = type(
             "MockCompletedProcess",
@@ -453,6 +549,26 @@ edition = "2018"
             return original_run(*args, **kwargs)
 
         self.patch(crbj_subprocess, "run", mock_run)
+
+        original_publish_properties = CraftPublishingJob._publish_properties
+
+        def mock_cargo_publish_properties(*args, **kwargs):
+            """Mock _publish_properties to deploy the crate to Artifactory
+            Fixture before testing.
+
+            We need to do this in a nested function here because we need
+            to access the `lfa` variable which is created in the this test
+            setup above but the mocked function (and the lfa.open()) can
+            only be called inside the job's run method."""
+
+            self._artifactory_put(args[1], "crates/test", args[2], lfa)
+            return original_publish_properties(*args, **kwargs)
+
+        self.patch(
+            CraftPublishingJob,
+            "_publish_properties",
+            mock_cargo_publish_properties,
+        )
 
         # Create and run the job
         job = getUtility(ICraftPublishingJobSource).create(self.build)
@@ -497,6 +613,24 @@ edition = "2018"
         self.assertIn("env", kwargs)
         env = kwargs["env"]
         self.assertIn("CARGO_HOME", env)
+
+        # Verify that the artifact's metadata were uploaded to Artifactory
+        artifact = self._artifactory_search("repository", lfa.filename)
+
+        self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+
+        self.assertEqual(artifact["repo"], "repository")
+        self.assertEqual(artifact["name"], lfa.filename)
+        self.assertEqual(artifact["path"], "crates/test")
+        self.assertEqual(
+            artifact["properties"]["soss.commit_id"], "random-revision-id"
+        )
+        self.assertEqual(
+            artifact["properties"]["soss.source_url"],
+            git_repository.git_https_url,
+        )
+        self.assertEqual(artifact["properties"]["soss.type"], "source")
+        self.assertEqual(artifact["properties"]["soss.license"], license_value)
 
     def test_run_missing_maven_config(self):
         """
@@ -561,7 +695,7 @@ edition = "2018"
             "craftbuild.soss",
             environment_variables=json.dumps(
                 {
-                    "MAVEN_PUBLISH_URL": "https://example.com/maven",
+                    "MAVEN_PUBLISH_URL": f"{self.base_url}/repository",
                     "MAVEN_PUBLISH_AUTH": "maven_user:maven_password",
                 }
             ),
@@ -604,6 +738,21 @@ edition = "2018"
         removeSecurityProxy(self.build).addFile(jar_lfa)
         removeSecurityProxy(self.build).addFile(pom_lfa)
 
+        # Create a metadata file with license information
+        license_value = "Apache-2.0"
+        metadata_yaml = f"license: {license_value}\n"
+        librarian = getUtility(ILibraryFileAliasSet)
+        metadata_lfa = librarian.create(
+            "metadata.yaml",
+            len(metadata_yaml),
+            MockBytesIO(metadata_yaml.encode("utf-8")),
+            "text/x-yaml",
+        )
+        removeSecurityProxy(self.build).addFile(metadata_lfa)
+
+        # Set a revision ID for the build
+        removeSecurityProxy(self.build).revision_id = "random-revision-id"
+
         # Create a mock return value for subprocess.run
         mock_completed_process = type(
             "MockCompletedProcess",
@@ -626,6 +775,28 @@ edition = "2018"
             return original_run(*args, **kwargs)
 
         self.patch(crbj_subprocess, "run", mock_run)
+
+        original_publish_properties = CraftPublishingJob._publish_properties
+
+        def mock_maven_publish_properties(*args, **kwargs):
+            """Mock _publish_properties to deploy the crate to Artifactory
+            Fixture before testing.
+
+            We need to do this in a nested function here because we need
+            to access the `lfa` variable which is created in the this test
+            setup above but the mocked function (and the lfa.open()) can
+            only be called inside the job's run method."""
+
+            self._artifactory_put(
+                args[1], "com/example/test-artifact/0.1.0", args[2], jar_lfa
+            )
+            return original_publish_properties(*args, **kwargs)
+
+        self.patch(
+            CraftPublishingJob,
+            "_publish_properties",
+            mock_maven_publish_properties,
+        )
 
         # Create and run the job
         job = getUtility(ICraftPublishingJobSource).create(self.build)
@@ -655,7 +826,9 @@ edition = "2018"
 
         # Check for required Maven arguments
         self.assertIn("-DrepositoryId=central", args_str)
-        self.assertIn("-Durl=https://example.com/maven", args_str)
+        self.assertIn(
+            "-Durl=https://example.com/artifactory/repository", args_str
+        )
 
         # Verify that the POM and JAR files are correctly referenced
         pom_found = False
@@ -686,3 +859,247 @@ edition = "2018"
         # Verify working directory was set correctly
         kwargs = mvn_call[1]
         self.assertIn("cwd", kwargs)
+
+        artifact = self._artifactory_search("repository", jar_lfa.filename)
+
+        # Verify that the artifact's metadata were uploaded to Artifactory
+        self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+
+        self.assertEqual(artifact["repo"], "repository")
+        self.assertEqual(artifact["name"], jar_lfa.filename)
+        self.assertEqual(artifact["path"], "com/example/test-artifact/0.1.0")
+        self.assertEqual(
+            artifact["properties"]["soss.commit_id"], "random-revision-id"
+        )
+        self.assertEqual(
+            artifact["properties"]["soss.source_url"],
+            git_repository.git_https_url,
+        )
+        self.assertEqual(artifact["properties"]["soss.type"], "source")
+        self.assertEqual(artifact["properties"]["soss.license"], license_value)
+
+    def test__publish_properties_sets_expected_properties(self):
+        """Test that _publish_properties sets the correct properties in
+        Artifactory."""
+        # Arrange
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+
+        # Patch _recipe_git_url and _get_license_metadata for deterministic
+        # output
+        self.patch(
+            CraftPublishingJob,
+            "_recipe_git_url",
+            lambda self: "https://example.com/repo.git",
+        )
+        self.patch(
+            CraftPublishingJob, "_get_license_metadata", lambda self: "MIT"
+        )
+
+        removeSecurityProxy(self.build).revision_id = "random-revision-id"
+
+        self._artifactory_put(
+            f"{self.base_url}/repository",
+            "middle_folder",
+            "artifact.file",
+            MockBytesIO(b"dummy content"),
+        )
+        job._publish_properties(f"{self.base_url}/repository", "artifact.file")
+        artifact = self._artifactory_search("repository", "artifact.file")
+
+        self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+
+        props = artifact["properties"]
+        self.assertIn("soss.commit_id", props)
+        self.assertIn("soss.source_url", props)
+        self.assertIn("soss.type", props)
+        self.assertIn("soss.license", props)
+        self.assertEqual(props["soss.commit_id"], job.build.revision_id)
+        self.assertEqual(
+            props["soss.source_url"], "https://example.com/repo.git"
+        )
+        self.assertEqual(props["soss.type"], "source")
+        self.assertEqual(props["soss.license"], "MIT")
+
+    def test__publish_properties_artifact_not_found(self):
+        """Test that _publish_properties raises NotFoundError if artifact is
+        missing."""
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+
+        from lp.app.errors import NotFoundError
+
+        self.assertRaises(
+            NotFoundError,
+            job._publish_properties,
+            f"{self.base_url}/repository",
+            "missing-artifact.file",
+        )
+
+    def test__publish_properties_no_metadata_yaml(self):
+        """Test that _publish_properties sets license to 'unknown' if no
+        metadata.yaml is present."""
+
+        self._artifactory_put(
+            f"{self.base_url}/repository",
+            "some/path",
+            "artifact.file",
+            MockBytesIO(b"dummy content"),
+        )
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+        job.run = lambda: job._publish_properties(
+            f"{self.base_url}/repository", "artifact.file"
+        )
+
+        self.patch(
+            CraftPublishingJob,
+            "_recipe_git_url",
+            lambda self: "https://example.com/repo.git",
+        )
+
+        JobRunner([job]).runAll()
+
+        artifact = self._artifactory_search("repository", "artifact.file")
+        self.assertEqual(artifact["properties"]["soss.license"], "unknown")
+
+    def test__publish_properties_no_license_in_metadata_yaml(self):
+        """Test that _publish_properties sets license to 'unknown' if no
+        license is specified in metadata.yaml."""
+
+        # Create a broken metadata.yaml file with a license
+        metadata_yaml = "no_license: True\n"
+        librarian = getUtility(ILibraryFileAliasSet)
+        metadata_lfa = librarian.create(
+            "metadata.yaml",
+            len(metadata_yaml),
+            MockBytesIO(metadata_yaml.encode("utf-8")),
+            "text/x-yaml",
+        )
+        removeSecurityProxy(self.build).addFile(metadata_lfa)
+
+        self._artifactory_put(
+            f"{self.base_url}/repository",
+            "some/path",
+            "artifact.file",
+            MockBytesIO(b"dummy content"),
+        )
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+        job.run = lambda: job._publish_properties(
+            f"{self.base_url}/repository", "artifact.file"
+        )
+
+        self.patch(
+            CraftPublishingJob,
+            "_recipe_git_url",
+            lambda self: "https://example.com/repo.git",
+        )
+
+        JobRunner([job]).runAll()
+
+        artifact = self._artifactory_search("repository", "artifact.file")
+        self.assertEqual(artifact["properties"]["soss.license"], "unknown")
+
+    def test__publish_properties_license_from_metadata_yaml(self):
+        """Test that _publish_properties gets license from metadata.yaml
+        if present."""
+
+        # Create a metadata.yaml file with a license
+        license_value = "Apache-2.0"
+        metadata_yaml = f"license: {license_value}\n"
+        librarian = getUtility(ILibraryFileAliasSet)
+        metadata_lfa = librarian.create(
+            "metadata.yaml",
+            len(metadata_yaml),
+            MockBytesIO(metadata_yaml.encode("utf-8")),
+            "text/x-yaml",
+        )
+        removeSecurityProxy(self.build).addFile(metadata_lfa)
+
+        self._artifactory_put(
+            f"{self.base_url}/repository",
+            "some/path",
+            "artifact.file",
+            MockBytesIO(b"dummy content"),
+        )
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+        job.run = lambda: job._publish_properties(
+            f"{self.base_url}/repository", "artifact.file"
+        )
+
+        self.patch(
+            CraftPublishingJob,
+            "_recipe_git_url",
+            lambda self: "https://example.com/repo.git",
+        )
+
+        JobRunner([job]).runAll()
+
+        artifact = self._artifactory_search("repository", "artifact.file")
+        self.assertEqual(artifact["properties"]["soss.license"], license_value)
+
+    def test__publish_properties_git_repository_source_url(self):
+        """Test that _publish_properties gets git_repository as source_url."""
+
+        self._artifactory_put(
+            f"{self.base_url}/repository",
+            "some/path",
+            "artifact.file",
+            MockBytesIO(b"dummy content"),
+        )
+
+        git_repository = self.factory.makeGitRepository()
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+
+        self.patch(
+            CraftPublishingJob, "_get_license_metadata", lambda self: "MIT"
+        )
+
+        job._publish_properties(f"{self.base_url}/repository", "artifact.file")
+
+        artifact = self._artifactory_search("repository", "artifact.file")
+        self.assertEqual(
+            artifact["properties"]["soss.source_url"],
+            git_repository.git_https_url,
+        )
+
+    def test__publish_properties_git_repository_url_source_url(self):
+        """Test that _publish_properties gets git_repository_url as
+        source_url."""
+
+        self._artifactory_put(
+            f"{self.base_url}/repository",
+            "some/path",
+            "artifact.file",
+            MockBytesIO(b"dummy content"),
+        )
+
+        git_url_recipe = self.factory.makeCraftRecipe(
+            git_ref=self.factory.makeGitRefRemote()
+        )
+        git_url_build = self.factory.makeCraftRecipeBuild(
+            recipe=git_url_recipe
+        )
+
+        job = getUtility(ICraftPublishingJobSource).create(git_url_build)
+        job = removeSecurityProxy(job)
+
+        self.patch(
+            CraftPublishingJob, "_get_license_metadata", lambda self: "MIT"
+        )
+
+        job._publish_properties(f"{self.base_url}/repository", "artifact.file")
+
+        artifact = self._artifactory_search("repository", "artifact.file")
+        self.assertEqual(
+            artifact["properties"]["soss.source_url"],
+            git_url_recipe.git_repository_url,
+        )
