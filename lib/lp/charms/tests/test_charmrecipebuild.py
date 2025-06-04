@@ -820,6 +820,17 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
             ),
         )
 
+    def test_getByBuildFarmJob_works_for_remote_repositories(self):
+        build = self.factory.makeCharmRecipeBuild(
+            git_repository_url="https://foo.git", git_path="main"
+        )
+        self.assertEqual(
+            build,
+            getUtility(ICharmRecipeBuildSet).getByBuildFarmJob(
+                build.build_farm_job
+            ),
+        )
+
     def test_getByBuildFarmJob_returns_None_when_missing(self):
         bpb = self.factory.makeBinaryPackageBuild()
         self.assertIsNone(
@@ -829,7 +840,12 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
         )
 
     def test_getByBuildFarmJobs_works(self):
-        builds = [self.factory.makeCharmRecipeBuild() for i in range(10)]
+        builds = [self.factory.makeCharmRecipeBuild() for i in range(10)] + [
+            self.factory.makeCharmRecipeBuild(
+                git_repository_url="https://foo.git", git_path="main"
+            )
+            for i in range(10)
+        ]
         self.assertContentEqual(
             builds,
             getUtility(ICharmRecipeBuildSet).getByBuildFarmJobs(

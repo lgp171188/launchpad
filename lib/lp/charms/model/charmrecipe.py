@@ -1221,7 +1221,11 @@ class CharmRecipeSet:
             GenericGitCollection.preloadDataForRepositories(repositories)
 
         git_refs = GitRef.findByReposAndPaths(
-            [(recipe.git_repository, recipe.git_path) for recipe in recipes]
+            [
+                (recipe.git_repository, recipe.git_path)
+                for recipe in recipes
+                if recipe.git_repository
+            ]
         )
         for recipe in recipes:
             git_ref = git_refs.get((recipe.git_repository, recipe.git_path))
