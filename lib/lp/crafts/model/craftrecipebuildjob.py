@@ -151,8 +151,6 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
     max_retries = 5
 
     task_queue = "native_publisher_job"
-
-    artifactory_base_url = config.artifactory.base_url
     config = config.ICraftPublishingJobSource
 
     @classmethod
@@ -518,8 +516,14 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         # We assume the URL ends with the repository name
         repo_name = publish_url.rstrip("/").split("/")[-1]
 
+        root_path_str = self._extract_root_path(publish_url)
+        if not root_path_str:
+            raise NotFoundError(
+                f"Could not extract root path from URL: {publish_url}"
+            )
+
         # Search for the artifact in Artifactory using AQL
-        root_path = ArtifactoryPath(self.artifactory_base_url)
+        root_path = ArtifactoryPath(root_path_str)
         artifacts = root_path.aql(
             "items.find",
             {
@@ -550,6 +554,20 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
             root_path, artifact["repo"], artifact["path"], artifact["name"]
         )
         artifact_path.set_properties(new_properties)
+
+    def _extract_root_path(self, publish_url: str) -> str:
+        """
+        Extracts everything from the first occurrence of 'https' up to and
+        including 'artifactory'."""
+        start_index = publish_url.find("https")
+        if start_index == -1:
+            return ""
+
+        end_index = publish_url.find("artifactory", start_index)
+        if end_index == -1:
+            return ""
+
+        return publish_url[start_index : end_index + len("artifactory")]
 
     def _recipe_git_url(self):
         """Get the recipe git URL."""

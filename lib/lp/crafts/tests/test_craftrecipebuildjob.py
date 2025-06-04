@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 from artifactory import ArtifactoryPath
-from fixtures import FakeLogger, MonkeyPatch
+from fixtures import FakeLogger
 from testtools.matchers import Equals, Is, MatchesStructure
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -88,14 +88,6 @@ class TestCraftPublishingJob(TestCaseWithFactory):
 
         self.artifactory = self.useFixture(
             FakeArtifactoryFixture(self.base_url, self.repository_name)
-        )
-
-        self.useFixture(
-            MonkeyPatch(
-                "lp.crafts.model.craftrecipebuildjob."
-                + "CraftPublishingJob.artifactory_base_url",
-                self.base_url,
-            )
         )
 
     def _artifactory_search(self, repo_name, artifact_name):
@@ -1103,3 +1095,40 @@ edition = "2018"
             artifact["properties"]["soss.source_url"],
             git_url_recipe.git_repository_url,
         )
+
+    def test__extract_root_path_no_https(self):
+        """Test that the _extract_root_path method return empty string
+        when the URL does not contain 'https'."""
+
+        url = "http://example.com/path/to/artifactory/file.txt"
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+
+        self.assertEqual(job._extract_root_path(url), "")
+
+    def test__extract_root_path_no_artifactory(self):
+        """Test that _extract_root_path returns empty string when 'artifactory'
+        is not in the URL."""
+
+        url = "https://example.com/path/to/somewhere/file.txt"
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+
+        self.assertEqual(job._extract_root_path(url), "")
+
+    def test__extract_root_path(self):
+        """Test that _extract_root_path extracts the correct root path from an
+        https:// URL.
+
+        We expect the root path to be everything after the 'https',
+        before and including the 'artifactory'."""
+        url = "https://example.com/path/to/artifactory/file.txt"
+        expected_root = "https://example.com/path/to/artifactory"
+
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = removeSecurityProxy(job)
+
+        root_path = job._extract_root_path(url)
+        self.assertEqual(expected_root, root_path)
