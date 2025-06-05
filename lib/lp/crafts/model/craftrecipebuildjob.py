@@ -9,11 +9,13 @@ __all__ = [
     "CraftRecipeBuildJobType",
 ]
 
+import glob
 import json
 import os
 import subprocess
 import tempfile
 from configparser import NoSectionError
+from urllib.parse import urlparse
 
 import transaction
 import yaml
@@ -40,6 +42,10 @@ from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.scripts import log
+
+# Timeout in seconds for HTTP requests made through Cargo.
+# Prevents builds from hanging if network connectivity issues occur.
+CARGO_HTTP_TIMEOUT = 60
 
 
 class CraftRecipeBuildJobType(DBEnumeratedType):
@@ -216,6 +222,14 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                 )
                 raise Exception(self.error_message)
 
+            # Check if HTTP proxy is configured - log a warning but continue
+            if not config.launchpad.http_proxy:
+                log.warning(
+                    "No HTTP proxy configured for artifact publishing. "
+                    "This may cause connectivity issues with external "
+                    "repositories."
+                )
+
             # Check if we have a .crate file or .jar file
             crate_file = None
             jar_file = None
@@ -336,6 +350,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         # Extract token from auth string (discard username if present)
         if ":" in cargo_publish_auth:
             _, token = cargo_publish_auth.split(":", 1)
+            token = token.strip('"')
         else:
             token = cargo_publish_auth
 
@@ -345,7 +360,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
         # Create config.toml
         with open(os.path.join(cargo_dir, "config.toml"), "w") as f:
-            f.write(
+            config_content = (
                 "\n"
                 "[registry]\n"
                 'global-credential-providers = ["cargo:token"]\n'
@@ -354,11 +369,28 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                 f'index = "{cargo_publish_url}"\n'
             )
 
-        # Create credentials.toml
-        with open(os.path.join(cargo_dir, "credentials.toml"), "w") as f:
-            f.write(
-                "\n" "[registries.launchpad]\n" f'token = "Bearer {token}"\n'
-            )
+            # Only add the HTTP proxy configuration if it's set
+            if config.launchpad.http_proxy:
+                config_content += (
+                    "\n"
+                    "[http]\n"
+                    f"proxy = '{config.launchpad.http_proxy}'\n"
+                    f"timeout = {CARGO_HTTP_TIMEOUT}\n"
+                    "multiplexing = false\n"
+                )
+
+            f.write(config_content)
+
+        # Replace any Cargo.toml files with their .orig versions if they exist,
+        # as the .orig files contain the original content before build
+        # modifications
+        orig_files = glob.glob(
+            f"{extract_dir}/**/Cargo.toml.orig", recursive=True
+        )
+        for orig_file in orig_files:
+            cargo_toml = orig_file.replace(".orig", "")
+            if os.path.exists(cargo_toml):
+                os.replace(orig_file, cargo_toml)
 
         # Run cargo publish from the extracted directory
         result = subprocess.run(
@@ -378,9 +410,10 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         if result.returncode != 0:
             raise Exception(f"Failed to publish crate: {result.stderr}")
 
-        # XXX ilkeremrekoc 2025-06-10:
-        # The publish_properties method returns a 403 error.
-        # Until this is resolved, we will not call it.
+        # XXX ruinedyourlife 2025-06-06:
+        # The publish_properties method is not working as expected.
+        # Artifactory is giving us a 403.
+        # We should fix it, but for now we'll skip it.
         # self._publish_properties(cargo_publish_url, artifact_name)
 
     def _publish_maven_artifact(
@@ -445,9 +478,10 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                 f"Failed to publish Maven artifact: {result.stderr}"
             )
 
-        # XXX ilkeremrekoc 2025-06-10:
-        # The publish_properties method returns a 403 error.
-        # Until this is resolved, we will not call it.
+        # XXX ruinedyourlife 2025-06-06:
+        # The publish_properties method is not working as expected.
+        # Artifactory is giving us a 403.
+        # We should fix it, but for now we'll skip it.
         # self._publish_properties(maven_publish_url, artifact_name)
 
     def _get_maven_settings_xml(self, username, password):
@@ -457,6 +491,29 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         :param password: Maven repository password
         :return: XML content as string
         """
+        # Get proxy settings from config
+        proxy_url = config.launchpad.http_proxy
+        proxy_host = None
+        proxy_port = None
+
+        if proxy_url:
+            # Parse the proxy URL using urllib.parse
+            parsed_url = urlparse(proxy_url)
+
+            # Extract host and port from the parsed URL
+            proxy_host = parsed_url.hostname
+            proxy_port = parsed_url.port
+
+            # Log warning if proxy URL doesn't contain both host and port
+            if not proxy_host or not proxy_port:
+                log.warning(
+                    f"Invalid proxy URL format: {proxy_url}. "
+                    "Expected format: http://hostname:port. "
+                    "Maven proxy configuration will be skipped."
+                )
+                proxy_host = None
+                proxy_port = None
+
         # Break it into smaller parts to avoid long lines
         header = (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -480,6 +537,21 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
             "    </servers>\n"
         )
 
+        # Add proxy configuration if proxy is configured
+        proxies = ""
+        if proxy_host and proxy_port:
+            proxies = (
+                "    <proxies>\n"
+                "        <proxy>\n"
+                "            <id>launchpad-proxy</id>\n"
+                "            <active>true</active>\n"
+                "            <protocol>http</protocol>\n"
+                f"            <host>{proxy_host}</host>\n"
+                f"            <port>{proxy_port}</port>\n"
+                "        </proxy>\n"
+                "    </proxies>\n"
+            )
+
         profiles = (
             "    <profiles>\n"
             "        <profile>\n"
@@ -502,7 +574,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         )
 
         # Combine all parts
-        return header + schema + servers + profiles + active_profiles
+        return header + schema + servers + proxies + profiles + active_profiles
 
     def _publish_properties(
         self, publish_url: str, artifact_name: str
