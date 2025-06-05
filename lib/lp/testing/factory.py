@@ -6753,6 +6753,8 @@ class LaunchpadObjectFactory(ObjectFactory):
         date_created=DEFAULT,
         use_fetch_service=False,
         fetch_service_policy=FetchServicePolicy.STRICT,
+        git_repository_url=None,
+        git_path=None,
     ):
         """Make a new charm recipe."""
         if registrant is None:
@@ -6782,7 +6784,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             )
         if name is None:
             name = self.getUniqueUnicode("charm-name")
-        if git_ref is None:
+        if git_repository_url is None and git_ref is None:
             git_ref = self.makeGitRefs()[0]
         recipe = getUtility(ICharmRecipeSet).new(
             registrant=registrant,
@@ -6803,6 +6805,8 @@ class LaunchpadObjectFactory(ObjectFactory):
             date_created=date_created,
             use_fetch_service=use_fetch_service,
             fetch_service_policy=fetch_service_policy,
+            git_repository_url=git_repository_url,
+            git_path=git_path,
         )
         if is_stale is not None:
             removeSecurityProxy(recipe).is_stale = is_stale
