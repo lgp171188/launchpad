@@ -98,7 +98,12 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         if build.recipe.build_path is not None:
             args["build_path"] = build.recipe.build_path
         if build.recipe.git_ref is not None:
-            args["git_repository"] = build.recipe.git_repository.git_https_url
+            if build.recipe.git_ref.repository_url is not None:
+                args["git_repository"] = build.recipe.git_ref.repository_url
+            else:
+                args["git_repository"] = (
+                    build.recipe.git_repository.git_https_url
+                )
             # "git clone -b" doesn't accept full ref names.  If this becomes
             # a problem then we could change launchpad-buildd to do "git
             # clone" followed by "git checkout" instead.
@@ -126,3 +131,7 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # that check does not make sense.  We do, however, refuse to build
         # for obsolete series.
         assert self.build.distro_series.status != SeriesStatus.OBSOLETE
+
+    @defer.inlineCallbacks
+    def _saveBuildSpecificFiles(self, upload_path):
+        yield self.endProxySession(upload_path)
