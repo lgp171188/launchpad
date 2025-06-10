@@ -606,23 +606,31 @@ edition = "2018"
         env = kwargs["env"]
         self.assertIn("CARGO_HOME", env)
 
+        # XXX ilkeremrekoc 2025-06-10:
+        # The publish_properties method returns a 403 error.
+        # Until this is resolved, we will comment out the method
+        # from the publishing runs and not run these tests here.
+
         # Verify that the artifact's metadata were uploaded to Artifactory
-        artifact = self._artifactory_search("repository", lfa.filename)
+        # artifact = self._artifactory_search("repository", lfa.filename)
 
-        self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+        # self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
 
-        self.assertEqual(artifact["repo"], "repository")
-        self.assertEqual(artifact["name"], lfa.filename)
-        self.assertEqual(artifact["path"], "crates/test")
-        self.assertEqual(
-            artifact["properties"]["soss.commit_id"], "random-revision-id"
-        )
-        self.assertEqual(
-            artifact["properties"]["soss.source_url"],
-            git_repository.git_https_url,
-        )
-        self.assertEqual(artifact["properties"]["soss.type"], "source")
-        self.assertEqual(artifact["properties"]["soss.license"], license_value)
+        # self.assertEqual(artifact["repo"], "repository")
+        # self.assertEqual(artifact["name"], lfa.filename)
+        # self.assertEqual(artifact["path"], "crates/test")
+        # self.assertEqual(
+        #    artifact["properties"]["soss.commit_id"], "random-revision-id"
+        # )
+        # self.assertEqual(
+        #    artifact["properties"]["soss.source_url"],
+        #    git_repository.git_https_url,
+        # )
+        # self.assertEqual(artifact["properties"]["soss.type"], "source")
+        # self.assertEqual(
+        # artifact["properties"]["soss.license"],
+        # license_value
+        # )
 
     def test_run_missing_maven_config(self):
         """
@@ -852,23 +860,31 @@ edition = "2018"
         kwargs = mvn_call[1]
         self.assertIn("cwd", kwargs)
 
-        artifact = self._artifactory_search("repository", jar_lfa.filename)
+        # XXX ilkeremrekoc 2025-06-10:
+        # The publish_properties method returns a 403 error.
+        # Until this is resolved, we will comment out the method
+        # from the publishing runs and not run these tests here.
 
         # Verify that the artifact's metadata were uploaded to Artifactory
-        self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+        # artifact = self._artifactory_search("repository", jar_lfa.filename)
 
-        self.assertEqual(artifact["repo"], "repository")
-        self.assertEqual(artifact["name"], jar_lfa.filename)
-        self.assertEqual(artifact["path"], "com/example/test-artifact/0.1.0")
-        self.assertEqual(
-            artifact["properties"]["soss.commit_id"], "random-revision-id"
-        )
-        self.assertEqual(
-            artifact["properties"]["soss.source_url"],
-            git_repository.git_https_url,
-        )
-        self.assertEqual(artifact["properties"]["soss.type"], "source")
-        self.assertEqual(artifact["properties"]["soss.license"], license_value)
+        # self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+
+        # self.assertEqual(artifact["repo"], "repository")
+        # self.assertEqual(artifact["name"], jar_lfa.filename)
+        # self.assertEqual(artifact["path"], "com/example/test-artifact/0.1.0")
+        # self.assertEqual(
+        #    artifact["properties"]["soss.commit_id"], "random-revision-id"
+        # )
+        # self.assertEqual(
+        #    artifact["properties"]["soss.source_url"],
+        #    git_repository.git_https_url,
+        # )
+        # self.assertEqual(artifact["properties"]["soss.type"], "source")
+        # self.assertEqual(
+        # artifact["properties"]["soss.license"],
+        # license_value
+        # )
 
     def test__publish_properties_sets_expected_properties(self):
         """Test that _publish_properties sets the correct properties in

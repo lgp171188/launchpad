@@ -378,7 +378,10 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         if result.returncode != 0:
             raise Exception(f"Failed to publish crate: {result.stderr}")
 
-        self._publish_properties(cargo_publish_url, artifact_name)
+        # XXX ilkeremrekoc 2025-06-10:
+        # The publish_properties method returns a 403 error.
+        # Until this is resolved, we will not call it.
+        # self._publish_properties(cargo_publish_url, artifact_name)
 
     def _publish_maven_artifact(
         self, work_dir, env_vars, artifact_name, jar_path=None, pom_path=None
@@ -442,7 +445,10 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                 f"Failed to publish Maven artifact: {result.stderr}"
             )
 
-        self._publish_properties(maven_publish_url, artifact_name)
+        # XXX ilkeremrekoc 2025-06-10:
+        # The publish_properties method returns a 403 error.
+        # Until this is resolved, we will not call it.
+        # self._publish_properties(maven_publish_url, artifact_name)
 
     def _get_maven_settings_xml(self, username, password):
         """Generate Maven settings.xml content.
