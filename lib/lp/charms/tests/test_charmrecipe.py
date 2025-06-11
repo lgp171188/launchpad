@@ -671,6 +671,27 @@ class TestCharmRecipe(TestCaseWithFactory):
             ),
         )
 
+    def test_requestBuilds_with_processor_objects(self):
+        # 'architectures' may be passed as Processor objects or strings
+        # to 'requestBuilds'. Processor instances must be converted
+        # to its tag strings before being stored in the job metadata.
+        recipe = self.factory.makeCharmRecipe()
+        amd64 = getUtility(IProcessorSet).getByName("amd64")
+
+        with person_logged_in(recipe.owner.teamowner):
+            request = recipe.requestBuilds(
+                recipe.owner.teamowner, architectures={amd64}
+            )
+        self.assertThat(
+            request.architectures,
+            MatchesSetwise(Equals("amd64")),
+        )
+        [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+        self.assertThat(
+            job.architectures,
+            MatchesSetwise(Equals("amd64")),
+        )
+
     def makeRequestBuildsJob(
         self, distro_series_version, arch_tags, git_ref=None
     ):
