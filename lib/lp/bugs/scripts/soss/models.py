@@ -50,6 +50,9 @@ class SOSSRecord:
             if not VALID_CHANNEL_REGEX.match(self.value):
                 raise ValueError(f"Invalid channel format: {self.value}")
 
+        def __str__(self) -> str:
+            return self.value
+
     @dataclass
     class CVSS:
         source: str
@@ -67,6 +70,14 @@ class SOSSRecord:
                     f"Invalid base severity: {self.base_severity}"
                 )
 
+        def to_dict(self) -> Dict[str, Any]:
+            return {
+                "source": self.source,
+                "vector": self.vector,
+                "baseScore": self.base_score,
+                "baseSeverity": self.base_severity,
+            }
+
     @dataclass
     class Package:
         name: str
@@ -74,6 +85,15 @@ class SOSSRecord:
         repositories: List[str]
         status: "SOSSRecord.PackageStatusEnum"
         note: str
+
+        def to_dict(self) -> Dict[str, Any]:
+            return {
+                "Name": self.name,
+                "Channel": str(self.channel),
+                "Repositories": self.repositories,
+                "Status": self.status.value,
+                "Note": self.note,
+            }
 
     references: List[str]
     notes: List[str]
@@ -126,7 +146,7 @@ class SOSSRecord:
         ]
 
         public_date_str = raw.get("PublicDate")
-        public_date = (
+        public_date: datetime = (
             datetime.fromisoformat(public_date_str)
             if public_date_str
             else None
@@ -144,3 +164,33 @@ class SOSSRecord:
             cvss=cvss_list,
             public_date=public_date,
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        serialized = {
+            "References": self.references,
+            "Notes": self.notes,
+            "Priority": self.priority.value,
+            "Priority-Reason": self.priority_reason,
+            "Assigned-To": self.assigned_to,
+            "Packages": {
+                key.value: [p.to_dict() for p in pkg_list]
+                for key, pkg_list in self.packages.items()
+            },
+        }
+
+        # If empty, we don't print the header
+        if self.candidate:
+            serialized["Candidate"] = self.candidate
+        if self.description:
+            serialized["Description"] = self.description
+        if self.cvss:
+            serialized["CVSS"] = [cvss.to_dict() for cvss in self.cvss]
+        if self.public_date:
+            serialized["PublicDate"] = self.public_date.isoformat(
+                sep="T", timespec="milliseconds"
+            )
+
+        return serialized
+
+    def to_yaml(self) -> str:
+        return yaml.dump(self.to_dict(), sort_keys=False)

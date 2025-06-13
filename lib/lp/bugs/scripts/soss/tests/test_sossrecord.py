@@ -1,5 +1,6 @@
 #  Copyright 2025 Canonical Ltd.  This software is licensed under the
 #  GNU Affero General Public License version 3 (see the file LICENSE).
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -9,6 +10,10 @@ from lp.testing import TestCase
 
 class TestSOSSRecord(TestCase):
     maxDiff = None
+
+    def get_sample_files(self):
+        directory = Path(__file__).parent / "sampledata"
+        return [directory / f for f in os.listdir(directory)]
 
     def setUp(self, *args, **kwargs):
         super().setUp(*args, **kwargs)
@@ -273,3 +278,29 @@ class TestSOSSRecord(TestCase):
             soss_record = SOSSRecord.from_yaml(f)
 
         self.assertEqual(self.soss_record, soss_record)
+
+    def test_to_dict(self):
+        self.assertDictEqual(
+            self.soss_record.to_dict(),
+            self.soss_record_dict,
+        )
+
+    def test_to_yaml(self):
+        load_from = Path(__file__).parent / "sampledata" / "CVE-2025-1979-full"
+        with open(load_from) as f:
+            sample_data = f.read()
+
+        self.assertEqual(self.soss_record.to_yaml(), sample_data),
+
+    def _verify_import_export_yaml(self, file):
+        with open(file) as f:
+            soss_record_read = f.read()
+
+        soss_record = SOSSRecord.from_yaml(soss_record_read)
+        self.assertEqual(soss_record_read, soss_record.to_yaml())
+
+    def test_verify_import_export_yaml(self):
+        files = self.get_sample_files()
+
+        for f in files:
+            self._verify_import_export_yaml(f)
