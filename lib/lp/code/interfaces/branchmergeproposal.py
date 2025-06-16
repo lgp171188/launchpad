@@ -608,10 +608,7 @@ class IBranchMergeProposalView(Interface):
         """Check if the merge proposal has any conflicts."""
 
     def hasNoPendingPrerequisite():
-        """Check if the prerequisite branch has been merged into the target.
-
-        :raises NotImplementedError: If using Bazaar branches.
-        """
+        """Check if the prerequisite branch has been merged into the target."""
 
     def diffIsUpToDate():
         """Check if the preview diff is up to date, i.e., that there are no
@@ -629,7 +626,17 @@ class IBranchMergeProposalView(Interface):
         to manually merge.
         """
 
-    def checkMergeCriteria():
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getMergeCriteria():
+        """Get mergeability status for a merge proposal.
+
+        :return: A dictionary containing the status of merge criteria checks.
+            The 'can_be_merged' key indicates if all criteria passed, and the
+            'criteria' key contains details about each check."
+        """
+
+    def checkMergeCriteria(force=False):
         """Check if the merge proposal meets all criteria for merging.
 
         The hard criteria are:
