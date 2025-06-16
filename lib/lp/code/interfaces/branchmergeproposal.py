@@ -618,6 +618,17 @@ class IBranchMergeProposalView(Interface):
         pending diff update jobs.
         """
 
+    @call_with(person=REQUEST_USER)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def canIMerge(person):
+        """Check if logged in user has permission to merge this proposal.
+
+        We assume that a person can merge a proposal if they can push to the
+        target ref, as that would mean they have the necessary permissions
+        to manually merge.
+        """
+
     def checkMergeCriteria():
         """Check if the merge proposal meets all criteria for merging.
 

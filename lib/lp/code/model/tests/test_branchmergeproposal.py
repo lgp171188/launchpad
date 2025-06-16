@@ -89,6 +89,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.webapp import canonical_url
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.services.xref.interfaces import IXRefSet
 from lp.testing import (
@@ -96,6 +97,7 @@ from lp.testing import (
     TestCaseWithFactory,
     WebServiceTestCase,
     admin_logged_in,
+    api_url,
     launchpadlib_for,
     login,
     login_person,
@@ -110,6 +112,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
 )
+from lp.testing.pages import webservice_for_person
 
 
 class WithVCSScenarios(WithScenarios):
@@ -3881,36 +3884,81 @@ class TestBranchMergeProposalMergePermissions(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
+        self.person = self.factory.makePerson()
         self.proposal = self.factory.makeBranchMergeProposalForGit()
         self.useFixture(GitHostingFixture())
 
     def test_personCanMerge_no_permission(self):
         # A person without push permission cannot merge
-        person = self.factory.makePerson()
         proposal = removeSecurityProxy(self.proposal)
-        self.assertFalse(proposal.personCanMerge(person))
+        self.assertFalse(proposal.personCanMerge(self.person))
 
     def test_personCanMerge_with_permission(self):
         # A person with push permission can merge
-        person = self.factory.makePerson()
         proposal = removeSecurityProxy(self.proposal)
         rule = removeSecurityProxy(
             self.factory.makeGitRule(repository=proposal.target_git_repository)
         )
         self.factory.makeGitRuleGrant(
-            rule=rule, grantee=person, can_create=True, can_push=True
+            rule=rule, grantee=self.person, can_create=True, can_push=True
         )
-        self.assertTrue(proposal.personCanMerge(person))
+        self.assertTrue(proposal.personCanMerge(self.person))
 
     def test_personCanMerge_bazaar(self):
         # Check checking permissions for merging bazaar repo raises error
-        person = self.factory.makePerson()
         proposal = removeSecurityProxy(self.factory.makeBranchMergeProposal())
         self.assertRaises(
             NotImplementedError,
             proposal.personCanMerge,
-            person,
+            self.person,
         )
+
+    def test_canIMerge_no_permission(self):
+        # Check that canIMerge endpoint is exposed and returns False if user
+        # has no merge permissions
+
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        with person_logged_in(self.person):
+            proposal_url = api_url(self.proposal)
+
+        response = self.webservice.named_get(
+            proposal_url,
+            "canIMerge",
+            api_version="devel",
+        )
+        self.assertEqual(200, response.status)
+        self.assertFalse(response.jsonBody())
+
+    def test_canIMerge_with_permission(self):
+        # Check that canIMerge endpoint is exposed and returns True if user
+        # has merge permissions
+
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        with person_logged_in(self.person):
+            proposal_url = api_url(self.proposal)
+
+        rule = removeSecurityProxy(
+            self.factory.makeGitRule(
+                repository=removeSecurityProxy(
+                    self.proposal
+                ).target_git_repository
+            )
+        )
+        self.factory.makeGitRuleGrant(
+            rule=rule, grantee=self.person, can_create=True, can_push=True
+        )
+
+        response = self.webservice.named_get(
+            proposal_url,
+            "canIMerge",
+            api_version="devel",
+        )
+        self.assertEqual(200, response.status)
+        self.assertTrue(response.jsonBody())
 
 
 class TestBranchMergeProposalMerge(TestCaseWithFactory):

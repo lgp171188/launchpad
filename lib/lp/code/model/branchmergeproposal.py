@@ -964,6 +964,10 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
 
         return result, failed_checks
 
+    def canIMerge(self, person):
+        """See `IBranchMergeProposal`."""
+        return self.personCanMerge(person)
+
     def personCanMerge(self, person):
         """See `IBranchMergeProposal`."""
 
