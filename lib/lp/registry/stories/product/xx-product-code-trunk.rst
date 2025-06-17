@@ -116,14 +116,11 @@ The owner is taken back to the project page.
      Change details (http://launchpad.test/fooix/+edit)
     >>> print_code_trunk(owner_browser)
     lp://dev/fooix  Configure Code
-    Browse the code
     Links:
       lp://dev/fooix (http://code.launchpad.test/~eric/fooix/trunk)
       Configure Code
         Configure code for this project
         (http://launchpad.test/fooix/+configure-code)
-      Browse the code
-        (https://bazaar.launchpad.test/~eric/fooix/trunk/files)
 
 
 Projects with development focus branches
@@ -132,7 +129,7 @@ Projects with development focus branches
 If the project has a specified development focus branch, this is shown in the
 development focus section of the project information.
 
-There is a link both to the branch, and to the source code browser for that
+There is a link both to the branch, and but no source code browser for that
 branch.
 
     >>> anon_browser.open("http://launchpad.test/fooix")
@@ -142,11 +139,8 @@ branch.
      trunk series (/fooix/trunk)
     >>> print_code_trunk(anon_browser)
     lp://dev/fooix
-    Browse the code
     Links:
       lp://dev/fooix (http://code.launchpad.test/~eric/fooix/trunk)
-      Browse the code
-        (https://bazaar.launchpad.test/~eric/fooix/trunk/files)
 
     >>> owner_browser.open("http://launchpad.test/fooix")
     >>> print_development_focus(owner_browser)
@@ -156,14 +150,11 @@ branch.
      Change details (http://launchpad.test/fooix/+edit)
     >>> print_code_trunk(owner_browser)
     lp://dev/fooix   Configure Code
-    Browse the code
     Links:
       lp://dev/fooix (http://code.launchpad.test/~eric/fooix/trunk)
       Configure Code
         Configure code for this project
         (http://launchpad.test/fooix/+configure-code)
-      Browse the code
-        (https://bazaar.launchpad.test/~eric/fooix/trunk/files)
 
 
 Private development focus branches
@@ -195,11 +186,8 @@ appears as if there is no series branch set.
         (http://launchpad.test/fooix/+edit)
     >>> print_code_trunk(owner_browser)
     lp://dev/fooix   Configure Code
-    Browse the code
     Links:
       lp://dev/fooix (http://code.launchpad.test/~eric/fooix/trunk)
       Configure Code
         Configure code for this project
         (http://launchpad.test/fooix/+configure-code)
-      Browse the code
-        (https://bazaar.launchpad.test/~eric/fooix/trunk/files)

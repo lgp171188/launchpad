@@ -841,7 +841,7 @@ class Branch(StormBase, WebhookTargetMixin, BzrIdentityMixin):
     @property
     def code_is_browsable(self):
         """See `IBranch`."""
-        return self.revision_count > 0 or self.last_mirrored != None
+        return False
 
     def getCodebrowseUrl(self, *extras):
         """See `IBranch`."""
