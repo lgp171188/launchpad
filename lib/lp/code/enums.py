@@ -28,6 +28,7 @@ __all__ = [
     "GitRepositoryStatus",
     "GitRepositoryType",
     "MergeType",
+    "MergeProposalCriteria",
     "NON_CVS_RCS_TYPES",
     "RevisionControlSystems",
     "RevisionStatusArtifactType",
@@ -669,6 +670,25 @@ class MergeType(DBEnumeratedType):
         Default merge with a merge commit.
         """,
     )
+
+
+class MergeProposalCriteria(EnumeratedType):
+    """Merge proposal merge criteria
+
+    Which checks we run when verifying that a merge proposal is mergeable
+    """
+
+    IS_IN_PROGRESS = Item("is_in_progress")
+
+    HAS_NO_CONFLICTS = Item("has_no_conflicts")
+
+    DIFF_IS_UP_TO_DATE = Item("diff_is_up_to_date")
+
+    HAS_NO_PENDING_PREREQUISITE = Item("has_no_pending_prerequisite")
+
+    IS_APPROVED = Item("is_approved")
+
+    CI_CHECKS_PASSED = Item("CI_checks_passed")
 
 
 class BranchSubscriptionDiffSize(DBEnumeratedType):
