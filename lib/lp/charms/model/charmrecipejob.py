@@ -173,6 +173,14 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
     @classmethod
     def create(cls, recipe, requester, channels=None, architectures=None):
         """See `ICharmRecipeRequestBuildsJobSource`."""
+        # 'architectures' can be an iterable of strings or 'Processor's.
+        # In the latter case, we need to convert them to strings.
+        if architectures and all(
+            not isinstance(arch, str) for arch in architectures
+        ):
+            architectures = [
+                architecture.name for architecture in architectures
+            ]
         metadata = {
             "requester": requester.id,
             "channels": channels,
