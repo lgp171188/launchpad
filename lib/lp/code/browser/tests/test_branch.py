@@ -546,7 +546,7 @@ class TestBranchView(BrowserTestCase):
         self.assertTextMatchesExpressionIgnoreWhitespace(expected_text, text)
 
         links = revision_content.find_all("a")
-        self.assertEqual(mp_url, links[2]["href"])
+        self.assertEqual(mp_url, links[0]["href"])
 
     def test_recent_revisions_with_merge_proposals_and_bug_links(self):
         # Revisions which result from merging in a branch with a merge
@@ -605,10 +605,10 @@ class TestBranchView(BrowserTestCase):
         self.assertTextMatchesExpressionIgnoreWhitespace(expected_text, text)
 
         links = revision_content.find_all("a")
-        self.assertEqual(mp_url, links[2]["href"])
-        self.assertEqual(branch_url, links[3]["href"])
-        self.assertEqual(linked_bug_urls[0], links[4]["href"])
-        self.assertEqual(linked_bug_urls[1], links[5]["href"])
+        self.assertEqual(mp_url, links[0]["href"])
+        self.assertEqual(branch_url, links[1]["href"])
+        self.assertEqual(linked_bug_urls[0], links[2]["href"])
+        self.assertEqual(linked_bug_urls[1], links[3]["href"])
 
     def test_view_for_user_with_artifact_grant(self):
         # Users with an artifact grant for a branch related to a private
