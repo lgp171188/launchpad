@@ -89,13 +89,14 @@ than the text of the revision author.
     2. By Eric on 2007-01-02
     1. By Eric on 2007-01-01
 
-Each of the revision numbers are anchors to codebrowse.
+Each of the revision numbers are no longer anchors to codebrowse and
+link to the user's profile instead.
 
     >>> revision = find_tags_by_class(
     ...     user_browser.contents, "revision-details", only_first=True
     ... )
     >>> print(revision.a)
-    <a href="https://bazaar.launchpad.test/~eric/fooix/trunk/revision/5">5</a>
+    <a class="sprite person" href="http://launchpad.test/~eric">Eric</a>
 
 
 Commit messages
@@ -218,7 +219,6 @@ the URL for the branch's canonical location.
     >>> print(extract_text(get_branch_management_portlet()))
     Only Sample Person can upload to this branch.
     If you are Sample Person please log in for upload directions.
-    Browse the code
 
 For mirrored branches, the table has a link to the branch's project, the
 location of the original branch, the mirror on Launchpad, information
@@ -308,7 +308,9 @@ If next_mirror_time is NULL, then mirroring of the branch is disabled.
 Codebrowse link
 ---------------
 
-The codebrowse link only appears for branches that have revisions.
+The codebrowse link does not appear for bzr branches because we are
+shutting down loggerhead as a part of the upcoming bzr codehosting
+decommissioning.
 
     >>> browser.open(
     ...     "http://code.launchpad.test/~name12/gnome-terminal/scanned"
@@ -324,7 +326,9 @@ view in codebrowse.
 
     >>> browser.open("http://code.launchpad.test/~name12/+junk/junk.dev")
     >>> print(browser.getLink("All revisions").url)
-    https://bazaar.launchpad.test/~name12/+junk/junk.dev/changes
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
 
 If the branch is private, the browse code link is not shown. In order to
 see the private branch, we need to log in as a user that is able to see

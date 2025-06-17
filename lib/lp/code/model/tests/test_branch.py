@@ -2595,16 +2595,14 @@ class TestCodebrowse(TestCaseWithFactory):
             branch.browse_source_url, branch.getCodebrowseUrl("files")
         )
 
-    def test_no_revisions_not_browsable(self):
-        # A branch with no revisions is not browsable.
+    def test_not_browsable(self):
+        # For the upcoming decommissioning of bzr codehosting on
+        # Launchpad, we are disabling the codebrowse feature. So
+        # code is always not browsable.
         branch = self.factory.makeBranch()
         self.assertFalse(branch.code_is_browsable)
-
-    def test_revisions_means_browsable(self):
-        # A branch that has revisions is browsable.
-        branch = self.factory.makeBranch()
         self.factory.makeRevisionsForBranch(branch, count=5)
-        self.assertTrue(branch.code_is_browsable)
+        self.assertFalse(branch.code_is_browsable)
 
 
 class TestBranchNamespace(TestCaseWithFactory):

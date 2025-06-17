@@ -66,16 +66,17 @@ class TestProductBranchesView(ProductTestBase):
         else:
             self.fail("Browse link present when it should not have been.")
 
-    def test_browsable_branch_has_link(self):
-        # If the product's development focus branch is browsable, there is a
-        # 'browse code' link.
+    def test_branch_is_not_browsable_and_has_no_link(self):
+        # If the product has a development focus branch, it is no
+        # browsable, abd there is no 'browse code' link.
         product, branch = self.makeProductAndDevelopmentFocusBranch()
         branch.updateScannedDetails(self.factory.makeRevision(), 1)
-        self.assertTrue(branch.code_is_browsable)
-
-        link = self.getBranchSummaryBrowseLinkForProduct(product)
-        login(ANONYMOUS)
-        self.assertEqual(link.url, branch.browse_source_url)
+        self.assertFalse(branch.code_is_browsable)
+        self.assertRaises(
+            LinkNotFoundError,
+            self.getBranchSummaryBrowseLinkForProduct,
+            product,
+        )
 
     def test_unbrowsable_branch_does_not_have_link(self):
         # If the product's development focus branch is not browsable, there
