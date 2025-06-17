@@ -3,6 +3,7 @@
 
 import io
 import json
+import logging
 import os
 import tarfile
 import tempfile
@@ -90,6 +91,136 @@ class TestCraftPublishingJob(TestCaseWithFactory):
             FakeArtifactoryFixture(self.base_url, self.repository_name)
         )
 
+    def run_job(self, job):
+        """Helper to run a job and return the result."""
+        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        JobRunner([job]).runAll()
+        job = removeSecurityProxy(job)
+        return job
+
+    def _setup_distribution(self, distribution_name="soss"):
+        """Helper to setup a distribution and its source package."""
+        distribution = self.factory.makeDistribution(name=distribution_name)
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        removeSecurityProxy(self.recipe).git_repository = git_repository
+
+    def _setup_config(self, with_env_vars=False, with_http_proxy=False):
+        """Helper to setup a config with the given values."""
+        distribution_name = "soss"
+
+        # Push config with or without env vars
+        if not with_env_vars:
+            # Just push the distribution section without env vars
+            self.pushConfig(f"craftbuild.{distribution_name}")
+        else:
+            # Push with standard environment variables
+            env_vars = {
+                "CARGO_PUBLISH_URL": f"{self.base_url}/repository",
+                "CARGO_PUBLISH_AUTH": "lp:token123",
+                "MAVEN_PUBLISH_URL": f"{self.base_url}/repository",
+                "MAVEN_PUBLISH_AUTH": "lp:token123",
+            }
+            self.pushConfig(
+                f"craftbuild.{distribution_name}",
+                environment_variables=json.dumps(env_vars),
+            )
+
+        if with_http_proxy:
+            self.pushConfig("launchpad", http_proxy="http://localhost:8080")
+
+    def _create_crate_file(self, crate_name="test-0.1.0"):
+        """Helper to create a crate file."""
+        # Create a BytesIO object to hold the tar data
+        tar_data = io.BytesIO()
+
+        # Create a tar archive
+        with tarfile.open(fileobj=tar_data, mode="w") as tar:
+            # Create a directory entry for the crate
+            crate_dir_info = tarfile.TarInfo(crate_name)
+            crate_dir_info.type = tarfile.DIRTYPE
+            crate_dir_info.mode = 0o755
+            tar.addfile(crate_dir_info)
+
+            # Add a Cargo.toml file
+            cargo_toml = (
+                "[package]\n"
+                'name = "test"\n'
+                'version = "0.1.0"\n'
+                'authors = ["Test <test@example.com>"]\n'
+                'edition = "2025"\n'
+            )
+            cargo_toml_info = tarfile.TarInfo(f"{crate_name}/Cargo.toml")
+            cargo_toml_bytes = cargo_toml.encode("utf-8")
+            cargo_toml_info.size = len(cargo_toml_bytes)
+            tar.addfile(cargo_toml_info, io.BytesIO(cargo_toml_bytes))
+
+            # Add a src directory
+            src_dir_info = tarfile.TarInfo(f"{crate_name}/src")
+            src_dir_info.type = tarfile.DIRTYPE
+            tar.addfile(src_dir_info)
+
+            # Add a main.rs file
+            main_rs = 'fn main() { println!("Hello, world!"); }'
+            main_rs_info = tarfile.TarInfo(f"{crate_name}/src/main.rs")
+            main_rs_bytes = main_rs.encode("utf-8")
+            main_rs_info.size = len(main_rs_bytes)
+            tar.addfile(main_rs_info, io.BytesIO(main_rs_bytes))
+
+        # Get the tar data
+        tar_data.seek(0)
+        crate_content = tar_data.getvalue()
+
+        # Create a LibraryFileAlias with the crate content
+        librarian = getUtility(ILibraryFileAliasSet)
+        lfa = librarian.create(
+            f"{crate_name}.crate",
+            len(crate_content),
+            io.BytesIO(crate_content),
+            "application/x-tar",
+        )
+
+        removeSecurityProxy(self.build).addFile(lfa)
+
+        return lfa
+
+    def _create_invalid_crate_file(self, type):
+        """Create an invalid crate file of different types."""
+        if type == "no_dirs":
+            tar_data = io.BytesIO()
+            with tarfile.open(fileobj=tar_data, mode="w") as tar:
+                # Add a file at the root level (no directory)
+                file_info = tarfile.TarInfo("file.txt")
+                file_content = b"This is a file with no directory"
+                file_info.size = len(file_content)
+                tar.addfile(file_info, io.BytesIO(file_content))
+            tar_data.seek(0)
+            content = tar_data.getvalue()
+            filename = "nodirs-0.1.0.crate"
+            mimetype = "application/x-tar"
+        elif type == "dummy":
+            content = b"test content"
+            filename = "test.txt"
+            mimetype = "text/plain"
+        elif type == "invalid_tar":
+            content = b"This is not a valid tar file"
+            filename = "invalid-0.1.0.crate"
+            mimetype = "application/x-tar"
+        else:
+            raise ValueError(f"Unknown invalid crate type: {type}")
+
+        librarian = getUtility(ILibraryFileAliasSet)
+        lfa = librarian.create(
+            filename,
+            len(content),
+            io.BytesIO(content),
+            mimetype,
+        )
+
+        removeSecurityProxy(self.build).addFile(lfa)
+
     def _artifactory_search(self, repo_name, artifact_name):
         """Helper to search for a file in the Artifactory fixture."""
 
@@ -170,17 +301,8 @@ class TestCraftPublishingJob(TestCaseWithFactory):
 
     def test_run_failure_cannot_determine_distribution(self):
         """Test failure when distribution cannot be determined."""
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
+        job = self.run_job(self.build)
 
-        # Create a mock git repository with a non-distribution target
-        git_repo = self.factory.makeGitRepository()
-        self.patch(
-            removeSecurityProxy(self.recipe), "git_repository", git_repo
-        )
-
-        JobRunner([job]).runAll()
-
-        job = removeSecurityProxy(job)
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
             "Could not determine distribution for build",
@@ -189,23 +311,9 @@ class TestCraftPublishingJob(TestCaseWithFactory):
 
     def test_run_failure_no_configuration(self):
         """Test failure when no configuration is found for the distribution."""
-        # Create a distribution with a name that won't have a configuration
-        distribution = self.factory.makeDistribution(name="nonexistent")
+        self._setup_distribution("nonexistent")
 
-        # Create a distribution source package for our distribution
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
-
-        # Create a git repository targeting that package
-        git_repository = self.factory.makeGitRepository(target=package)
-
-        # Update our recipe to use this git repository
-        removeSecurityProxy(self.recipe).git_repository = git_repository
-
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-        JobRunner([job]).runAll()
-        job = removeSecurityProxy(job)
+        job = self.run_job(self.build)
 
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
@@ -213,41 +321,46 @@ class TestCraftPublishingJob(TestCaseWithFactory):
             job.error_message,
         )
 
+    def test_run_no_http_proxy(self):
+        """Test that job runs even when no HTTP proxy is configured."""
+        self._setup_distribution("soss")
+        self._setup_config(with_env_vars=True)  # With env vars but no proxy
+
+        # Set up a fixture to capture log messages
+        logger_fixture = self.useFixture(FakeLogger(level=logging.WARNING))
+
+        # Create a crate file
+        self._create_crate_file()
+
+        # Mock the _publish_rust_crate method to avoid actual publishing
+        self.patch(
+            CraftPublishingJob,
+            "_publish_rust_crate",
+            lambda self, extract_dir, env_vars, artifact_name: None,
+        )
+
+        # Run the job
+        job = self.run_job(self.build)
+
+        # Verify the warning was logged
+        self.assertIn(
+            "No HTTP proxy configured for artifact publishing",
+            logger_fixture.output,
+        )
+
+        # Job should complete successfully despite no proxy
+        self.assertEqual(JobStatus.COMPLETED, job.job.status)
+
     def test_run_no_publishable_artifacts(self):
         """Test failure when no publishable artifacts are found."""
-        distribution = self.factory.makeDistribution(name="soss")
+        self._setup_distribution("soss")
+        self._setup_config(with_http_proxy=True)
 
-        # Set up config with environment variables but no Cargo publishing info
-        # We just need a config section for the distribution name
-        self.pushConfig("craftbuild.soss")
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
-        git_repository = self.factory.makeGitRepository(target=package)
-        removeSecurityProxy(self.recipe).git_repository = git_repository
+        self._create_invalid_crate_file(type="dummy")
 
-        # Create a dummy file (but not a crate or jar)
-        from io import BytesIO
+        job = self.run_job(self.build)
 
-        dummy_content = b"test content"
-
-        # Create a LibraryFileAlias with the dummy content
-        librarian = getUtility(ILibraryFileAliasSet)
-        lfa = librarian.create(
-            "test.txt",
-            len(dummy_content),
-            BytesIO(dummy_content),
-            "text/plain",
-        )
-
-        # Add the file to the build
-        removeSecurityProxy(self.build).addFile(lfa)
-
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-        JobRunner([job]).runAll()
-        job = removeSecurityProxy(job)
         self.assertEqual(JobStatus.FAILED, job.job.status)
-
         self.assertEqual(
             "No publishable artifacts found in build",
             job.error_message,
@@ -255,69 +368,12 @@ class TestCraftPublishingJob(TestCaseWithFactory):
 
     def test_run_missing_cargo_config(self):
         """Test failure when a crate is found but Cargo config is missing."""
-        distribution = self.factory.makeDistribution(name="soss")
-        self.pushConfig("craftbuild.soss")
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
+        self._setup_distribution("soss")
+        self._setup_config(with_http_proxy=True)
 
-        git_repository = self.factory.makeGitRepository(target=package)
+        self._create_crate_file()
 
-        removeSecurityProxy(self.recipe).git_repository = git_repository
-
-        # Create a BytesIO object to hold the tar data
-        tar_data = io.BytesIO()
-
-        # Create a tar archive
-        with tarfile.open(fileobj=tar_data, mode="w") as tar:
-            # Create a directory entry for the crate
-            crate_dir_info = tarfile.TarInfo("test-0.1.0")
-            crate_dir_info.type = tarfile.DIRTYPE
-            tar.addfile(crate_dir_info)
-
-            # Add a Cargo.toml file
-            cargo_toml = """
-[package]
-name = "test"
-version = "0.1.0"
-authors = ["Test <test@example.com>"]
-edition = "2018"
-"""
-            cargo_toml_info = tarfile.TarInfo("test-0.1.0/Cargo.toml")
-            cargo_toml_bytes = cargo_toml.encode("utf-8")
-            cargo_toml_info.size = len(cargo_toml_bytes)
-            tar.addfile(cargo_toml_info, io.BytesIO(cargo_toml_bytes))
-
-            # Add a src directory
-            src_dir_info = tarfile.TarInfo("test-0.1.0/src")
-            src_dir_info.type = tarfile.DIRTYPE
-            tar.addfile(src_dir_info)
-
-            # Add a main.rs file
-            main_rs = 'fn main() { println!("Hello, world!"); }'
-            main_rs_info = tarfile.TarInfo("test-0.1.0/src/main.rs")
-            main_rs_bytes = main_rs.encode("utf-8")
-            main_rs_info.size = len(main_rs_bytes)
-            tar.addfile(main_rs_info, io.BytesIO(main_rs_bytes))
-
-        # Get the tar data
-        tar_data.seek(0)
-        crate_content = tar_data.getvalue()
-
-        # Create a LibraryFileAlias with the crate content
-        librarian = getUtility(ILibraryFileAliasSet)
-        lfa = librarian.create(
-            "test-0.1.0.crate",
-            len(crate_content),
-            io.BytesIO(crate_content),
-            "application/x-tar",
-        )
-
-        removeSecurityProxy(self.build).addFile(lfa)
-
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-        JobRunner([job]).runAll()
-        job = removeSecurityProxy(job)
+        job = self.run_job(self.build)
 
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
@@ -327,43 +383,12 @@ edition = "2018"
 
     def test_run_crate_extraction_failure(self):
         """Test failure when crate extraction fails."""
-        distribution = self.factory.makeDistribution(name="soss")
+        self._setup_distribution("soss")
+        self._setup_config(with_env_vars=True, with_http_proxy=True)
 
-        # Set up config with environment variables
-        self.pushConfig(
-            "craftbuild.soss",
-            environment_variables=json.dumps(
-                {
-                    "CARGO_PUBLISH_URL": "https://example.com/registry",
-                    "CARGO_PUBLISH_AUTH": "lp:token123",
-                }
-            ),
-        )
+        self._create_invalid_crate_file(type="invalid_tar")
 
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
-
-        git_repository = self.factory.makeGitRepository(target=package)
-
-        removeSecurityProxy(self.recipe).git_repository = git_repository
-
-        # Create an invalid tar file (just some random bytes)
-        invalid_crate_content = b"This is not a valid tar file"
-
-        librarian = getUtility(ILibraryFileAliasSet)
-        lfa = librarian.create(
-            "invalid-0.1.0.crate",
-            len(invalid_crate_content),
-            io.BytesIO(invalid_crate_content),
-            "application/x-tar",
-        )
-
-        removeSecurityProxy(self.build).addFile(lfa)
-
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-        JobRunner([job]).runAll()
-        job = removeSecurityProxy(job)
+        job = self.run_job(self.build)
 
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertIn(
@@ -373,60 +398,13 @@ edition = "2018"
 
     def test_run_no_directory_in_crate(self):
         """Test failure when no directory is found in extracted crate."""
-        distribution = self.factory.makeDistribution(name="soss")
+        self._setup_distribution("soss")
+        self._setup_config(with_env_vars=True, with_http_proxy=True)
 
-        # Set up config with environment variables
-        self.pushConfig(
-            "craftbuild.soss",
-            environment_variables=json.dumps(
-                {
-                    "CARGO_PUBLISH_URL": "https://example.com/registry",
-                    "CARGO_PUBLISH_AUTH": "lp:token123",
-                }
-            ),
-        )
+        self._create_invalid_crate_file(type="no_dirs")
 
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
+        job = self.run_job(self.build)
 
-        git_repository = self.factory.makeGitRepository(target=package)
-
-        removeSecurityProxy(self.recipe).git_repository = git_repository
-
-        tar_data = io.BytesIO()
-
-        # Create a tar archive with only files (no directories)
-        with tarfile.open(fileobj=tar_data, mode="w") as tar:
-            # Add a file at the root level (no directory)
-            file_info = tarfile.TarInfo("file.txt")
-            file_content = b"This is a file with no directory"
-            file_info.size = len(file_content)
-            tar.addfile(file_info, io.BytesIO(file_content))
-
-        # Get the tar data
-        tar_data.seek(0)
-        crate_content = tar_data.getvalue()
-
-        # Create a LibraryFileAlias with the crate content
-        librarian = getUtility(ILibraryFileAliasSet)
-        lfa = librarian.create(
-            "nodirs-0.1.0.crate",
-            len(crate_content),
-            io.BytesIO(crate_content),
-            "application/x-tar",
-        )
-
-        # Add the file to the build
-        removeSecurityProxy(self.build).addFile(lfa)
-
-        # Create and run the job
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-
-        JobRunner([job]).runAll()
-
-        # Verify job failed with expected error message
-        job = removeSecurityProxy(job)
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
             "No directory found in extracted crate",
@@ -435,74 +413,11 @@ edition = "2018"
 
     def test_run_cargo_publish_success(self):
         """Test success when a crate is found and Cargo config is present."""
-        distribution = self.factory.makeDistribution(name="soss")
-        self.pushConfig(
-            "craftbuild.soss",
-            environment_variables=json.dumps(
-                {
-                    "CARGO_PUBLISH_URL": f"{self.base_url}/repository",
-                    "CARGO_PUBLISH_AUTH": "lp:token123",
-                }
-            ),
-        )
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
+        self._setup_distribution("soss")
+        self._setup_config(with_env_vars=True, with_http_proxy=True)
 
-        git_repository = self.factory.makeGitRepository(target=package)
-
-        removeSecurityProxy(self.recipe).git_repository = git_repository
-
-        # Create a BytesIO object to hold the tar data
-        tar_data = io.BytesIO()
-
-        # Create a tar archive
-        with tarfile.open(fileobj=tar_data, mode="w") as tar:
-            # Create a directory entry for the crate
-            crate_dir_info = tarfile.TarInfo("test-0.1.0")
-            crate_dir_info.type = tarfile.DIRTYPE
-            crate_dir_info.mode = 0o755  # rwxr-xr-x
-            tar.addfile(crate_dir_info)
-
-            # Add a Cargo.toml file
-            cargo_toml = """
-[package]
-name = "test"
-version = "0.1.0"
-authors = ["Test <test@example.com>"]
-edition = "2018"
-"""
-            cargo_toml_info = tarfile.TarInfo("test-0.1.0/Cargo.toml")
-            cargo_toml_bytes = cargo_toml.encode("utf-8")
-            cargo_toml_info.size = len(cargo_toml_bytes)
-            tar.addfile(cargo_toml_info, io.BytesIO(cargo_toml_bytes))
-
-            # Add a src directory
-            src_dir_info = tarfile.TarInfo("test-0.1.0/src")
-            src_dir_info.type = tarfile.DIRTYPE
-            tar.addfile(src_dir_info)
-
-            # Add a main.rs file
-            main_rs = 'fn main() { println!("Hello, world!"); }'
-            main_rs_info = tarfile.TarInfo("test-0.1.0/src/main.rs")
-            main_rs_bytes = main_rs.encode("utf-8")
-            main_rs_info.size = len(main_rs_bytes)
-            tar.addfile(main_rs_info, io.BytesIO(main_rs_bytes))
-
-        # Get the tar data
-        tar_data.seek(0)
-        crate_content = tar_data.getvalue()
-
-        # Create a LibraryFileAlias with the crate content
-        librarian = getUtility(ILibraryFileAliasSet)
-        lfa = librarian.create(
-            "test-0.1.0.crate",
-            len(crate_content),
-            io.BytesIO(crate_content),
-            "application/x-tar",
-        )
-
-        removeSecurityProxy(self.build).addFile(lfa)
+        # lfa = self._create_crate_file()
+        self._create_crate_file()
 
         # Add a metadata file with license information
         license_value = "Apache-2.0"
@@ -542,32 +457,32 @@ edition = "2018"
 
         self.patch(crbj_subprocess, "run", mock_run)
 
-        original_publish_properties = CraftPublishingJob._publish_properties
+        # XXX ruinedyourlife 2025-06-06:
+        # The publish_properties method is not working as expected.
+        # Artifactory is giving us a 403.
+        # We should fix it, but for now we'll skip it.
+        # original_publish_properties = CraftPublishingJob._publish_properties
 
-        def mock_cargo_publish_properties(*args, **kwargs):
-            """Mock _publish_properties to deploy the crate to Artifactory
-            Fixture before testing.
+        # def mock_cargo_publish_properties(*args, **kwargs):
+        #     """Mock _publish_properties to deploy the crate to Artifactory
+        #     Fixture before testing.
 
-            We need to do this in a nested function here because we need
-            to access the `lfa` variable which is created in the this test
-            setup above but the mocked function (and the lfa.open()) can
-            only be called inside the job's run method."""
+        #     We need to do this in a nested function here because we need
+        #     to access the `lfa` variable which is created in the this test
+        #     setup above but the mocked function (and the lfa.open()) can
+        #     only be called inside the job's run method."""
 
-            self._artifactory_put(args[1], "crates/test", args[2], lfa)
-            return original_publish_properties(*args, **kwargs)
+        #     self._artifactory_put(args[1], "crates/test", args[2], lfa)
+        #     return original_publish_properties(*args, **kwargs)
 
-        self.patch(
-            CraftPublishingJob,
-            "_publish_properties",
-            mock_cargo_publish_properties,
-        )
+        # self.patch(
+        #     CraftPublishingJob,
+        #     "_publish_properties",
+        #     mock_cargo_publish_properties,
+        # )
 
         # Create and run the job
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-        JobRunner([job]).runAll()
-
-        # Verify job succeeded
-        job = removeSecurityProxy(job)
+        job = self.run_job(self.build)
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
 
         # Find the call for cargo publish (should be the second call)
@@ -606,12 +521,11 @@ edition = "2018"
         env = kwargs["env"]
         self.assertIn("CARGO_HOME", env)
 
-        # XXX ilkeremrekoc 2025-06-10:
-        # The publish_properties method returns a 403 error.
-        # Until this is resolved, we will comment out the method
-        # from the publishing runs and not run these tests here.
-
-        # Verify that the artifact's metadata were uploaded to Artifactory
+        # XXX ruinedyourlife 2025-06-06:
+        # The publish_properties method is not working as expected.
+        # Artifactory is giving us a 403.
+        # We should fix it, but for now we'll skip it.
+        # # Verify that the artifact's metadata were uploaded to Artifactory
         # artifact = self._artifactory_search("repository", lfa.filename)
 
         # self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
@@ -624,12 +538,12 @@ edition = "2018"
         # )
         # self.assertEqual(
         #    artifact["properties"]["soss.source_url"],
-        #    git_repository.git_https_url,
+        #    removeSecurityProxy(self.recipe).git_repository.git_https_url,
         # )
         # self.assertEqual(artifact["properties"]["soss.type"], "source")
         # self.assertEqual(
-        # artifact["properties"]["soss.license"],
-        # license_value
+        #     artifact["properties"]["soss.license"],
+        #     license_value
         # )
 
     def test_run_missing_maven_config(self):
@@ -637,14 +551,8 @@ edition = "2018"
         Test failure when Maven artifacts are found but Maven config is
         missing.
         """
-        distribution = self.factory.makeDistribution(name="soss")
-
-        self.pushConfig("craftbuild.soss")
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
-        git_repository = self.factory.makeGitRepository(target=package)
-        removeSecurityProxy(self.recipe).git_repository = git_repository
+        self._setup_distribution("soss")
+        self._setup_config(with_http_proxy=True)
 
         # Create a dummy jar file
         from io import BytesIO
@@ -676,9 +584,7 @@ edition = "2018"
         removeSecurityProxy(self.build).addFile(pom_lfa)
 
         # Create and run the job
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-        JobRunner([job]).runAll()
-        job = removeSecurityProxy(job)
+        job = self.run_job(self.build)
 
         self.assertEqual(JobStatus.FAILED, job.job.status)
         self.assertEqual(
@@ -688,24 +594,8 @@ edition = "2018"
 
     def test_run_maven_deploy_success(self):
         """Test successful Maven artifact publishing."""
-        distribution = self.factory.makeDistribution(name="soss")
-
-        # Set up config with Maven publishing environment variables
-        self.pushConfig(
-            "craftbuild.soss",
-            environment_variables=json.dumps(
-                {
-                    "MAVEN_PUBLISH_URL": f"{self.base_url}/repository",
-                    "MAVEN_PUBLISH_AUTH": "maven_user:maven_password",
-                }
-            ),
-        )
-
-        package = self.factory.makeDistributionSourcePackage(
-            distribution=distribution
-        )
-        git_repository = self.factory.makeGitRepository(target=package)
-        removeSecurityProxy(self.recipe).git_repository = git_repository
+        self._setup_distribution("soss")
+        self._setup_config(with_env_vars=True, with_http_proxy=True)
 
         # Create a dummy jar file
         dummy_jar_content = b"dummy jar content"
@@ -719,13 +609,13 @@ edition = "2018"
 
         # Create a dummy pom file
         pom_content = """
-    <project>
-        <modelVersion>4.0.0</modelVersion>
-        <groupId>com.example</groupId>
-        <artifactId>test-artifact</artifactId>
-        <version>0.1.0</version>
-    </project>
-    """
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>test-artifact</artifactId>
+    <version>0.1.0</version>
+</project>
+"""
         pom_bytes = pom_content.encode("utf-8")
         pom_lfa = librarian.create(
             "pom.xml",
@@ -776,34 +666,34 @@ edition = "2018"
 
         self.patch(crbj_subprocess, "run", mock_run)
 
-        original_publish_properties = CraftPublishingJob._publish_properties
+        # XXX ruinedyourlife 2025-06-06:
+        # The publish_properties method is not working as expected.
+        # Artifactory is giving us a 403.
+        # We should fix it, but for now we'll skip it.
+        # original_publish_properties = CraftPublishingJob._publish_properties
 
-        def mock_maven_publish_properties(*args, **kwargs):
-            """Mock _publish_properties to deploy the crate to Artifactory
-            Fixture before testing.
+        # def mock_maven_publish_properties(*args, **kwargs):
+        #     """Mock _publish_properties to deploy the crate to Artifactory
+        #     Fixture before testing.
 
-            We need to do this in a nested function here because we need
-            to access the `lfa` variable which is created in the this test
-            setup above but the mocked function (and the lfa.open()) can
-            only be called inside the job's run method."""
+        #     We need to do this in a nested function here because we need
+        #     to access the `lfa` variable which is created in the this test
+        #     setup above but the mocked function (and the lfa.open()) can
+        #     only be called inside the job's run method."""
 
-            self._artifactory_put(
-                args[1], "com/example/test-artifact/0.1.0", args[2], jar_lfa
-            )
-            return original_publish_properties(*args, **kwargs)
+        #     self._artifactory_put(
+        #         args[1], "com/example/test-artifact/0.1.0", args[2], jar_lfa
+        #     )
+        #     return original_publish_properties(*args, **kwargs)
 
-        self.patch(
-            CraftPublishingJob,
-            "_publish_properties",
-            mock_maven_publish_properties,
-        )
+        # self.patch(
+        #     CraftPublishingJob,
+        #     "_publish_properties",
+        #     mock_maven_publish_properties,
+        # )
 
-        # Create and run the job
-        job = getUtility(ICraftPublishingJobSource).create(self.build)
-        JobRunner([job]).runAll()
+        job = self.run_job(self.build)
 
-        # Verify job succeeded
-        job = removeSecurityProxy(job)
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
 
         # Find the call for mvn deploy
@@ -860,14 +750,13 @@ edition = "2018"
         kwargs = mvn_call[1]
         self.assertIn("cwd", kwargs)
 
-        # XXX ilkeremrekoc 2025-06-10:
-        # The publish_properties method returns a 403 error.
-        # Until this is resolved, we will comment out the method
-        # from the publishing runs and not run these tests here.
-
-        # Verify that the artifact's metadata were uploaded to Artifactory
+        # XXX ruinedyourlife 2025-06-06:
+        # The publish_properties method is not working as expected.
+        # Artifactory is giving us a 403.
+        # We should fix it, but for now we'll skip it.
         # artifact = self._artifactory_search("repository", jar_lfa.filename)
 
+        # # Verify that the artifact's metadata were uploaded to Artifactory
         # self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
 
         # self.assertEqual(artifact["repo"], "repository")
