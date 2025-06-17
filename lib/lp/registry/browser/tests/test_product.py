@@ -490,12 +490,14 @@ class TestProductView(BrowserTestCase):
                         attrs={"href": canonical_url(branch)},
                     )
                 ),
-                HTMLContains(
-                    Tag(
-                        "code browser link",
-                        "a",
-                        text="Browse the code",
-                        attrs={"href": branch.getCodebrowseUrl("files")},
+                Not(
+                    HTMLContains(
+                        Tag(
+                            "code browser link",
+                            "a",
+                            text="Browse the code",
+                            attrs={"href": branch.getCodebrowseUrl("files")},
+                        )
                     )
                 ),
             ),
