@@ -44,7 +44,7 @@ LPCONFIG=launchpad-scripts
 
 # Rosetta
 */10 * * * * nice -16 {{ code_dir }}/cronscripts/rosetta-approve-imports.py -q --log-file=INFO:{{ logs_dir }}/rosetta-approve-imports.log
-*/4 * * * * {{ code_dir }}/cronscripts/rosetta-export-queue.py -v --log-file=INFO:{{ logs_dir }}/rosetta-export-queue.log
+*/4 * * * * {{ code_dir }}/cronscripts/rosetta-export-queue.py -q --log-file=INFO:{{ logs_dir }}/rosetta-export-queue.log
 */3 * * * * nice -16 {{ code_dir }}/cronscripts/rosetta-poimport.py -q --log-file=INFO:{{ logs_dir }}/rosetta-poimport.log
 
 {% if language_pack_exporter_schedule -%}
@@ -115,7 +115,7 @@ PROBER="{{ code_dir }}/cronscripts/distributionmirror-prober.py -q --log-file=DE
 {% if domain_git %}
 # Automatic Git repository repacks; limit to weekdays to avoid on-call
 # problems caused by high load at weekends
-35 */4 * * 1-5 BRZ_PLUGIN_PATH={{ code_dir }}/brzplugins {{ code_dir }}/cronscripts/repack_git_repositories.py -v --log-file=INFO:{{ logs_dir }}/repack-git-repositories.log
+35 */4 * * 1-5 BRZ_PLUGIN_PATH={{ code_dir }}/brzplugins {{ code_dir }}/cronscripts/repack_git_repositories.py -q --log-file=INFO:{{ logs_dir }}/repack-git-repositories.log
 {% endif %}
 
 {% if librarian_frontend_ip_addresses %}
