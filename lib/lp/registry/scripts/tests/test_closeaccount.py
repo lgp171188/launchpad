@@ -1377,3 +1377,13 @@ class TestCloseAccount(TestCaseWithFactory):
         with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(registrant_account_id, registrant_id)
+
+    def test_skips_sprintspecification_registrant(self):
+        person = self.factory.makePerson()
+        sprint = self.factory.makeSprint()
+        blueprint = self.factory.makeSpecification()
+        removeSecurityProxy(blueprint).linkSprint(sprint, person)
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(person.account.id, person.id)
