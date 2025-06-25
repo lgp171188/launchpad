@@ -172,6 +172,7 @@ def close_account(username, log):
         ("specification", "owner"),
         ("specification", "starter"),
         ("specificationbranch", "registrant"),
+        ("sprintspecification", "registrant"),
         ("structuralsubscription", "subscribed_by"),
         ("teammembership", "acknowledged_by"),
         ("teammembership", "last_changed_by"),
