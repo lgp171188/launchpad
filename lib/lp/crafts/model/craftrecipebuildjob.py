@@ -381,6 +381,12 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
             f.write(config_content)
 
+        # Create credentials.toml
+        with open(os.path.join(cargo_dir, "credentials.toml"), "w") as f:
+            f.write(
+                "\n" "[registries.launchpad]\n" f'token = "Bearer {token}"\n'
+            )
+
         # Replace any Cargo.toml files with their .orig versions if they exist,
         # as the .orig files contain the original content before build
         # modifications
