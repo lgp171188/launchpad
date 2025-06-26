@@ -55,6 +55,10 @@ def craft_build_status_changed(build, event):
             )
             try:
                 # Check if there are any config variables for this distribution
+                # XXX ruinedyourlife 2025-06-05: For now, we publish only using
+                # our craftbuild configuration, so only to one place.
+                # We could use the store_name property of the recipe to
+                # determine where to publish, when we have other destinations.
                 config["craftbuild." + distribution_name]
                 should_publish = True
             except NoSectionError:

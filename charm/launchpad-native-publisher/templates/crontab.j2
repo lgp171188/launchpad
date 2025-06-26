@@ -4,7 +4,7 @@ MAILTO={{ cron_mailto }}
 LPCONFIG=launchpad-native-publisher
 
 {% if active -%}
-*/6 * * * * {{ code_dir }}/cronscripts/process-job-source.py ICraftPublishingJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.ICraftPublishingJobSource.log
+*/5 * * * * {{ code_dir }}/cronscripts/process-job-source.py ICraftPublishingJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.ICraftPublishingJobSource.log
 {% endif -%}
 
 # OOPS amqp

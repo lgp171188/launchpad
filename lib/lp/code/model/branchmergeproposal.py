@@ -40,6 +40,7 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
     CodeReviewVote,
     GitPermissionType,
+    MergeProposalCriteria,
     MergeType,
     RevisionStatusResult,
 )
@@ -911,8 +912,9 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         if self.merge_prerequisite is None:
             return True
 
+        # Bazaar - not implemented
         if self.target_branch:
-            raise NotImplementedError("Bazaar branches are not supported")
+            return None
 
         # Check if prerequisite has been merged into the target branch
         # The response returns a list of commits that were merged, meaning
@@ -930,39 +932,87 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
 
         return self.next_preview_diff_job is None
 
+    def getMergeCriteria(self):
+        """See `IBranchMergeProposal`."""
+        can_be_merged, criteria = self.checkMergeCriteria()
+
+        return {
+            "can_be_merged": can_be_merged,
+            "criteria": criteria,
+        }
+
     def checkMergeCriteria(self, force=False):
         """See `IBranchMergeProposal`."""
 
         # TODO ines-almeida 2025-05-05: the mergeability criteria should be
         # to some extent defined by the repository owner. While that
         # capability is not in place, we will set a few hard rules for one
-        # to merge a MP from Launchpad
+        # to merge a MP from Launchpad.
 
-        # List of hard rule criteria (defined by Launchpad)
-        criteria = [
-            (self.isInProgress, "Invalid status for merging"),
-            (self.hasNoConflicts, "Diff contains conflicts"),
-            (self.hasNoPendingPrerequisite, "Prerequisit branch not merged"),
-            (self.diffIsUpToDate, "New changes were pushed too recently"),
+        # List MP criteria: method and error message
+        MERGE_CRITERIA = {
+            MergeProposalCriteria.IS_IN_PROGRESS: (
+                self.isInProgress,
+                "Invalid status for merging",
+            ),
+            MergeProposalCriteria.HAS_NO_CONFLICTS: (
+                self.hasNoConflicts,
+                "Diff contains conflicts",
+            ),
+            MergeProposalCriteria.DIFF_IS_UP_TO_DATE: (
+                self.diffIsUpToDate,
+                "New changes were pushed too recently",
+            ),
+            MergeProposalCriteria.HAS_NO_PENDING_PREREQUISITE: (
+                self.hasNoPendingPrerequisite,
+                "Prerequisite branch not merged",
+            ),
+            MergeProposalCriteria.IS_APPROVED: (
+                self.isApproved,
+                "Proposal has not been approved",
+            ),
+            MergeProposalCriteria.CI_CHECKS_PASSED: (
+                self.CIChecksPassed,
+                "CI checks failed",
+            ),
+        }
+
+        criteria_to_run = [
+            MergeProposalCriteria.IS_IN_PROGRESS,
+            MergeProposalCriteria.HAS_NO_CONFLICTS,
+            MergeProposalCriteria.DIFF_IS_UP_TO_DATE,
         ]
+
+        # This is only a criteria if there is a prerequisit branch
+        if self.merge_prerequisite is not None:
+            criteria_to_run.append(
+                MergeProposalCriteria.HAS_NO_PENDING_PREREQUISITE
+            )
 
         # Criteria defined by project owners (skipped if 'force' merge)
         if not force:
-            criteria.extend(
-                [
-                    (self.isApproved, "Proposal has not been approved"),
-                    (self.CIChecksPassed, "CI checks failed"),
-                ]
-            )
+            criteria_to_run.append(MergeProposalCriteria.IS_APPROVED)
+            criteria_to_run.append(MergeProposalCriteria.CI_CHECKS_PASSED)
 
         result = True
-        failed_checks = []
-        for check, error_message in criteria:
-            if not check():
-                failed_checks.append(error_message)
+        status = {}
+        for criteria in criteria_to_run:
+            check, error = MERGE_CRITERIA[criteria]
+            passed = check()
+
+            key = str(criteria)
+            status[key] = {"passed": passed}
+            if passed is None:
+                status[key]["error"] = "Not implemented"
+            elif not passed:
+                status[key]["error"] = error
                 result = False
 
-        return result, failed_checks
+        return result, status
+
+    def canIMerge(self, person):
+        """See `IBranchMergeProposal`."""
+        return self.personCanMerge(person)
 
     def personCanMerge(self, person):
         """See `IBranchMergeProposal`."""
@@ -993,8 +1043,13 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         if not self.personCanMerge(person):
             raise Unauthorized()
 
-        can_be_merged, failed_checks = self.checkMergeCriteria(force)
+        can_be_merged, criteria = self.checkMergeCriteria(force)
         if not can_be_merged:
+            failed_checks = [
+                item["error"]
+                for item in criteria.values()
+                if item["passed"] is False
+            ]
             raise BranchMergeProposalNotMergeable(
                 "Merge proposal cannot be merged in its current state: %s"
                 % ", ".join(failed_checks)
