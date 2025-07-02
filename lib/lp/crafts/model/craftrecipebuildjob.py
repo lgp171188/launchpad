@@ -17,6 +17,7 @@ import tempfile
 from configparser import NoSectionError
 from urllib.parse import urlparse
 
+import requests
 import transaction
 import yaml
 from artifactory import ArtifactoryPath
@@ -416,11 +417,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         if result.returncode != 0:
             raise Exception(f"Failed to publish crate: {result.stderr}")
 
-        # XXX ruinedyourlife 2025-06-06:
-        # The publish_properties method is not working as expected.
-        # Artifactory is giving us a 403.
-        # We should fix it, but for now we'll skip it.
-        # self._publish_properties(cargo_publish_url, artifact_name)
+        self._publish_properties(cargo_publish_url, artifact_name)
 
     def _publish_maven_artifact(
         self, work_dir, env_vars, artifact_name, jar_path=None, pom_path=None
@@ -484,11 +481,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                 f"Failed to publish Maven artifact: {result.stderr}"
             )
 
-        # XXX ruinedyourlife 2025-06-06:
-        # The publish_properties method is not working as expected.
-        # Artifactory is giving us a 403.
-        # We should fix it, but for now we'll skip it.
-        # self._publish_properties(maven_publish_url, artifact_name)
+        self._publish_properties(maven_publish_url, artifact_name)
 
     def _get_maven_settings_xml(self, username, password):
         """Generate Maven settings.xml content.
@@ -582,6 +575,26 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         # Combine all parts
         return header + schema + servers + proxies + profiles + active_profiles
 
+    def _make_session(self) -> requests.Session:
+        """Make a suitable requests session for talking to Artifactory."""
+
+        session = requests.Session()
+        session.trust_env = False
+        if config.launchpad.http_proxy:
+            session.proxies = {
+                "http": config.launchpad.http_proxy,
+                "https": config.launchpad.http_proxy,
+            }
+        if config.launchpad.ca_certificates_path is not None:
+            session.verify = config.launchpad.ca_certificates_path
+        write_creds = config.artifactory.write_credentials
+
+        if write_creds is not None:
+            session.headers.update(
+                {"Authorization": f"Bearer {write_creds.split(':', 1)[1]}"}
+            )
+        return session
+
     def _publish_properties(
         self, publish_url: str, artifact_name: str
     ) -> None:
@@ -597,8 +610,10 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         new_properties["soss.license"] = [self._get_license_metadata()]
 
         # Repo name is derived from the URL
-        # We assume the URL ends with the repository name
-        repo_name = publish_url.rstrip("/").split("/")[-1]
+        # We assume the URL ends with "index" as both Cargo and Maven use such
+        # indexes to publish artifacts. Thus, we also assume that the
+        # repository name is the second last part of the URL.
+        repo_name = publish_url.rstrip("/").split("/")[-2]
 
         root_path_str = self._extract_root_path(publish_url)
         if not root_path_str:
@@ -608,6 +623,8 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
         # Search for the artifact in Artifactory using AQL
         root_path = ArtifactoryPath(root_path_str)
+        root_path.session = self._make_session()
+
         artifacts = root_path.aql(
             "items.find",
             {
@@ -621,8 +638,8 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
         if not artifacts:
             raise NotFoundError(
-                f"Artifact '{artifact_name}' not found in repository \
-                '{repo_name}'"
+                f"Artifact '{artifact_name}' not found in repository: "
+                + f"'{repo_name}'"
             )
 
         if len(artifacts) > 1:
@@ -637,6 +654,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         artifact_path = ArtifactoryPath(
             root_path, artifact["repo"], artifact["path"], artifact["name"]
         )
+        artifact_path.session = self._make_session()
         artifact_path.set_properties(new_properties)
 
     def _extract_root_path(self, publish_url: str) -> str:
@@ -658,7 +676,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
         craft_recipe = self.build.recipe
         if craft_recipe.git_repository is not None:
-            return craft_recipe.git_repository.git_https_url
+            return craft_recipe.git_repository.getCodebrowseUrl()
         elif craft_recipe.git_repository_url is not None:
             return craft_recipe.git_repository_url
         else:
