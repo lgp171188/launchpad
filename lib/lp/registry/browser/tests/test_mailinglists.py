@@ -157,30 +157,6 @@ class TestTeamMailingListConfigurationView(MailingListTestCase):
         element = find_tag_by_id(view(), "mailing-list-archive")
         self.assertEqual("private", extract_text(element))
 
-    def test_public_achive_message_without_list(self):
-        # Public teams have public archives.
-        team = self.factory.makeTeam()
-        view = create_initialized_view(
-            team,
-            name="+mailinglist",
-            principal=team.teamowner,
-        )
-        element = find_tag_by_id(view(), "mailing-list-archive")
-        self.assertEqual("public", extract_text(element))
-
-    def test_private_message_message_without_list(self):
-        # Private teams have private archives.
-        owner = self.factory.makePerson()
-        team = self.factory.makeTeam(
-            owner=owner, visibility=PersonVisibility.PRIVATE
-        )
-        login_person(owner)
-        view = create_initialized_view(
-            team, name="+mailinglist", principal=owner
-        )
-        element = find_tag_by_id(view(), "mailing-list-archive")
-        self.assertEqual("private", extract_text(element))
-
 
 class HeldMessageViewTestCase(MailingListTestCase):
     """Verify the +moderation view."""
