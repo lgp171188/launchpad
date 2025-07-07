@@ -1078,21 +1078,27 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
             )
 
         merge_commit = response["merge_commit"]
-        # Edge case, if `merge_commit` is None it means the merge proposal had
-        # already been merged by the time this endpoint was run. Might happen
-        # in the odd case that someone changes the status of a proposal from
-        # 'merged' back to another state and then tries merging again.
-        if merge_commit is None:
-            return
+        previously_merged = response.get("previously_merged", False)
 
-        # Update commit message in DB
-        self.commit_message = commit_message
+        if previously_merged:
+            merge_type = (
+                self.merge_type if self.merge_type else MergeType.UNKNOWN
+            )
+
+            # If there was already a merge commit (odd case that someone
+            # changes the status of an old proposal from 'merged' back to
+            # another state and then tries merging again) don't overwrite it
+            if self.merged_revision_id:
+                merge_commit = self.merged_revision_id
+        else:
+            merge_type = MergeType.REGULAR_MERGE
+            self.commit_message = commit_message
 
         self.markAsMerged(
             merge_reporter=person,
             merged_revision_id=merge_commit,
             date_merged=UTC_NOW,
-            merge_type=MergeType.REGULAR_MERGE,
+            merge_type=merge_type,
         )
 
     def _reviewProposal(
