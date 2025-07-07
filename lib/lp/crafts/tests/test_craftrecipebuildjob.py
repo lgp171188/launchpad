@@ -86,6 +86,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         # Set up the Artifactory fixture
         self.base_url = "https://example.com/artifactory"
         self.repository_name = "repository"
+        self.publish_url = f"{self.base_url}/{self.repository_name}/index"
 
         self.artifactory = self.useFixture(
             FakeArtifactoryFixture(self.base_url, self.repository_name)
@@ -118,9 +119,9 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         else:
             # Push with standard environment variables
             env_vars = {
-                "CARGO_PUBLISH_URL": f"{self.base_url}/repository",
+                "CARGO_PUBLISH_URL": self.publish_url,
                 "CARGO_PUBLISH_AUTH": "lp:token123",
-                "MAVEN_PUBLISH_URL": f"{self.base_url}/repository",
+                "MAVEN_PUBLISH_URL": self.publish_url,
                 "MAVEN_PUBLISH_AUTH": "lp:token123",
             }
             self.pushConfig(
@@ -416,8 +417,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         self._setup_distribution("soss")
         self._setup_config(with_env_vars=True, with_http_proxy=True)
 
-        # lfa = self._create_crate_file()
-        self._create_crate_file()
+        lfa = self._create_crate_file()
 
         # Add a metadata file with license information
         license_value = "Apache-2.0"
@@ -457,29 +457,25 @@ class TestCraftPublishingJob(TestCaseWithFactory):
 
         self.patch(crbj_subprocess, "run", mock_run)
 
-        # XXX ruinedyourlife 2025-06-06:
-        # The publish_properties method is not working as expected.
-        # Artifactory is giving us a 403.
-        # We should fix it, but for now we'll skip it.
-        # original_publish_properties = CraftPublishingJob._publish_properties
+        original_publish_properties = CraftPublishingJob._publish_properties
 
-        # def mock_cargo_publish_properties(*args, **kwargs):
-        #     """Mock _publish_properties to deploy the crate to Artifactory
-        #     Fixture before testing.
+        def mock_cargo_publish_properties(*args, **kwargs):
+            """Mock _publish_properties to deploy the crate to Artifactory
+            Fixture before testing.
 
-        #     We need to do this in a nested function here because we need
-        #     to access the `lfa` variable which is created in the this test
-        #     setup above but the mocked function (and the lfa.open()) can
-        #     only be called inside the job's run method."""
+            We need to do this in a nested function here because we need
+            to access the `lfa` variable which is created in the this test
+            setup above but the mocked function (and the lfa.open()) can
+            only be called inside the job's run method."""
 
-        #     self._artifactory_put(args[1], "crates/test", args[2], lfa)
-        #     return original_publish_properties(*args, **kwargs)
+            self._artifactory_put(args[1], "crates/test", args[2], lfa)
+            return original_publish_properties(*args, **kwargs)
 
-        # self.patch(
-        #     CraftPublishingJob,
-        #     "_publish_properties",
-        #     mock_cargo_publish_properties,
-        # )
+        self.patch(
+            CraftPublishingJob,
+            "_publish_properties",
+            mock_cargo_publish_properties,
+        )
 
         # Create and run the job
         job = self.run_job(self.build)
@@ -521,30 +517,29 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         env = kwargs["env"]
         self.assertIn("CARGO_HOME", env)
 
-        # XXX ruinedyourlife 2025-06-06:
-        # The publish_properties method is not working as expected.
-        # Artifactory is giving us a 403.
-        # We should fix it, but for now we'll skip it.
-        # # Verify that the artifact's metadata were uploaded to Artifactory
-        # artifact = self._artifactory_search("repository", lfa.filename)
+        # Verify that the artifact's metadata were uploaded to Artifactory
+        artifact = self._artifactory_search("repository", lfa.filename)
 
-        # self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+        self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
 
-        # self.assertEqual(artifact["repo"], "repository")
-        # self.assertEqual(artifact["name"], lfa.filename)
-        # self.assertEqual(artifact["path"], "crates/test")
-        # self.assertEqual(
-        #    artifact["properties"]["soss.commit_id"], "random-revision-id"
-        # )
-        # self.assertEqual(
-        #    artifact["properties"]["soss.source_url"],
-        #    removeSecurityProxy(self.recipe).git_repository.git_https_url,
-        # )
-        # self.assertEqual(artifact["properties"]["soss.type"], "source")
-        # self.assertEqual(
-        #     artifact["properties"]["soss.license"],
-        #     license_value
-        # )
+        self.assertEqual(artifact["repo"], "repository")
+        self.assertEqual(artifact["name"], lfa.filename)
+
+        # Our artifactory fixture preserves the "index/" path used during
+        # publishing. This is not the case in a real Artifactory
+        # instance, so we need to remove the "index/" prefix.
+        path_without_index = artifact["path"].replace("index/", "")
+        self.assertEqual(path_without_index, "crates/test")
+
+        self.assertEqual(
+            artifact["properties"]["soss.commit_id"], "random-revision-id"
+        )
+        self.assertEqual(
+            artifact["properties"]["soss.source_url"],
+            removeSecurityProxy(self.recipe).git_repository.git_https_url,
+        )
+        self.assertEqual(artifact["properties"]["soss.type"], "source")
+        self.assertEqual(artifact["properties"]["soss.license"], license_value)
 
     def test_run_missing_maven_config(self):
         """
@@ -666,31 +661,27 @@ class TestCraftPublishingJob(TestCaseWithFactory):
 
         self.patch(crbj_subprocess, "run", mock_run)
 
-        # XXX ruinedyourlife 2025-06-06:
-        # The publish_properties method is not working as expected.
-        # Artifactory is giving us a 403.
-        # We should fix it, but for now we'll skip it.
-        # original_publish_properties = CraftPublishingJob._publish_properties
+        original_publish_properties = CraftPublishingJob._publish_properties
 
-        # def mock_maven_publish_properties(*args, **kwargs):
-        #     """Mock _publish_properties to deploy the crate to Artifactory
-        #     Fixture before testing.
+        def mock_maven_publish_properties(*args, **kwargs):
+            """Mock _publish_properties to deploy the crate to Artifactory
+            Fixture before testing.
 
-        #     We need to do this in a nested function here because we need
-        #     to access the `lfa` variable which is created in the this test
-        #     setup above but the mocked function (and the lfa.open()) can
-        #     only be called inside the job's run method."""
+            We need to do this in a nested function here because we need
+            to access the `lfa` variable which is created in the this test
+            setup above but the mocked function (and the lfa.open()) can
+            only be called inside the job's run method."""
 
-        #     self._artifactory_put(
-        #         args[1], "com/example/test-artifact/0.1.0", args[2], jar_lfa
-        #     )
-        #     return original_publish_properties(*args, **kwargs)
+            self._artifactory_put(
+                args[1], "com/example/test-artifact/0.1.0", args[2], jar_lfa
+            )
+            return original_publish_properties(*args, **kwargs)
 
-        # self.patch(
-        #     CraftPublishingJob,
-        #     "_publish_properties",
-        #     mock_maven_publish_properties,
-        # )
+        self.patch(
+            CraftPublishingJob,
+            "_publish_properties",
+            mock_maven_publish_properties,
+        )
 
         job = self.run_job(self.build)
 
@@ -750,30 +741,27 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         kwargs = mvn_call[1]
         self.assertIn("cwd", kwargs)
 
-        # XXX ruinedyourlife 2025-06-06:
-        # The publish_properties method is not working as expected.
-        # Artifactory is giving us a 403.
-        # We should fix it, but for now we'll skip it.
-        # artifact = self._artifactory_search("repository", jar_lfa.filename)
+        artifact = self._artifactory_search("repository", jar_lfa.filename)
 
-        # # Verify that the artifact's metadata were uploaded to Artifactory
-        # self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+        # Verify that the artifact's metadata were uploaded to Artifactory
+        self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
+        self.assertEqual(artifact["repo"], "repository")
+        self.assertEqual(artifact["name"], jar_lfa.filename)
 
-        # self.assertEqual(artifact["repo"], "repository")
-        # self.assertEqual(artifact["name"], jar_lfa.filename)
-        # self.assertEqual(artifact["path"], "com/example/test-artifact/0.1.0")
-        # self.assertEqual(
-        #    artifact["properties"]["soss.commit_id"], "random-revision-id"
-        # )
-        # self.assertEqual(
-        #    artifact["properties"]["soss.source_url"],
-        #    git_repository.git_https_url,
-        # )
-        # self.assertEqual(artifact["properties"]["soss.type"], "source")
-        # self.assertEqual(
-        # artifact["properties"]["soss.license"],
-        # license_value
-        # )
+        # Our artifactory fixture preserves the "index/" path used during
+        # publishing. This is not the case in a real Artifactory
+        # instance, so we need to remove the "index/" prefix.
+        path_without_index = artifact["path"].replace("index/", "")
+        self.assertEqual(path_without_index, "com/example/test-artifact/0.1.0")
+        self.assertEqual(
+            artifact["properties"]["soss.commit_id"], "random-revision-id"
+        )
+        self.assertEqual(
+            artifact["properties"]["soss.source_url"],
+            removeSecurityProxy(self.recipe).git_repository.git_https_url,
+        )
+        self.assertEqual(artifact["properties"]["soss.type"], "source")
+        self.assertEqual(artifact["properties"]["soss.license"], license_value)
 
     def test__publish_properties_sets_expected_properties(self):
         """Test that _publish_properties sets the correct properties in
@@ -796,12 +784,12 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         removeSecurityProxy(self.build).revision_id = "random-revision-id"
 
         self._artifactory_put(
-            f"{self.base_url}/repository",
+            f"{self.base_url}/{self.repository_name}",
             "middle_folder",
             "artifact.file",
             MockBytesIO(b"dummy content"),
         )
-        job._publish_properties(f"{self.base_url}/repository", "artifact.file")
+        job._publish_properties(self.publish_url, "artifact.file")
         artifact = self._artifactory_search("repository", "artifact.file")
 
         self.assertIsNotNone(artifact, "Artifact not found in Artifactory")
@@ -829,7 +817,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         self.assertRaises(
             NotFoundError,
             job._publish_properties,
-            f"{self.base_url}/repository",
+            self.publish_url,
             "missing-artifact.file",
         )
 
@@ -838,7 +826,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         metadata.yaml is present."""
 
         self._artifactory_put(
-            f"{self.base_url}/repository",
+            f"{self.base_url}/{self.repository_name}",
             "some/path",
             "artifact.file",
             MockBytesIO(b"dummy content"),
@@ -847,7 +835,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         job = getUtility(ICraftPublishingJobSource).create(self.build)
         job = removeSecurityProxy(job)
         job.run = lambda: job._publish_properties(
-            f"{self.base_url}/repository", "artifact.file"
+            self.publish_url, "artifact.file"
         )
 
         self.patch(
@@ -877,7 +865,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         removeSecurityProxy(self.build).addFile(metadata_lfa)
 
         self._artifactory_put(
-            f"{self.base_url}/repository",
+            f"{self.base_url}/{self.repository_name}",
             "some/path",
             "artifact.file",
             MockBytesIO(b"dummy content"),
@@ -886,7 +874,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         job = getUtility(ICraftPublishingJobSource).create(self.build)
         job = removeSecurityProxy(job)
         job.run = lambda: job._publish_properties(
-            f"{self.base_url}/repository", "artifact.file"
+            self.publish_url, "artifact.file"
         )
 
         self.patch(
@@ -917,7 +905,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         removeSecurityProxy(self.build).addFile(metadata_lfa)
 
         self._artifactory_put(
-            f"{self.base_url}/repository",
+            f"{self.base_url}/{self.repository_name}",
             "some/path",
             "artifact.file",
             MockBytesIO(b"dummy content"),
@@ -926,7 +914,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         job = getUtility(ICraftPublishingJobSource).create(self.build)
         job = removeSecurityProxy(job)
         job.run = lambda: job._publish_properties(
-            f"{self.base_url}/repository", "artifact.file"
+            self.publish_url, "artifact.file"
         )
 
         self.patch(
@@ -944,7 +932,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         """Test that _publish_properties gets git_repository as source_url."""
 
         self._artifactory_put(
-            f"{self.base_url}/repository",
+            f"{self.base_url}/{self.repository_name}",
             "some/path",
             "artifact.file",
             MockBytesIO(b"dummy content"),
@@ -960,7 +948,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
             CraftPublishingJob, "_get_license_metadata", lambda self: "MIT"
         )
 
-        job._publish_properties(f"{self.base_url}/repository", "artifact.file")
+        job._publish_properties(self.publish_url, "artifact.file")
 
         artifact = self._artifactory_search("repository", "artifact.file")
         self.assertEqual(
@@ -973,7 +961,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         source_url."""
 
         self._artifactory_put(
-            f"{self.base_url}/repository",
+            f"{self.base_url}/{self.repository_name}",
             "some/path",
             "artifact.file",
             MockBytesIO(b"dummy content"),
@@ -993,7 +981,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
             CraftPublishingJob, "_get_license_metadata", lambda self: "MIT"
         )
 
-        job._publish_properties(f"{self.base_url}/repository", "artifact.file")
+        job._publish_properties(self.publish_url, "artifact.file")
 
         artifact = self._artifactory_search("repository", "artifact.file")
         self.assertEqual(
