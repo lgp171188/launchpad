@@ -4324,5 +4324,61 @@ class TestBranchMergeProposalMerge(TestCaseWithFactory):
                 self.person,
             )
 
+    def test_merge_already_merged(self):
+        # Test if proposal had already been merged previously, we still mark
+        # it as merged with the correct merge_revsision_id and merge_type
+
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+
+        self.hosting_fixture.merge.result = {
+            "merge_commit": "fake-sha1",
+            "previously_merged": True,
+        }
+
+        with person_logged_in(self.person):
+            self.proposal.merge(self.person)
+            self.assertEqual(
+                BranchMergeProposalStatus.MERGED,
+                self.proposal.queue_status,
+            )
+            self.assertEqual("fake-sha1", self.proposal.merged_revision_id)
+            self.assertEqual(MergeType.UNKNOWN, self.proposal.merge_type)
+
+    def test_merge_already_merged_with_merge_commit(self):
+        # Test that if proposal had already been merged previously, we don't
+        # overwrite the merge_revision_id or the merge_type
+
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+
+        with person_logged_in(self.person):
+            self.proposal.merge(self.person)
+            self.assertEqual("fake-sha1", self.proposal.merged_revision_id)
+
+        self.proposal.setAsWorkInProgress()
+
+        self.hosting_fixture.merge.result = {
+            "merge_commit": "new-sha1",
+            "previously_merged": True,
+        }
+
+        with person_logged_in(self.person):
+            self.proposal.merge(self.person)
+            self.assertEqual(
+                BranchMergeProposalStatus.MERGED,
+                self.proposal.queue_status,
+            )
+            self.assertEqual("fake-sha1", self.proposal.merged_revision_id)
+            self.assertEqual(MergeType.REGULAR_MERGE, self.proposal.merge_type)
+
 
 load_tests = load_tests_apply_scenarios
