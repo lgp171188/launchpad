@@ -15,6 +15,7 @@ from charms.launchpad.payload import (
 )
 from charms.reactive import (
     helpers,
+    hook,
     remove_state,
     set_state,
     when,
@@ -160,7 +161,7 @@ def deconfigure():
     remove_state("service.configured")
 
 
-@when("install")
+@hook("install")
 def install_packages():
     """Install Rust, Cargo, Java and Maven dependencies."""
     hookenv.status_set("maintenance", "Installing packages")
