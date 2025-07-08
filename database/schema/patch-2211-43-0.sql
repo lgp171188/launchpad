@@ -258,6 +258,7 @@ BEGIN
             RETURN;
         EXCEPTION WHEN unique_violation THEN
             -- do nothing, and loop to try the UPDATE again
+            RAISE NOTICE 'Looping and trying to update again';
         END;
     END LOOP;
 END;
