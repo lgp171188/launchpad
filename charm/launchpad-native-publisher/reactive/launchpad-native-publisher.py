@@ -15,7 +15,6 @@ from charms.launchpad.payload import (
 )
 from charms.reactive import (
     helpers,
-    hook,
     remove_state,
     set_state,
     when,
@@ -90,12 +89,112 @@ def perform_action_on_services(services, action):
         action(service)
 
 
+def check_binaries_exist():
+    """Check if required binaries exist and are executable."""
+    required_binaries = ["java", "mvn", "rustc", "cargo"]
+    missing = []
+
+    for binary in required_binaries:
+        try:
+            subprocess.check_call(
+                ["which", binary],
+                stderr=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            missing.append(binary)
+            hookenv.log(f"{binary} is missing")
+
+    return missing
+
+
+def apt_install(*packages):
+    """Install packages via apt."""
+    subprocess.check_call(["apt-get", "install", "-y"] + list(packages))
+
+
+def update_alternatives(name, path, priority="100"):
+    """Set up update-alternatives for a binary."""
+    subprocess.check_call(
+        [
+            "update-alternatives",
+            "--install",
+            f"/usr/bin/{name}",
+            name,
+            path,
+            priority,
+        ]
+    )
+
+
+def install_dependencies():
+    """Install Java and Rust dependencies."""
+    config = hookenv.config()
+    java_version = config.get("java_version")
+    rust_version = config.get("rust_version")
+
+    missing = check_binaries_exist()
+    missing_java = any(binary in missing for binary in ["java", "mvn"])
+    missing_rust = any(binary in missing for binary in ["rustc", "cargo"])
+
+    try:
+        # Install Java and Maven only if needed
+        if missing_java:
+            subprocess.check_call(["apt-get", "update"])
+            hookenv.log("Installing Java packages...")
+            apt_install(
+                f"openjdk-{java_version}-jdk",
+                "maven",
+                "libmaven-deploy-plugin-java",
+            )
+
+        # Install Rust and Cargo only if needed
+        if missing_rust:
+            subprocess.check_call(["apt-get", "update"])
+            hookenv.log("Installing Rust packages...")
+            apt_install(f"rustc-{rust_version}", f"cargo-{rust_version}")
+
+            # Use update-alternatives to create generic command names
+            hookenv.log("Setting up alternatives for Rust and Cargo...")
+            update_alternatives("rustc", f"/usr/bin/rustc-{rust_version}")
+            update_alternatives("cargo", f"/usr/bin/cargo-{rust_version}")
+
+        # Verify installations
+        hookenv.log("Verifying installations...")
+        missing = check_binaries_exist()
+        if missing:
+            raise RuntimeError(
+                f"Still missing binaries after installation: {missing}"
+            )
+
+        hookenv.log("All dependencies successfully installed and verified")
+
+    except subprocess.CalledProcessError as e:
+        hookenv.log(f"Failed to install dependencies: {e}", level="ERROR")
+        raise
+    except RuntimeError as e:
+        hookenv.log(str(e), level="ERROR")
+        raise
+
+
+def ensure_dependencies():
+    """Ensure required dependencies are installed."""
+    hookenv.log("Checking if binaries are already installed...")
+    missing = check_binaries_exist()
+    if missing:
+        install_dependencies()
+    else:
+        hookenv.log("All required binaries are available")
+
+
 @when(
     "launchpad.db.configured",
 )
 @when_not("service.configured")
 def configure():
     """Configure the native publisher service."""
+    ensure_dependencies()
+
     config = get_service_config()
     try:
         if config.get("craftbuild_config"):
@@ -159,81 +258,3 @@ def check_is_running():
 )
 def deconfigure():
     remove_state("service.configured")
-
-
-@hook("install")
-def install_packages():
-    """Install Rust, Cargo, Java and Maven dependencies."""
-    hookenv.status_set("maintenance", "Installing packages")
-
-    # Get configuration values
-    config = hookenv.config()
-    rust_version = config.get("rust-version")
-    java_version = config.get("java-version")
-
-    subprocess.check_call(["apt-get", "update"])
-
-    hookenv.log(f"Installing Java {java_version} and Maven...")
-    subprocess.check_call(
-        [
-            "apt-get",
-            "install",
-            "-y",
-            f"openjdk-{java_version}-jdk",
-            "maven",
-            "libmaven-deploy-plugin-java",
-        ]
-    )
-
-    hookenv.log(f"Installing Rust {rust_version} and Cargo...")
-    subprocess.check_call(
-        [
-            "apt-get",
-            "install",
-            "-y",
-            f"rustc-{rust_version}",
-            f"cargo-{rust_version}",
-        ]
-    )
-
-    # Use update-alternatives to create generic command names
-    hookenv.log("Setting up alternatives for Rust and Cargo...")
-    subprocess.check_call(
-        [
-            "update-alternatives",
-            "--install",
-            "/usr/bin/rustc",
-            "rustc",
-            f"/usr/bin/rustc-{rust_version}",
-            "100",
-        ]
-    )
-    subprocess.check_call(
-        [
-            "update-alternatives",
-            "--install",
-            "/usr/bin/cargo",
-            "cargo",
-            f"/usr/bin/cargo-{rust_version}",
-            "100",
-        ]
-    )
-
-    # Verify the installations
-    hookenv.log("Verifying installations...")
-    try:
-        subprocess.check_call(["which", "java"])
-        subprocess.check_output(["java", "-version"], stderr=subprocess.STDOUT)
-        subprocess.check_call(["which", "mvn"])
-        subprocess.check_output(["mvn", "--version"])
-        subprocess.check_call(["which", "rustc"])
-        subprocess.check_output(["rustc", "--version"])
-        subprocess.check_call(["which", "cargo"])
-        subprocess.check_output(["cargo", "--version"])
-
-        hookenv.log("All packages successfully installed")
-        set_state("packages.installed")
-    except subprocess.CalledProcessError as e:
-        hookenv.log(f"Failed to verify installations: {str(e)}", level="ERROR")
-        set_state("packages.failed")
-        hookenv.status_set("blocked", "Failed to install packages")

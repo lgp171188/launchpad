@@ -3,12 +3,12 @@ options:
     type: boolean
     description: Should the cron jobs and the celery services be active?
     default: true
-  rust-version:
+  rust_version:
     type: string
     default: "1.80"
     description: >
       Rust version to install, cargo will be installed with the same version.
-  java-version:
+  java_version:
     type: string
     default: "21"
     description: >
