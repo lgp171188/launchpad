@@ -20,7 +20,7 @@ from lp.services.webapp.servers import LaunchpadTestRequest
 def check_menu_links(menu):
     context = menu.context
     for link in menu.iterlinks():
-        if link.target.startswith(("/", "http://")):
+        if link.target.startswith(("/", "http://", "https://")):
             # The context is not the context of this target.
             continue
         if "?" in link.target:

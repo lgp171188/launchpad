@@ -686,7 +686,7 @@ class TestTeamMenu(TestCaseWithFactory):
         menu.links = no_mailinst_list_links
         self.assertIs(True, check_menu_links(menu))
         link = menu.configure_mailing_list()
-        self.assertEqual("Create a mailing list", link.text)
+        self.assertEqual("Read more about it here.", link.text)
 
     def test_TeamOverviewMenu_check_menu_links_with_mailing(self):
         self.factory.makeMailingList(self.team, self.team.teamowner)

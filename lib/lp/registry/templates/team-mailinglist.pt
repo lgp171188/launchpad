@@ -17,7 +17,9 @@
       <p id="mailing_list_status_message"
          tal:condition="view/mailing_list_status_message">
         <strong tal:content="structure view/mailing_list_status_message">
-          This team's mailing list will be available within a few minutes.
+          Launchpad no longer supports the creation of new mailing lists. 
+          <a id="launchpad-blog-sunset-mailing-lists"
+          tal:attributes="href string:https://blog.launchpad.net/general/sunsetting-launchpads-mailing-lists">Read more about it here.</a>
         </strong>
       </p>
 
@@ -34,38 +36,12 @@
 
     <metal:widgets fill-slot="widgets">
       <div id="no_mailing_list"
-         tal:condition="view/list_can_be_created">
-        <p>
-          You can create a mailing list for this team. Team members
-          can subscribe and post to the team mailing list.
-        </p>
-
-        <ul class="bulleted">
-          <li>
-            The mailing list can be used as the team's contact address
-          </li>
-          <li>
-            Messages will be kept in a
-            <strong id="mailing-list-archive"
-              tal:content="context/visibility/title/fmt:lower" /> archive
-          </li>
-          <li>
-            Launchpad will silently discard email sent from addresses that are
-            not associated with a Launchpad account.
-          </li>
-        </ul>
-
-        <p id="ubuntu-notice"><strong>Ubuntu does not use Launchpad to host
-          its mailing lists. Create them at
-          <a href="https://lists.ubuntu.com">lists.ubuntu.com</a> instead.
-        </strong></p>
-
-        <p>
-          &#187; <a href="https://help.launchpad.net/Teams/MailingLists">Help for mailing lists</a>
-        </p>
-        <input tal:replace="structure view/create_list_creation/render" />
-      </div>
-
+        tal:condition="view/list_can_be_created">
+        Launchpad no longer supports the creation of new mailing lists. 
+        <a id="launchpad-blog-sunset-mailing-lists"
+        tal:attributes="href string:https://blog.launchpad.net/general/sunsetting-launchpads-mailing-lists">Read more about it here.</a>
+      </div> 
+    
       <div id="mailing_list_purge"
            tal:condition="view/list_can_be_purged">
         <p>You can purge this mailing list so that the team can be merged or
@@ -110,9 +86,13 @@
         <input tal:replace="structure view/deactivate_list/render" />
       </span>
 
-      <p tal:condition="view/list_can_be_reactivated">
-        <input tal:replace="structure view/reactivate_list/render" />
-      </p>
+      <div id="mailing_list_reactivate" tal:condition="view/list_can_be_reactivated">
+        <p>Launchpad no longer supports the reactivation of mailing lists. 
+        <a id="launchpad-blog-sunset-mailing-lists"
+        tal:attributes="href string:https://blog.launchpad.net/general/sunsetting-launchpads-mailing-lists">Read more about it here.</a>
+        </p>
+      </div>
+
     </div>
   </div>
 </div>

@@ -801,14 +801,6 @@ class TeamMailingListConfigurationView(MailingListTeamBaseView):
             return None
         elif self.mailing_list.status == MailingListStatus.REGISTERED:
             return None
-        elif self.mailing_list.status in [
-            MailingListStatus.APPROVED,
-            MailingListStatus.CONSTRUCTING,
-        ]:
-            return _(
-                "This team's mailing list will be available within "
-                "a few minutes."
-            )
         elif self.mailing_list.status == MailingListStatus.DECLINED:
             return _(
                 "The application for this team's mailing list has been "
@@ -1713,14 +1705,18 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
 
     @enabled_with_permission("launchpad.Moderate")
     def configure_mailing_list(self):
-        target = "+mailinglist"
         mailing_list = self.person.mailing_list
         if mailing_list is not None:
             text = "Configure mailing list"
             icon = "edit"
+            target = "+mailinglist"
         else:
-            text = "Create a mailing list"
-            icon = "add"
+            text = "Read more about it here."
+            icon = None
+            target = (
+                "https://blog.launchpad.net/"
+                "general/sunsetting-launchpads-mailing-lists"
+            )
         summary = (
             "The mailing list associated with %s" % self.context.displayname
         )
