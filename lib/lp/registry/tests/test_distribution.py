@@ -67,6 +67,7 @@ from lp.registry.interfaces.accesspolicy import (
 )
 from lp.registry.interfaces.distribution import IDistribution, IDistributionSet
 from lp.registry.interfaces.distributionmirror import MirrorContent
+from lp.registry.interfaces.externalpackage import ExternalPackageType
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
@@ -378,6 +379,35 @@ class TestDistribution(TestCaseWithFactory):
             InformationType.PUBLIC,
             distro.getDefaultSpecificationInformationType(),
         )
+
+    def test_getExternalPackage(self):
+        # Test that we get the ExternalPackage that belongs to the distribution
+        # with the proper attributes
+        distro = self.factory.makeDistribution()
+        sourcepackagename = self.factory.getOrMakeSourcePackageName(
+            "my-package"
+        )
+        channel = {"track": "22.04", "risk": "candidate", "branch": "staging"}
+        externalpackage = distro.getExternalPackage(
+            name=sourcepackagename,
+            packagetype=ExternalPackageType.ROCK,
+            channel=channel,
+        )
+        self.assertEqual(externalpackage.distribution, distro)
+        self.assertEqual(externalpackage.name, "my-package")
+        self.assertEqual(externalpackage.packagetype, ExternalPackageType.ROCK)
+        self.assertEqual(externalpackage.channel, channel)
+
+        # We can have external packages without channel
+        externalpackage = distro.getExternalPackage(
+            name=sourcepackagename,
+            packagetype=ExternalPackageType.SNAP,
+            channel=None,
+        )
+        self.assertEqual(externalpackage.distribution, distro)
+        self.assertEqual(externalpackage.name, "my-package")
+        self.assertEqual(externalpackage.packagetype, ExternalPackageType.SNAP)
+        self.assertEqual(externalpackage.channel, None)
 
     def test_getOCIProject(self):
         distro = self.factory.makeDistribution()
