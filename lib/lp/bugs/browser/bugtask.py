@@ -126,6 +126,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
 from lp.registry.interfaces.distroseries import IDistroSeries, IDistroSeriesSet
+from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
@@ -320,7 +321,12 @@ class BugTargetTraversalMixin:
         # rather than making it look as though this task was "not found",
         # because it was filtered out by privacy-aware code.
         for bugtask in bug.bugtasks:
-            if bugtask.target == context:
+            if bugtask.target == context or IExternalPackage.providedBy(
+                bugtask.target
+            ):
+                # TODO: set +external urls for ExternalPackages
+                # actually we select the first ExternalPackage that appears
+
                 # Security proxy this object on the way out.
                 return getUtility(IBugTaskSet).get(bugtask.id)
 
@@ -1816,6 +1822,16 @@ def bugtask_sort_key(bugtask):
             bugtask.target.sourcepackagename.name,
             bugtask.target.distribution.displayname,
             None,
+            None,
+            None,
+            None,
+        )
+    elif IExternalPackage.providedBy(bugtask.target):
+        key = (
+            bugtask.target.sourcepackagename.name,
+            bugtask.target.distribution.displayname,
+            bugtask.target.packagetype,
+            bugtask.target.channel,
             None,
             None,
             None,

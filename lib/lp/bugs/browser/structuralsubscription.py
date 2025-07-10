@@ -35,6 +35,7 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
+from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.registry.interfaces.milestone import IProjectGroupMilestone
 from lp.registry.interfaces.person import IPerson, IPersonSet
 from lp.services.propertycache import cachedproperty
@@ -284,9 +285,11 @@ class StructuralSubscriptionView(LaunchpadFormView):
     def userIsDriver(self):
         """Has the current user driver permissions?"""
         # We only want to look at this if the target is a
-        # distribution source package, in order to maintain
+        # distribution or external package, in order to maintain
         # compatibility with the obsolete bug contacts feature.
-        if IDistributionSourcePackage.providedBy(self.context):
+        if IDistributionSourcePackage.providedBy(
+            self.context
+        ) or IExternalPackage.providedBy(self.context):
             return check_permission(
                 "launchpad.Driver", self.context.distribution
             )
