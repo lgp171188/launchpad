@@ -9,37 +9,38 @@ associated with exactly one team.
 Hosted mailing list
 ===================
 
-The owner of Landscape Developers applies for a mailing list.
+The owner of Landscape Developers cannot create a new mailing list.
+
+    >>> from zope.security.management import newInteraction, endInteraction
+    >>> from lp.testing.factory import LaunchpadObjectFactory
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> browser.open("http://launchpad.test/~landscape-developers")
-    >>> browser.getLink(url="+mailinglist").click()
+    >>> browser.open(
+    ...     "http://launchpad.test/~landscape-developers/+mailinglist"
+    ... )
     >>> from lp.services.helpers import backslashreplace
     >>> print(backslashreplace(browser.title))
-    Mailing list configuration...
+    Mailing list configuration : \u201cLandscape Developers\u201d team
+    >>> print(
+    ...     extract_text(find_tag_by_id(browser.contents, "no_mailing_list"))
+    ... )
+    Launchpad no longer supports the creation of new mailing lists.
+    Read more about it here.
 
-They think for a second whether their mailing list is for Ubuntu or not.
-
-    >>> print(extract_text(find_tag_by_id(browser.contents, "ubuntu-notice")))
-    Ubuntu does not use Launchpad to host its mailing lists. Create them
-    at lists.ubuntu.com instead.
-    >>> print(browser.getLink("lists.ubuntu.com"))
-    <Link text='lists.ubuntu.com' url='https://lists.ubuntu.com'>
-
-    >>> browser.getControl("Create new Mailing List").click()
+    >>> browser.open("http://launchpad.test/~landscape-developers")
     >>> print(browser.title)
     Landscape Developers in Launchpad
-    >>> print_feedback_messages(browser.contents)
-    The mailing list is being created and will be available for use in a few
-    minutes.
 
-Once the mailing list is created, the button to create it is not shown
-anymore.
-
-    >>> browser.getControl("Create new Mailing List")
-    Traceback (most recent call last):
-    ...
-    LookupError: ...
+    # Create a new mailing list for testing purposes.
+    >>> newInteraction()
+    >>> factory = LaunchpadObjectFactory()
+    >>> factory.makeTeamAndMailingList(
+    ...     "landscape-developers", "test"
+    ... )  # doctest: +ELLIPSIS
+    (<Person landscape-developers (Landscape Developers)>,
+    <MailingList for team "landscape-developers"; status=ACTIVE;
+    address=landscape-developers@lists.launchpad.test at ...>)
+    >>> endInteraction()
 
     >>> def mailing_list_status_message(contents):
     ...     """Find out if a mailing list is in an unusual state."""
@@ -50,22 +51,7 @@ anymore.
     ...         return ""
     ...
 
-Just because a mailing list has been applied for does not mean it has an
-archive link yet.
-
-    >>> browser.open("http://launchpad.test/~landscape-developers")
-    >>> print(find_tag_by_id(browser.contents, "mailing-list-archive"))
-    None
-
-Even after the list has been created, it still cannot be used as the contact
-address until Mailman has acknowledged successful creation.
-
-    >>> browser.reload()
-    >>> browser.getLink(url="+mailinglist").click()
-    >>> print(mailing_list_status_message(browser.contents))
-    This team's mailing list will be available within a few minutes.
-
-Mailman eventually wakes up and creates the mailing list.
+Mailman helper function.
 
     >>> from lp.registry.tests import mailinglists_helper
     >>> def act():
@@ -74,7 +60,6 @@ Mailman eventually wakes up and creates the mailing list.
     ...     transaction.commit()
     ...     logout()
     ...
-    >>> act()
 
 Once the team's mailing list is active, there is a link to its archive.  This
 is true even if no messages have yet been posted to the mailing list (since
@@ -207,37 +192,16 @@ are never deleted.
     ... )
     http://lists.launchpad.test/landscape-developers
 
-An inactive mailing list can be reactivated.
+An inactive mailing list cannot be reactivated.
 
     >>> browser.getLink(url="+mailinglist").click()
-    >>> browser.getControl("Reactivate this Mailing List").click()
-    >>> print(mailing_list_status_message(browser.contents))
-    <BLANKLINE>
-    >>> print_feedback_messages(browser.contents)
-    The mailing list will be reactivated within a few minutes.
-    >>> act()
-    >>> transaction.commit()
-
-    >>> browser.getLink(url="+mailinglist").click()
-    >>> print(mailing_list_status_message(browser.contents))
-    <BLANKLINE>
-
-This does not restore the mailing list as the team's contact method:
-
-    >>> browser.getLink(url="+contactaddress").click()
-    >>> control = browser.getControl(name="field.contact_method")
-    >>> [strip_label(label) for label in control.displayValue]
-    ['Each member individually']
-
-Of course, the reactivated list still has a link to its archive.
-
-    >>> browser.open("http://launchpad.test/~landscape-developers")
     >>> print(
-    ...     extract_link_from_tag(
-    ...         find_tag_by_id(browser.contents, "mailing-list-archive")
+    ...     extract_text(
+    ...         find_tag_by_id(browser.contents, "mailing_list_reactivate")
     ...     )
     ... )
-    http://lists.launchpad.test/landscape-developers
+    Launchpad no longer supports the reactivation of mailing lists.
+    Read more about it here.
 
 The archive link is only available for public mailing lists as shown above,
 and for private mailing lists for team members.
@@ -331,13 +295,27 @@ to delete the archives of an INACTIVE list, this must be done manually.
     ...     logout()
     ...
 
-The team owner can see that they can purge or reactivate mailing list.
+The team owner cannot create new mailing lists.
 
     >>> user_browser.open("http://launchpad.test/~aardvarks/+mailinglist")
-    >>> user_browser.getControl("Create new Mailing List").click()
-    >>> print(user_browser.title)
-    Aardvarks in Launchpad
-    >>> act()
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(user_browser.contents, "no_mailing_list")
+    ...     )
+    ... )
+    Launchpad no longer supports the creation of new mailing lists.
+    Read more about it here.
+
+    # Create a mailing list to test the deletion, purging, and reactivation
+    # options.
+    >>> newInteraction()
+    >>> mailinglists_helper.new_list_for_team(team)  # doctest: +ELLIPSIS
+    <MailingList for team "aardvarks"; status=ACTIVE;
+    address=aardvarks@lists.launchpad.test at ...>
+    >>> endInteraction()
+
+The team owner can purge or deactivate mailing lists.
+
     >>> user_browser.open("http://launchpad.test/~aardvarks/+mailinglist")
     >>> user_browser.getControl("Deactivate this Mailing List").click()
     >>> act()
@@ -355,8 +333,18 @@ The team owner can see that they can purge or reactivate mailing list.
     >>> print(purge_text(user_browser))
     You can purge this mailing list...
 
-    >>> user_browser.getControl("Reactivate this Mailing List")
-    <SubmitControl name='field.actions.reactivate_list' type='submit'>
+The team owner cannot reactivate mailing lists.
+
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(
+    ...             user_browser.contents, "mailing_list_reactivate"
+    ...         )
+    ...     )
+    ... )
+    Launchpad no longer supports the reactivation of mailing lists.
+    Read more about it here.
+
     >>> user_browser.getControl("Purge this Mailing List")
     <SubmitControl name='field.actions.purge_list' type='submit'>
 
@@ -415,11 +403,21 @@ A purged list acts as if it doesn't even exist.
     >>> print_list_state()
     PURGED
     >>> admin_browser.open("http://launchpad.test/~aardvarks/+mailinglist")
-    >>> admin_browser.getControl("Create new Mailing List")
-    <SubmitControl name='field.actions.create_list_creation' type='submit'>
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "no_mailing_list")
+    ...     )
+    ... )
+    Launchpad no longer supports the creation of new mailing lists.
+    Read more about it here.
     >>> expert_browser.open("http://launchpad.test/~aardvarks/+mailinglist")
-    >>> expert_browser.getControl("Create new Mailing List")
-    <SubmitControl name='field.actions.create_list_creation' type='submit'>
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(expert_browser.contents, "no_mailing_list")
+    ...     )
+    ... )
+    Launchpad no longer supports the creation of new mailing lists.
+    Read more about it here.
 
 The team owner can see that an inactive list can be reactivated or purged.
 

@@ -22,20 +22,26 @@ preferred email address.  Both the admins and rosetta-admins teams are given
 mailing lists but only admins will actually use its mailing list as its
 contact address.
 
-    >>> admin_browser.open("http://launchpad.test/~admins")
-    >>> admin_browser.getLink(url="+mailinglist").click()
-    >>> admin_browser.getControl("Create new Mailing List").click()
+    >>> from zope.security.management import newInteraction, endInteraction
+    >>> from lp.testing.factory import LaunchpadObjectFactory
 
-    >>> admin_browser.open("http://launchpad.test/~rosetta-admins/")
-    >>> admin_browser.getLink(url="+mailinglist").click()
-    >>> admin_browser.getControl("Create new Mailing List").click()
+    >>> newInteraction()
+    >>> factory = LaunchpadObjectFactory()
+    >>> factory.makeTeamAndMailingList("admins", "foo")  # doctest: +ELLIPSIS
+    (<Person admins (Launchpad Administrators)>,
+    <MailingList for team "admins"; status=ACTIVE;
+    address=admins@lists.launchpad.test at ...>)
+    >>> endInteraction()
 
-    >>> import transaction
-    >>> from lp.registry.tests import mailinglists_helper
-    >>> login("foo.bar@canonical.com")
-    >>> mailinglists_helper.mailman.act()
-    >>> transaction.commit()
-    >>> logout()
+    >>> newInteraction()
+    >>> factory = LaunchpadObjectFactory()
+    >>> factory.makeTeamAndMailingList(
+    ...     "rosetta-admins", "foo"
+    ... )  # doctest: +ELLIPSIS
+    (<Person rosetta-admins (Rosetta Administrators)>,
+    <MailingList for team "rosetta-admins"; status=ACTIVE;
+    address=rosetta-admins@lists.launchpad.test at ...>)
+    >>> endInteraction()
 
     >>> admin_browser.open("http://launchpad.test/~admins/+edit")
     >>> admin_browser.getLink(url="+contactaddress").click()
@@ -43,12 +49,17 @@ contact address.
     >>> admin_browser.getControl("Change").click()
 
 Carlos requests a mailing list for testing-spanish-team but it will not
-actually be approved.
+actually be approved (new mailing lists cannot be created).
 
     >>> browser = setupBrowser(auth="Basic carlos@canonical.com:test")
-    >>> browser.open("http://launchpad.test/~testing-spanish-team")
-    >>> browser.getLink(url="+mailinglist").click()
-    >>> browser.getControl("Create new Mailing List").click()
+    >>> browser.open(
+    ...     "http://launchpad.test/~testing-spanish-team/+mailinglist"
+    ... )
+    >>> print(
+    ...     extract_text(find_tag_by_id(browser.contents, "no_mailing_list"))
+    ... )
+    Launchpad no longer supports the creation of new mailing lists.
+    Read more about it here.
 
 
 Subscribing
@@ -393,8 +404,8 @@ does not show either link.
     ...     )
     ... )
     Mailing list
-    This team does not use Launchpad to host a mailing list.
-    Create a mailing list
+    Launchpad no longer supports the creation of new mailing lists.
+    Read more about it here.
 
     >>> carlos_browser.getLink("Subscribe")
     Traceback (most recent call last):
