@@ -23,6 +23,7 @@ from itertools import chain, repeat
 from operator import attrgetter, itemgetter
 
 from lazr.lifecycle.event import ObjectDeletedEvent
+from storm.databases.postgres import JSON
 from storm.expr import (
     SQL,
     And,
@@ -78,6 +79,10 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
 from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.externalpackage import (
+    ExternalPackageType,
+    IExternalPackage,
+)
 from lp.registry.interfaces.milestone import IMilestoneSet
 from lp.registry.interfaces.milestonetag import IProjectGroupMilestoneTag
 from lp.registry.interfaces.ociproject import IOCIProject
@@ -170,6 +175,8 @@ def bug_target_from_key(
     distroseries,
     sourcepackagename,
     ociproject,
+    packagetype,
+    channel,
 ):
     """Returns the IBugTarget defined by the given DB column values."""
     if ociproject:
@@ -182,7 +189,11 @@ def bug_target_from_key(
     elif productseries:
         return productseries
     elif distribution:
-        if sourcepackagename:
+        if sourcepackagename and packagetype:
+            return distribution.getExternalPackage(
+                sourcepackagename, packagetype, removeSecurityProxy(channel)
+            )
+        elif sourcepackagename:
             return distribution.getSourcePackage(sourcepackagename)
         else:
             return distribution
@@ -204,6 +215,8 @@ def bug_target_to_key(target):
         distroseries=None,
         sourcepackagename=None,
         ociproject=None,
+        packagetype=None,
+        channel=None,
     )
     if IProduct.providedBy(target):
         values["product"] = target
@@ -219,6 +232,11 @@ def bug_target_to_key(target):
     elif ISourcePackage.providedBy(target):
         values["distroseries"] = target.distroseries
         values["sourcepackagename"] = target.sourcepackagename
+    elif IExternalPackage.providedBy(target):
+        values["distribution"] = target.distribution
+        values["sourcepackagename"] = target.sourcepackagename
+        values["packagetype"] = target.packagetype
+        values["channel"] = removeSecurityProxy(target).channel
     elif IOCIProject.providedBy(target):
         # De-normalize the ociproject, including also the ociproject's
         # pillar (distribution or product).
@@ -371,6 +389,9 @@ def validate_target(
                 )
             except NotFoundError as e:
                 raise IllegalTarget(e.args[0])
+    elif IExternalPackage.providedBy(target):
+        # TODO: Check with store/soss that package exists
+        pass
 
     legal_types = target.pillar.getAllowedBugInformationTypes()
     new_pillar = target.pillar not in bug.affected_pillars
@@ -422,7 +443,9 @@ def validate_new_target(bug, target, check_source_package=True):
                 "affected package in which the bug has not yet "
                 "been reported." % target.displayname
             )
-    elif IDistributionSourcePackage.providedBy(target):
+    elif IDistributionSourcePackage.providedBy(
+        target
+    ) or IExternalPackage.providedBy(target):
         # Ensure that there isn't already a generic task open on the
         # distribution for this bug, because if there were, that task
         # should be reassigned to the sourcepackage, rather than a new
@@ -492,6 +515,17 @@ class BugTask(StormBase):
 
     sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
     sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+
+    packagetype = DBEnum(
+        name="packagetype",
+        allow_none=True,
+        enum=ExternalPackageType,
+        default=None,
+    )
+
+    channel = JSON(name="channel", allow_none=True, default=None)
+
+    metadata = JSON(name="metadata", allow_none=True, default=None)
 
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
@@ -627,6 +661,17 @@ class BugTask(StormBase):
         return self._status
 
     @property
+    def display_channel(self):
+        if self.channel is None:
+            return None
+
+        channel_list = [self.channel.get("track"), self.channel.get("risk")]
+        if branch := self.channel.get("branch", "") != "":
+            channel_list.append(branch)
+
+        return "/".join(channel_list)
+
+    @property
     def title(self):
         """See `IBugTask`."""
         return 'Bug #%s in %s: "%s"' % (
@@ -660,6 +705,8 @@ class BugTask(StormBase):
             self.distroseries,
             self.sourcepackagename,
             self.ociproject,
+            self.packagetype,
+            self.channel,
         )
 
     @property
@@ -1883,6 +1930,8 @@ class BugTaskSet:
                 key["distribution"],
                 key["distroseries"],
                 key["sourcepackagename"],
+                key["packagetype"],
+                key["channel"],
                 key["ociproject"],
                 status,
                 importance,
@@ -1900,6 +1949,8 @@ class BugTaskSet:
                 BugTask.distribution,
                 BugTask.distroseries,
                 BugTask.sourcepackagename,
+                BugTask.packagetype,
+                BugTask.channel,
                 BugTask.ociproject,
                 BugTask._status,
                 BugTask.importance,

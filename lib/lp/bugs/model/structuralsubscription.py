@@ -58,6 +58,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
 from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.registry.interfaces.milestone import IMilestone
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
@@ -607,7 +608,12 @@ def get_structural_subscriptions_for_bug(bug, person=None):
     # This is here because of a circular import.
     from lp.registry.model.person import Person
 
-    bugtasks = bug.bugtasks
+    bugtasks = []
+    # TODO: support bug subscriptions
+    for bugtask in bug.bugtasks:
+        if not IExternalPackage.providedBy(bugtask.target):
+            bugtasks.append(bugtask)
+
     if not bugtasks:
         return EmptyResultSet()
     conditions = []
