@@ -4184,6 +4184,8 @@ class TestBranchMergeProposalMerge(TestCaseWithFactory):
                 proposal.queue_status,
             )
 
+        self.assertIsNotNone(proposal.target_git_repository.getLatestScanJob())
+
     def test_cross_repo_merge_success(self):
         # A successful merge request updates the proposal status
 

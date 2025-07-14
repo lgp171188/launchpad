@@ -1077,6 +1077,11 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
                 "Failed to merge the proposal."
             )
 
+        # Schedule a rescan (similarly to what happens when a push is done to
+        # turnip). This will prevent Launchpad from getting out of date with
+        # turnip's repository
+        self.target_git_repository.rescan()
+
         merge_commit = response["merge_commit"]
         previously_merged = response.get("previously_merged", False)
 
