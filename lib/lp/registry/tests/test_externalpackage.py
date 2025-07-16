@@ -6,10 +6,7 @@
 from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.interfaces.externalpackage import ExternalPackageType
-from lp.registry.model.externalpackage import (
-    ChannelFieldException,
-    ExternalPackage,
-)
+from lp.registry.model.externalpackage import ExternalPackage
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -23,7 +20,7 @@ class TestExternalPackage(TestCaseWithFactory):
         self.sourcepackagename = self.factory.getOrMakeSourcePackageName(
             "mypackage"
         )
-        self.channel = {"track": "12.81", "risk": "edge", "branch": "myfix"}
+        self.channel = "12.81/edge/myfix"
         self.distribution = self.factory.makeDistribution(name="mydistro")
 
         self.externalpackage = self.distribution.getExternalPackage(
@@ -67,18 +64,20 @@ class TestExternalPackage(TestCaseWithFactory):
         )
         self.assertEqual(self.externalpackage_maven.display_channel, None)
 
-        removeSecurityProxy(self.externalpackage).channel = {
-            "track": "12.81",
-            "risk": "candidate",
-        }
+        removeSecurityProxy(self.externalpackage).channel = (
+            "12.81",
+            "candidate",
+            None,
+        )
         self.assertEqual(
             "12.81/candidate", self.externalpackage.display_channel
         )
 
     def test_channel_fields(self):
-        """Test invalid channel fields when creating an ExternalPackage"""
+        """Test channel fields when creating an ExternalPackage"""
+        # Channel is not a str, tuple or list
         self.assertRaises(
-            ChannelFieldException,
+            ValueError,
             ExternalPackage,
             self.distribution,
             self.sourcepackagename,
@@ -86,99 +85,53 @@ class TestExternalPackage(TestCaseWithFactory):
             {},
         )
         self.assertRaises(
-            ChannelFieldException,
+            ValueError,
             ExternalPackage,
             self.distribution,
             self.sourcepackagename,
             ExternalPackageType.CHARM,
-            {"track": 16},
+            16,
         )
+        # Channel risk is missing
         self.assertRaises(
-            ChannelFieldException,
-            ExternalPackage,
-            self.distribution,
-            self.sourcepackagename,
-            ExternalPackageType.CHARM,
-            {"track": "16"},
-        )
-        self.assertRaises(
-            ChannelFieldException,
+            ValueError,
             ExternalPackage,
             self.distribution,
             self.sourcepackagename,
             ExternalPackageType.ROCK,
-            {"risk": "beta"},
+            "16",
         )
+        # Branch name is also risk name
         self.assertRaises(
-            ChannelFieldException,
+            ValueError,
             ExternalPackage,
             self.distribution,
             self.sourcepackagename,
-            ExternalPackageType.PYTHON,
-            {"track": "16", "risk": "beta", "foo": "bar"},
+            ExternalPackageType.ROCK,
+            "16/stable/stable",
         )
+        # Invalid risk name
         self.assertRaises(
-            ChannelFieldException,
+            ValueError,
             ExternalPackage,
             self.distribution,
             self.sourcepackagename,
-            ExternalPackageType.CONDA,
-            1,
+            ExternalPackageType.ROCK,
+            "16/foo/bar",
         )
 
     def test_display_name(self):
-        """Test display_name property"""
-        self.assertEqual(
-            "mypackage - Snap @12.81/edge/myfix in Mydistro",
-            self.externalpackage.display_name,
-        )
+        """Test display_name property without channel"""
         self.assertEqual(
             "mypackage - Maven in Mydistro",
             self.externalpackage_maven.display_name,
         )
 
-    def test_displayname(self):
-        """Test displayname property"""
+    def test_display_name_with_channel(self):
+        """Test display_name property with channel"""
         self.assertEqual(
             "mypackage - Snap @12.81/edge/myfix in Mydistro",
             self.externalpackage.display_name,
-        )
-        self.assertEqual(
-            "mypackage - Maven in Mydistro",
-            self.externalpackage_maven.display_name,
-        )
-
-    def test_bugtargetdisplayname(self):
-        """Test bugtargetdisplayname property"""
-        self.assertEqual(
-            "mypackage - Snap @12.81/edge/myfix in Mydistro",
-            self.externalpackage.bugtargetdisplayname,
-        )
-        self.assertEqual(
-            "mypackage - Maven in Mydistro",
-            self.externalpackage_maven.bugtargetdisplayname,
-        )
-
-    def test_bugtargetname(self):
-        """Test bugtargetname property"""
-        self.assertEqual(
-            "mypackage - Snap @12.81/edge/myfix in Mydistro",
-            self.externalpackage.bugtargetname,
-        )
-        self.assertEqual(
-            "mypackage - Maven in Mydistro",
-            self.externalpackage_maven.bugtargetname,
-        )
-
-    def test_title(self):
-        """Test title property"""
-        self.assertEqual(
-            "mypackage - Snap @12.81/edge/myfix package in Mydistro",
-            self.externalpackage.title,
-        )
-        self.assertEqual(
-            "mypackage - Maven package in Mydistro",
-            self.externalpackage_maven.title,
         )
 
     def test_compare(self):

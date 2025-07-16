@@ -387,7 +387,7 @@ class TestDistribution(TestCaseWithFactory):
         sourcepackagename = self.factory.getOrMakeSourcePackageName(
             "my-package"
         )
-        channel = {"track": "22.04", "risk": "candidate", "branch": "staging"}
+        channel = ("22.04", "candidate", "staging")
         externalpackage = distro.getExternalPackage(
             name=sourcepackagename,
             packagetype=ExternalPackageType.ROCK,

@@ -62,7 +62,7 @@ class LaunchpadTargetWidgetTestCase(TestCaseWithFactory):
             distroseries=distroseries, sourcepackagename="snarf"
         )
         self.externalpackage = self.factory.makeExternalPackage(
-            distribution=self.distribution, sourcepackagename="snarf"
+            distribution=self.distribution, sourcepackagename="foo"
         )
         self.project = self.factory.makeProduct("pting")
         field = Reference(__name__="target", schema=Interface, title="target")

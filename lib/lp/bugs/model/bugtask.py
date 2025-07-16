@@ -664,17 +664,6 @@ class BugTask(StormBase):
         return self._status
 
     @property
-    def display_channel(self):
-        if self.channel is None:
-            return None
-
-        channel_list = [self.channel.get("track"), self.channel.get("risk")]
-        if branch := self.channel.get("branch", "") != "":
-            channel_list.append(branch)
-
-        return "/".join(channel_list)
-
-    @property
     def title(self):
         """See `IBugTask`."""
         return 'Bug #%s in %s: "%s"' % (

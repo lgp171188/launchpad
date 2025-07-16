@@ -5602,7 +5602,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if packagetype is None:
             packagetype = ExternalPackageType.SNAP
         if channel is None:
-            channel = {"track": "12.1", "risk": "stable", "branch": ""}
+            channel = ("12.1", "stable", None)
 
         return distribution.getExternalPackage(
             sourcepackagename, packagetype, channel

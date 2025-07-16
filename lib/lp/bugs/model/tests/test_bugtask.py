@@ -3616,9 +3616,18 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
         )
 
     def test_externalpackage_task_is_allowed(self):
-        # An External task can coexist with a task for its Distribution.
+        # An ExternalPackage task can coexist with a task for its Distribution.
         d = self.factory.makeDistribution()
         task = self.factory.makeBugTask(target=d)
+        externalpackage = self.factory.makeExternalPackage(distribution=d)
+        validate_target(task.bug, externalpackage)
+
+    def test_externalpackage_task_with_dsp_is_allowed(self):
+        # An ExternalPackage task can coexist with a task for a
+        # DistributionSourcePackage with the same name.
+        d = self.factory.makeDistribution()
+        dsp = self.factory.makeDistributionSourcePackage(distribution=d)
+        task = self.factory.makeBugTask(target=dsp)
         externalpackage = self.factory.makeExternalPackage(distribution=d)
         validate_target(task.bug, externalpackage)
 
