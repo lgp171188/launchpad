@@ -37,7 +37,7 @@
           at irc.libera.chat,
           <a href="mailto:feedback@launchpad.net">e-mail us</a>
           or visit our
-          <a href="https://help.launchpad.net/Feedback">feedback page</a>.
+          <a href="https://documentation.ubuntu.com/launchpad/en/latest/user/reference/launchpad-and-community/feedback-on-launchpad/">feedback page</a>.
         </p>
         <p>
           If you <a href="/launchpad/+filebug">report this as a bug</a>,
@@ -54,7 +54,7 @@
         <div class="related">
           <ul>
             <li>
-              <a href="https://help.launchpad.net/Feedback">
+              <a href="https://documentation.ubuntu.com/launchpad/en/latest/user/reference/launchpad-and-community/feedback-on-launchpad/">
                 Provide feedback or report a bug
               </a>
             </li>

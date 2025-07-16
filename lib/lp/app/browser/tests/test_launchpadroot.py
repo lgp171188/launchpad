@@ -121,7 +121,10 @@ class TestLaunchpadRootNavigation(TestCaseWithFactory):
         view()
         self.assertEqual(301, request.response.getStatus())
         self.assertEqual(
-            "https://help.launchpad.net/Feedback",
+            (
+                "https://documentation.ubuntu.com/launchpad/en/latest/user/"
+                "reference/launchpad-and-community/feedback-on-launchpad/"
+            ),
             request.response.getHeader("location"),
         )
 

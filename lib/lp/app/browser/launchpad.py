@@ -719,7 +719,11 @@ class LaunchpadRootNavigation(Navigation):
     def redirect_feedback(self):
         """Redirect /feedback to help.launchpad.net/Feedback site."""
         return self.redirectSubTree(
-            "https://help.launchpad.net/Feedback", status=301
+            (
+                "https://documentation.ubuntu.com/launchpad/en/latest/user/"
+                "reference/launchpad-and-community/feedback-on-launchpad/"
+            ),
+            status=301,
         )
 
     @stepto("+branch")
