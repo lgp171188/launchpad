@@ -320,17 +320,29 @@ class BugTargetTraversalMixin:
         # anonymous user is presented with a login screen at the correct URL,
         # rather than making it look as though this task was "not found",
         # because it was filtered out by privacy-aware code.
-        for bugtask in bug.bugtasks:
-            if bugtask.target == context or IExternalPackage.providedBy(
-                bugtask.target
-            ):
-                # TODO: set +external urls for ExternalPackages
-                # actually we select the first ExternalPackage that appears
 
+        externalpackage_bugtask = None
+
+        for bugtask in bug.bugtasks:
+            if bugtask.target == context:
                 # Security proxy this object on the way out.
                 return getUtility(IBugTaskSet).get(bugtask.id)
 
+            if (
+                externalpackage_bugtask is None
+                and IExternalPackage.providedBy(bugtask.target)
+            ):
+                # enriqueesanchz 2025-07-15 TODO: set +external urls for
+                # ExternalPackages. Currently we select the first
+                # ExternalPackage that appears if we don't have other match
+                externalpackage_bugtask = getUtility(IBugTaskSet).get(
+                    bugtask.id
+                )
+
         # If we've come this far, there's no task for the requested context.
+        if externalpackage_bugtask:
+            return externalpackage_bugtask
+
         # If we are attempting to navigate past the non-existent bugtask,
         # we raise NotFound error. eg +delete or +edit etc.
         # Otherwise we are simply navigating to a non-existent task and so we
