@@ -286,7 +286,7 @@
       &copy; 2004
       <a href="http://canonical.com/">Canonical&nbsp;Ltd.</a>
       &nbsp;&bull;&nbsp;
-      <a tal:attributes="href string:${rooturl}legal">Terms of use</a>
+      <a href="https://ubuntu.com/legal/launchpad-terms-of-service">Terms of use</a>
       &nbsp;&bull;&nbsp;
       <a href="https://www.ubuntu.com/legal/dataprivacy">Data privacy</a>
       &nbsp;&bull;&nbsp;

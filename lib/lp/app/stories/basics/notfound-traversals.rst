@@ -39,7 +39,7 @@ HTTP status is returned.
     >>> check_redirect("/faq", status=301)
     https://answers.launchpad.net/launchpad-project/+faqs
     >>> check_redirect("/feedback", status=301)
-    https://help.launchpad.net/Feedback
+    https://documentation.ubuntu.com/launchpad/.../feedback-on-launchpad/
     >>> check_redirect("/support/", status=301)
     http://answers.launchpad.test/launchpad
 

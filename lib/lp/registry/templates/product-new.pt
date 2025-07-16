@@ -35,7 +35,7 @@
     <div metal:use-macro="context/@@launchpad_form/form">
       <metal:step fill-slot="extra_info">
       <div style="float: right;">Not sure what to do?
-        <a href="https://help.launchpad.net/Feedback">Contact us</a>
+        <a href="https://documentation.ubuntu.com/launchpad/en/latest/user/reference/launchpad-and-community/feedback-on-launchpad/">Contact us</a>
       </div>
 
       <div tal:condition="view/is_step/1">
