@@ -79,10 +79,19 @@ class IExternalPackage(
 
 
 class ExternalPackageType(DBEnumeratedType):
-    """Bug Task Status
+    """ExternalPackageType
 
-    The various possible states for a bugfix in a specific place.
+    The various possible types for an ExternalPackage.
     """
+
+    UNKNOWN = DBItem(
+        0,
+        """
+        Unknown
+
+        Unknown external package
+        """,
+    )
 
     SNAP = DBItem(
         1,
