@@ -557,6 +557,8 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
         bug.addTask(actor, externalpackage)
         product_bugtask = bug.bugtasks[0]
         result = get_structural_subscription_targets(bug.bugtasks)
+        # enriqueesanchz 2025-07-15: We don't have an ExternalPackage here as
+        # it is not implemented yet
         self.assertEqual(
             set(result),
             {

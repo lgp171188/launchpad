@@ -390,7 +390,10 @@ def validate_target(
             except NotFoundError as e:
                 raise IllegalTarget(e.args[0])
     elif IExternalPackage.providedBy(target):
-        # TODO: Check with store/soss that package exists
+        # enriqueensanchz 2025-07-15 TODO: we are creating a bugtask for an
+        # ExternalPackage that is published in the Store/SOSS, we need to use
+        # their API to check that it exists as we dont have any data in
+        # Launchpad database
         pass
 
     legal_types = target.pillar.getAllowedBugInformationTypes()

@@ -109,7 +109,7 @@ class BugTaskTargetNameCachesTunableLoop:
             )
 
             # We don't need packagetype and channel to get items from
-            # target_classes
+            # target_classes, as there is no ExternalPackage class there
             target = bug_target_from_key(*target_objects, None, None)
             new_name = target.bugtargetdisplayname
             cached_names.discard(new_name)

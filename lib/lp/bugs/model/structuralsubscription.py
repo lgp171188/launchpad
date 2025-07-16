@@ -609,7 +609,8 @@ def get_structural_subscriptions_for_bug(bug, person=None):
     from lp.registry.model.person import Person
 
     bugtasks = []
-    # TODO: support bug subscriptions
+    # enriqueesanchz 2025-07-15 TODO: support bug subscriptions for
+    # ExternalPackages
     for bugtask in bug.bugtasks:
         if not IExternalPackage.providedBy(bugtask.target):
             bugtasks.append(bugtask)

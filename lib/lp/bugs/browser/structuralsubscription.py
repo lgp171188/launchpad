@@ -285,8 +285,8 @@ class StructuralSubscriptionView(LaunchpadFormView):
     def userIsDriver(self):
         """Has the current user driver permissions?"""
         # We only want to look at this if the target is a
-        # distribution or external package, in order to maintain
-        # compatibility with the obsolete bug contacts feature.
+        # distribution source package or external package, in order to
+        # maintain compatibility with the obsolete bug contacts feature.
         if IDistributionSourcePackage.providedBy(
             self.context
         ) or IExternalPackage.providedBy(self.context):

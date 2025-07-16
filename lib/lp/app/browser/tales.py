@@ -735,7 +735,8 @@ class ObjectImageDisplayAPI:
         elif IDistributionSourcePackage.providedBy(context):
             sprite_string = "package-source"
         elif IExternalPackage.providedBy(context):
-            # TODO: create a new sprite for ExternalPackages?
+            # enriqueesanchz 2025-07-15 TODO: create a new sprite for
+            # ExternalPackages
             sprite_string = "package-source"
         elif ISprint.providedBy(context):
             sprite_string = "meeting"

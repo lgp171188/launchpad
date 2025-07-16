@@ -109,7 +109,8 @@ def load_target(pid, psid, did, dsid, spnid, ociproject_id):
             (pid, psid, did, dsid, spnid, ociproject_id),
         ),
     )
-    # TODO: modify when BugSummary for ExternalPackage implemented
+    # enriqueesanchz 2025-07-16 TODO: modify when BugSummary for
+    # ExternalPackage implemented
     return bug_target_from_key(p, ps, d, ds, spn, ociproject, None, None)
 
 
@@ -133,7 +134,8 @@ def _get_bugsummary_constraint_bits(target):
     # Map to ID columns to work around Storm bug #682989.
     constraint_bits = {}
     for k, v in raw_key.items():
-        # TODO: implement BugSummary for packagetype and channel
+        # enriqueesanchz 2025-07-16 TODO: implement BugSummary for packagetype
+        # and channel
         if k != "packagetype" and k != "channel":
             key = "%s_id" % k
             value = v.id if v else None
@@ -165,7 +167,6 @@ def get_bugtaskflat_constraint(target):
     # Map to ID columns to work around Storm bug #682989.
     constraint = []
     for k, v in raw_key.items():
-        # TODO: implement BugSummary for packagetype and channel
         if k != "packagetype" and k != "channel":
             key = "%s_id" % k
             value = v.id if v else None
