@@ -178,7 +178,6 @@ from lp.registry.interfaces.distroseriesdifferencecomment import (
     IDistroSeriesDifferenceCommentSource,
 )
 from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
-from lp.registry.interfaces.externalpackage import ExternalPackageType
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.mailinglist import (
     IMailingListSet,
@@ -5585,28 +5584,6 @@ class LaunchpadObjectFactory(ObjectFactory):
                 binpkgnames=binary_names,
             )
         return dsp
-
-    def makeExternalPackage(
-        self,
-        sourcepackagename=None,
-        packagetype=None,
-        channel=None,
-        distribution=None,
-    ):
-        if sourcepackagename is None or isinstance(sourcepackagename, str):
-            sourcepackagename = self.getOrMakeSourcePackageName(
-                sourcepackagename
-            )
-        if distribution is None:
-            distribution = self.makeDistribution()
-        if packagetype is None:
-            packagetype = ExternalPackageType.SNAP
-        if channel is None:
-            channel = ("12.1", "stable", None)
-
-        return distribution.getExternalPackage(
-            sourcepackagename, packagetype, channel
-        )
 
     def makeEmailMessage(
         self,

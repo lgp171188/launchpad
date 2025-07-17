@@ -608,21 +608,6 @@
         provides="lp.services.webapp.interfaces.IBreadcrumb"
         factory="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageBreadcrumb"/>
 
-    <!-- ExternalPackage -->
-    <class
-        class="lp.registry.model.externalpackage.ExternalPackage">
-        <allow
-            interface="lp.registry.interfaces.externalpackage.IExternalPackageView"/>
-        <require
-            permission="launchpad.BugSupervisor"
-            set_attributes="
-                bug_reported_acknowledgement
-                bug_reporting_guidelines
-                content_templates
-                enable_bugfiling_duplicate_search
-                "/>
-    </class>
-
     <!-- CommercialSubscription -->
 
     <class

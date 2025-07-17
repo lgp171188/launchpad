@@ -52,7 +52,6 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
-from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
@@ -733,10 +732,6 @@ class ObjectImageDisplayAPI:
         elif IDistribution.providedBy(context):
             sprite_string = "distribution"
         elif IDistributionSourcePackage.providedBy(context):
-            sprite_string = "package-source"
-        elif IExternalPackage.providedBy(context):
-            # enriqueesanchz 2025-07-15 TODO: create a new sprite for
-            # ExternalPackages
             sprite_string = "package-source"
         elif ISprint.providedBy(context):
             sprite_string = "meeting"

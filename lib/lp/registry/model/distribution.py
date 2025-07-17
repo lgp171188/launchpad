@@ -145,7 +145,6 @@ from lp.registry.model.distributionsourcepackage import (
 )
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.distroseriesparent import DistroSeriesParent
-from lp.registry.model.externalpackage import ExternalPackage
 from lp.registry.model.hasdrivers import HasDriversMixin
 from lp.registry.model.karma import KarmaContextMixin
 from lp.registry.model.milestone import HasMilestonesMixin, Milestone
@@ -1359,18 +1358,6 @@ class Distribution(
             if sourcepackagename is None:
                 return None
         return DistributionSourcePackage(self, sourcepackagename)
-
-    def getExternalPackage(self, name, packagetype, channel):
-        """See `IDistribution`."""
-        if ISourcePackageName.providedBy(name):
-            sourcepackagename = name
-        else:
-            sourcepackagename = getUtility(ISourcePackageNameSet).queryByName(
-                name
-            )
-            if sourcepackagename is None:
-                return None
-        return ExternalPackage(self, sourcepackagename, packagetype, channel)
 
     def getSourcePackageRelease(self, sourcepackagerelease):
         """See `IDistribution`."""
