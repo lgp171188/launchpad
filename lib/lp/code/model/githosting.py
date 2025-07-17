@@ -262,6 +262,56 @@ class GitHostingClient:
                 "Failed to get merge diff from Git repository: %s" % str(e)
             )
 
+    def request_merge(
+        self,
+        repo,
+        target_branch,
+        target_commit_sha1,
+        source_branch,
+        source_commit_sha1,
+        commiter,
+        commit_message,
+        source_repo=None,
+        logger=None,
+    ):
+        """See `IGitHostingClient`."""
+
+        if logger is not None:
+            logger.info(
+                "Requesting merge for %s from %s to %s" % repo,
+                quote(source_branch),
+                quote(target_branch),
+            )
+
+        if source_repo:
+            repo = f"{repo}:{source_repo}"
+
+        url = "/repo/%s/request-merge/%s:%s" % (
+            repo,
+            quote(target_branch),
+            quote(source_branch),
+        )
+
+        json_data = {
+            "committer_name": commiter.display_name,
+            "committer_email": commiter.preferredemail.email,
+            "commit_message": commit_message,
+            "target_commit_sha1": target_commit_sha1,
+            "source_commit_sha1": source_commit_sha1,
+        }
+
+        if logger is not None:
+            logger.info("Sending request to turnip '%s'" % url)
+
+        try:
+            return self._post(url, json=json_data)
+        except requests.RequestException as e:
+            if e.response is not None and e.response.status_code == 404:
+                raise GitRepositoryScanFault("Repository or branch not found")
+            raise GitRepositoryScanFault(
+                "Failed to merge from Git repository: %s" % str(e)
+            )
+
     def merge(
         self,
         repo,

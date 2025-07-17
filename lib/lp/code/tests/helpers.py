@@ -383,6 +383,9 @@ class GitHostingFixture(fixtures.Fixture):
         self.detectMerges = fake_method_factory(
             result=({} if merges is None else merges)
         )
+        self.request_merge = fake_method_factory(
+            result=({"queued": True, "already_merged": False})
+        )
         self.merge = fake_method_factory(
             result=({"merge_commit": "fake-sha1", "previously_merged": False})
         )

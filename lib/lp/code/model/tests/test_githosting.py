@@ -834,3 +834,116 @@ class TestGitHostingClientMerge(TestCaseWithFactory):
             person,
             "Test commit message",
         )
+
+
+class TestGitHostingClientRequestMerge(TestCaseWithFactory):
+    """Test the request-merge method of GitHostingClient."""
+
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self):
+        super().setUp()
+        self.client = getUtility(IGitHostingClient)
+        self.requests = []
+
+    @contextmanager
+    def mockRequests(self, method, set_default_timeout=True, **kwargs):
+        with responses.RequestsMock() as requests_mock:
+            requests_mock.add(method, re.compile(r".*"), **kwargs)
+            original_timeout_function = get_default_timeout_function()
+            if set_default_timeout:
+                set_default_timeout_function(lambda: 60.0)
+            try:
+                yield
+            finally:
+                set_default_timeout_function(original_timeout_function)
+            self.requests = [call.request for call in requests_mock.calls]
+
+    def test_request_merge_success(self):
+        """Test successful request_merge"""
+        person = self.factory.makePerson()
+
+        with self.mockRequests(
+            "POST", json={"queued": True, "already_merged": False}
+        ):
+            response = self.client.request_merge(
+                1,  # repository id
+                "target-branch",
+                "target_commit_sha1",
+                "source-branch",
+                "source_commit_sha1",
+                person,
+                "Test commit message",
+            )
+
+        self.assertTrue(response["queued"])
+        self.assertEqual(
+            "http://git.launchpad.test:19417/repo/1/request-merge/"
+            "target-branch:source-branch",
+            self.requests[0].url,
+        )
+
+    def test_request_cross_repo_merge_success(self):
+        """Test successful request_merge for cross repo branches"""
+        person = self.factory.makePerson()
+
+        with self.mockRequests(
+            "POST", json={"queued": True, "already_merged": False}
+        ):
+            response = self.client.request_merge(
+                1,  # repository id
+                "target-branch",
+                "target_commit_sha1",
+                "source-branch",
+                "source_commit_sha1",
+                person,
+                "Test commit message",
+                source_repo=2,  # source repository id
+            )
+
+        self.assertTrue(response["queued"])
+        self.assertEqual(
+            "http://git.launchpad.test:19417/repo/1:2/request-merge/"
+            "target-branch:source-branch",
+            self.requests[0].url,
+        )
+
+    def test_request_merge_not_found(self):
+        """Test request_merge with non-existent repository"""
+
+        person = self.factory.makePerson()
+        with self.mockRequests("POST", status=404):
+            self.assertRaises(
+                GitRepositoryScanFault,
+                self.client.request_merge,
+                "non-existent",
+                "target-branch",
+                "target_commit_sha1",
+                "source-branch",
+                "source_commit_sha1",
+                person,
+                "Test commit message",
+            )
+
+    def test_request_merge_network_error(self):
+        """Test request_merge with network error"""
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+        self.hosting_fixture.request_merge.failure = GitRepositoryScanFault(
+            "Network error"
+        )
+        self.client = getUtility(IGitHostingClient)
+
+        repository = self.factory.makeGitRepository()
+        person = self.factory.makePerson()
+
+        self.assertRaises(
+            GitRepositoryScanFault,
+            self.client.request_merge,
+            repository.id,
+            "target-branch",
+            "target_commit_sha1",
+            "source-branch",
+            "source_commit_sha1",
+            person,
+            "Test commit message",
+        )
