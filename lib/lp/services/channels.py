@@ -33,38 +33,29 @@ def channel_string_to_list(channel):
 
     :raises ValueError: If the channel string is invalid.
     """
-    if isinstance(channel, str):
-        components = channel.split(CHANNEL_COMPONENTS_DELIMITER)
-    else:
-        components = channel
-
-    # Only 1, 2, or 3 components are allowed
-    if len(components) > 3:
-        raise ValueError("Invalid channel name: %r" % channel)
-
-    track = None
-    risk = None
-    branch = None
-
+    components = channel.split(CHANNEL_COMPONENTS_DELIMITER)
     if len(components) == 3:
         track, risk, branch = components
     elif len(components) == 2:
+        # Identify risk to determine if this is track/risk or risk/branch.
         if _is_risk(components[0]):
+            if _is_risk(components[1]):
+                raise ValueError(
+                    "Branch name cannot match a risk name: %r" % channel
+                )
+            track = None
             risk, branch = components
         elif _is_risk(components[1]):
             track, risk = components
+            branch = None
         else:
             raise ValueError("No valid risk provided: %r" % channel)
     elif len(components) == 1:
+        track = None
         risk = components[0]
-
-    # Validate risk and branch names
-    if not _is_risk(risk):
-        raise ValueError("No valid risk provided: %r" % channel)
-
-    if branch and _is_risk(branch):
-        raise ValueError("Branch name cannot match a risk name: %r" % channel)
-
+        branch = None
+    else:
+        raise ValueError("Invalid channel name: %r" % channel)
     return track, risk, branch
 
 

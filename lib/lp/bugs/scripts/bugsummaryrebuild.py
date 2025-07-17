@@ -109,9 +109,7 @@ def load_target(pid, psid, did, dsid, spnid, ociproject_id):
             (pid, psid, did, dsid, spnid, ociproject_id),
         ),
     )
-    # enriqueesanchz 2025-07-16 TODO: modify when BugSummary for
-    # ExternalPackage implemented
-    return bug_target_from_key(p, ps, d, ds, spn, ociproject, None, None)
+    return bug_target_from_key(p, ps, d, ds, spn, ociproject)
 
 
 def format_target(target):
@@ -132,16 +130,7 @@ def format_target(target):
 def _get_bugsummary_constraint_bits(target):
     raw_key = bug_target_to_key(target)
     # Map to ID columns to work around Storm bug #682989.
-    constraint_bits = {}
-    for k, v in raw_key.items():
-        # enriqueesanchz 2025-07-16 TODO: implement BugSummary for packagetype
-        # and channel
-        if k != "packagetype" and k != "channel":
-            key = "%s_id" % k
-            value = v.id if v else None
-            constraint_bits[key] = value
-
-    return constraint_bits
+    return {"%s_id" % k: v.id if v else None for (k, v) in raw_key.items()}
 
 
 def get_bugsummary_constraint(target, cls=RawBugSummary):
@@ -165,14 +154,10 @@ def get_bugtaskflat_constraint(target):
     if IProduct.providedBy(target):
         del raw_key["ociproject"]
     # Map to ID columns to work around Storm bug #682989.
-    constraint = []
-    for k, v in raw_key.items():
-        if k != "packagetype" and k != "channel":
-            key = "%s_id" % k
-            value = v.id if v else None
-            constraint.append(getattr(BugTaskFlat, key) == value)
-
-    return constraint
+    return [
+        getattr(BugTaskFlat, "%s_id" % k) == (v.id if v else None)
+        for (k, v) in raw_key.items()
+    ]
 
 
 def get_bugsummary_rows(target):
