@@ -4383,4 +4383,188 @@ class TestBranchMergeProposalMerge(TestCaseWithFactory):
             self.assertEqual(MergeType.REGULAR_MERGE, self.proposal.merge_type)
 
 
+class TestBranchMergeProposalRequestMerge(TestCaseWithFactory):
+    """Test the request_merge method of BranchMergeProposal."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.hosting_fixture = self.useFixture(GitHostingFixture())
+        self.useFixture(
+            FeatureFixture({PROPOSAL_MERGE_ENABLED_FEATURE_FLAG: "on"})
+        )
+
+        self.proposal = removeSecurityProxy(
+            self.factory.makeBranchMergeProposalForGit()
+        )
+
+        self.person = self.factory.makePerson()
+        self.reviewer = self.proposal.target_git_repository.owner
+
+        rule = removeSecurityProxy(
+            self.factory.makeGitRule(
+                repository=self.proposal.target_git_repository
+            )
+        )
+        self.factory.makeGitRuleGrant(
+            rule=rule, grantee=self.person, can_create=True, can_push=True
+        )
+
+    def test_request_merge_feature_flag(self):
+        self.useFixture(
+            FeatureFixture({PROPOSAL_MERGE_ENABLED_FEATURE_FLAG: ""})
+        )
+        self.assertRaises(
+            BranchMergeProposalFeatureDisabled,
+            self.proposal.request_merge,
+            self.person,
+        )
+
+    def test_request_merge_success(self):
+        repository = self.proposal.target_git_repository
+        [source_ref, target_ref] = self.factory.makeGitRefs(
+            paths=["refs/heads/source", "refs/heads/target"],
+            repository=repository,
+        )
+        proposal = removeSecurityProxy(
+            self.factory.makeBranchMergeProposalForGit(
+                source_ref=source_ref,
+                target_ref=target_ref,
+            )
+        )
+        proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        proposal.next_preview_diff_job.start()
+        proposal.next_preview_diff_job.complete()
+        with person_logged_in(self.person):
+            result = proposal.request_merge(self.person)
+            self.assertEqual("Merge successfully queued", result)
+
+    def test_request_cross_repo_merge_success(self):
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        with person_logged_in(self.person):
+            result = self.proposal.request_merge(self.person)
+            self.assertEqual("Merge successfully queued", result)
+
+    def test_request_force_merge(self):
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        with person_logged_in(self.person):
+            self.assertRaises(
+                BranchMergeProposalNotMergeable,
+                self.proposal.request_merge,
+                self.person,
+            )
+            result = self.proposal.request_merge(self.person, force=True)
+            self.assertEqual("Merge successfully queued", result)
+
+    def test_request_merge_success_commit_message(self):
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        self.proposal.commit_message = "Old commit message"
+        with person_logged_in(self.person):
+            result = self.proposal.request_merge(
+                self.person,
+                commit_message="New commit message",
+            )
+            self.assertEqual("Merge successfully queued", result)
+        self.proposal = Store.of(self.proposal).get(
+            BranchMergeProposal, self.proposal.id
+        )
+        self.assertEqual("Old commit message", self.proposal.commit_message)
+
+    def test_request_merge_unsuccessful_commit_message(self):
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        self.proposal.commit_message = "Old commit message"
+        self.hosting_fixture.request_merge.failure = (
+            BranchMergeProposalMergeFailed("Merge proposal failed to merge")
+        )
+        with person_logged_in(self.person):
+            self.assertRaises(
+                BranchMergeProposalMergeFailed,
+                self.proposal.request_merge,
+                self.person,
+                commit_message="New commit message",
+            )
+        self.proposal = Store.of(self.proposal).get(
+            BranchMergeProposal, self.proposal.id
+        )
+        self.assertEqual(self.proposal.commit_message, "Old commit message")
+
+    def test_request_merge_no_permission(self):
+        person = self.factory.makePerson()
+        self.assertRaises(
+            Unauthorized,
+            self.proposal.request_merge,
+            person,
+        )
+
+    def test_request_merge_not_mergeable(self):
+        self.assertRaises(
+            BranchMergeProposalNotMergeable,
+            self.proposal.request_merge,
+            self.person,
+        )
+
+    def test_request_merge_bazaar_not_supported(self):
+        proposal = removeSecurityProxy(self.factory.makeBranchMergeProposal())
+        self.assertRaises(
+            NotImplementedError,
+            proposal.request_merge,
+            self.person,
+        )
+
+    def test_request_merge_turnip_failure(self):
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        self.hosting_fixture.request_merge.failure = (
+            BranchMergeProposalMergeFailed("Merge proposal failed to merge")
+        )
+        with person_logged_in(self.person):
+            self.assertRaises(
+                BranchMergeProposalMergeFailed,
+                self.proposal.request_merge,
+                self.person,
+            )
+
+    def test_request_merge_already_merged(self):
+        self.proposal.createComment(
+            owner=self.reviewer,
+            vote=CodeReviewVote.APPROVE,
+        )
+        self.proposal.next_preview_diff_job.start()
+        self.proposal.next_preview_diff_job.complete()
+        self.hosting_fixture.request_merge.result = {
+            "queued": False,
+            "already_merged": True,
+        }
+        with person_logged_in(self.person):
+            result = self.proposal.request_merge(self.person)
+            self.assertEqual(
+                "Proposal already merged, waiting for rescan",
+                result,
+            )
+
+
 load_tests = load_tests_apply_scenarios
