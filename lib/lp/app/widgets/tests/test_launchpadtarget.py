@@ -326,10 +326,7 @@ class LaunchpadTargetWidgetTestCase(TestCaseWithFactory):
             self.distribution,
             self.widget.distribution_widget._getCurrentValue(),
         )
-        self.assertEqual(
-            self.externalpackage.sourcepackagename,
-            self.widget.package_widget._getCurrentValue(),
-        )
+        self.assertEqual(None, self.widget.package_widget._getCurrentValue())
 
     def test_call(self):
         # The __call__ method setups the widgets and the options.

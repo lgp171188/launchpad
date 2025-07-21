@@ -222,7 +222,8 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
         elif IExternalPackage.providedBy(value):
             self.default_option = "package"
             self.distribution_widget.setRenderedValue(value.distribution)
-            self.package_widget.setRenderedValue(value.sourcepackagename)
+            # TODO enriqueensanchz 2025-07-22: add a widget for externalpackage
+            # if necessary
         else:
             raise AssertionError("Not a valid value: %r" % value)
 
