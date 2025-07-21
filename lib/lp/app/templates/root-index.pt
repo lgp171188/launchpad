@@ -79,8 +79,8 @@
                   <p>One place to track bugs across project boundaries and tools</p>
                 </div>
                 <div class="col-3 p-divider__block">
-                  <h4><a tal:attributes="href apphomes/code">Code hosting</a> using <a href="https://git-scm.com/">Git</a> and <a href="http://bazaar.canonical.com/">Bazaar</a></h4>
-                  <p>Easy for anyone to get your project's code using Git or Bazaar</p>
+                  <h4><a tal:attributes="href apphomes/code">Code hosting</a> using <a href="https://git-scm.com/">Git</a></h4>
+                  <p>Easy for anyone to get your project's code using Git</p>
                 </div>
                 <div class="col-3 p-divider__block">
                   <h4><a  href="https://help.launchpad.net/Code/Review">Code reviews</a></h4>
