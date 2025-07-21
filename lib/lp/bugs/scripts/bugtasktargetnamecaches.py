@@ -107,7 +107,10 @@ class BugTaskTargetNameCachesTunableLoop:
                 (store.get(cls, id) if id is not None else None)
                 for cls, id in zip(target_classes, target_bits)
             )
-            target = bug_target_from_key(*target_objects)
+
+            # We don't need packagetype and channel to get items from
+            # target_classes, as there is no ExternalPackage class there
+            target = bug_target_from_key(*target_objects, None, None)
             new_name = target.bugtargetdisplayname
             cached_names.discard(new_name)
             # If there are any outdated names cached, update them all in

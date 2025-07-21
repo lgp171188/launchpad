@@ -548,6 +548,24 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
             },
         )
 
+    def test_externalpackage_target(self):
+        actor = self.factory.makePerson()
+        login_person(actor)
+        externalpackage = self.factory.makeExternalPackage()
+        product = self.factory.makeProduct()
+        bug = self.factory.makeBug(target=product)
+        bug.addTask(actor, externalpackage)
+        product_bugtask = bug.bugtasks[0]
+        result = get_structural_subscription_targets(bug.bugtasks)
+        # enriqueesanchz 2025-07-15: We don't have an ExternalPackage here as
+        # it is not implemented yet
+        self.assertEqual(
+            set(result),
+            {
+                (product_bugtask, product),
+            },
+        )
+
     def test_product_with_project_group(self):
         # get_structural_subscription_targets() will yield both a
         # product and its parent project group if it has one.
