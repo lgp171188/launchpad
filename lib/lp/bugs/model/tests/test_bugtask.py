@@ -3174,6 +3174,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distroseries=None,
                 sourcepackagename=None,
                 ociproject=None,
+                packagetype=None,
+                channel=None,
             ),
         )
 
@@ -3187,6 +3189,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=None,
                 sourcepackagename=None,
+                packagetype=None,
+                channel=None,
                 ociproject=None,
             ),
         )
@@ -3201,6 +3205,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=distro,
                 distroseries=None,
                 sourcepackagename=None,
+                packagetype=None,
+                channel=None,
                 ociproject=None,
             ),
         )
@@ -3215,6 +3221,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=distroseries,
                 sourcepackagename=None,
+                packagetype=None,
+                channel=None,
                 ociproject=None,
             ),
         )
@@ -3229,6 +3237,24 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=dsp.distribution,
                 distroseries=None,
                 sourcepackagename=dsp.sourcepackagename,
+                packagetype=None,
+                channel=None,
+                ociproject=None,
+            ),
+        )
+
+    def test_externalpackage(self):
+        externalpackage = self.factory.makeExternalPackage()
+        self.assertTargetKeyWorks(
+            externalpackage,
+            dict(
+                product=None,
+                productseries=None,
+                distribution=externalpackage.distribution,
+                distroseries=None,
+                sourcepackagename=externalpackage.sourcepackagename,
+                packagetype=externalpackage.packagetype,
+                channel=externalpackage.channel,
                 ociproject=None,
             ),
         )
@@ -3243,6 +3269,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=sp.distroseries,
                 sourcepackagename=sp.sourcepackagename,
+                packagetype=None,
+                channel=None,
                 ociproject=None,
             ),
         )
@@ -3258,6 +3286,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=pillar,
                 distroseries=None,
                 sourcepackagename=None,
+                packagetype=None,
+                channel=None,
                 ociproject=ociproject,
             ),
         )
@@ -3273,6 +3303,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=None,
                 sourcepackagename=None,
+                packagetype=None,
+                channel=None,
                 ociproject=ociproject,
             ),
         )
@@ -3286,6 +3318,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
         self.assertRaises(
             AssertionError,
             bug_target_from_key,
+            None,
+            None,
             None,
             None,
             None,
@@ -3581,6 +3615,44 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
             dsp,
         )
 
+    def test_externalpackage_task_is_allowed(self):
+        # An ExternalPackage task can coexist with a task for its Distribution.
+        d = self.factory.makeDistribution()
+        task = self.factory.makeBugTask(target=d)
+        externalpackage = self.factory.makeExternalPackage(distribution=d)
+        validate_target(task.bug, externalpackage)
+
+    def test_externalpackage_task_with_dsp_is_allowed(self):
+        # An ExternalPackage task can coexist with a task for a
+        # DistributionSourcePackage with the same name.
+        d = self.factory.makeDistribution()
+        dsp = self.factory.makeDistributionSourcePackage(distribution=d)
+        task = self.factory.makeBugTask(target=dsp)
+        externalpackage = self.factory.makeExternalPackage(distribution=d)
+        validate_target(task.bug, externalpackage)
+
+    def test_different_externalpackage_tasks_are_allowed(self):
+        # An ExternalPackage task can also coexist with a task for another one.
+        externalpackage = self.factory.makeExternalPackage()
+        task = self.factory.makeBugTask(target=externalpackage)
+        externalpackage = self.factory.makeExternalPackage(
+            distribution=externalpackage.distribution
+        )
+        validate_target(task.bug, externalpackage)
+
+    def test_same_externalpackage_task_is_forbidden(self):
+        # But an ExternalPackage task cannot coexist with a task for itself.
+        externalpackage = self.factory.makeExternalPackage()
+        task = self.factory.makeBugTask(target=externalpackage)
+        self.assertRaisesWithContent(
+            IllegalTarget,
+            "A fix for this bug has already been requested for %s"
+            % (externalpackage.displayname),
+            validate_target,
+            task.bug,
+            externalpackage,
+        )
+
     def test_illegal_information_type_disallowed(self):
         # The bug's current information_type must be permitted by the
         # new target.
@@ -3669,6 +3741,38 @@ class TestValidateNewTarget(TestCaseWithFactory, ValidateTargetMixin):
         d = self.factory.makeDistribution()
         dsp = self.factory.makeDistributionSourcePackage(distribution=d)
         task = self.factory.makeBugTask(target=dsp)
+        self.assertRaisesWithContent(
+            IllegalTarget,
+            "This bug is already on %s. Please specify an affected "
+            "package in which the bug has not yet been reported."
+            % d.displayname,
+            validate_new_target,
+            task.bug,
+            d,
+        )
+
+    def test_externalpackage_task_with_distribution_task_forbidden(self):
+        # You can't create a BugTask for the ExternalPackage if a Distribution
+        # BugTask already exists, you need to re target it
+        d = self.factory.makeDistribution()
+        externalpackage = self.factory.makeExternalPackage(distribution=d)
+        task = self.factory.makeBugTask(target=d)
+        self.assertRaisesWithContent(
+            IllegalTarget,
+            "This bug is already open on %s with no package specified. "
+            "You should fill in a package name for the existing bug."
+            % d.displayname,
+            validate_new_target,
+            task.bug,
+            externalpackage,
+        )
+
+    def test_distribution_task_with_externalpackage_task_forbidden(self):
+        # You can't create a BugTask for the Distribution if an ExternalPackage
+        # BugTask already exists, you need to re target it
+        d = self.factory.makeDistribution()
+        externalpackage = self.factory.makeExternalPackage(distribution=d)
+        task = self.factory.makeBugTask(target=externalpackage)
         self.assertRaisesWithContent(
             IllegalTarget,
             "This bug is already on %s. Please specify an affected "
@@ -3826,6 +3930,11 @@ class TestBugTaskUserHasBugSupervisorPrivilegesContext(TestCaseWithFactory):
     def test_distributionsourcepackage(self):
         dsp = self.factory.makeDistributionSourcePackage()
         self.assert_userHasBugSupervisorPrivilegesContext(dsp)
+
+    def test_externalpackage(self):
+        # A user does not have bug supervisor privileges in the externalpackage
+        externalpackage = self.factory.makeExternalPackage()
+        self.assert_userHasBugSupervisorPrivilegesContext(externalpackage)
 
     def test_product(self):
         product = self.factory.makeProduct()

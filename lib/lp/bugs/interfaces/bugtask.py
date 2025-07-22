@@ -478,6 +478,17 @@ class IBugTask(IHasBug, IBugTaskDelete):
         title=_("Package"), required=False, vocabulary="SourcePackageName"
     )
     sourcepackagename_id = Attribute("The sourcepackagename ID")
+
+    packagetype = Int(
+        title=_("Package type"),
+        default=None,
+        readonly=True,
+    )
+
+    channel = Attribute("The package channel")
+
+    metadata = Attribute("Bugtask metadata")
+
     distribution = Choice(
         title=_("Distribution"), required=False, vocabulary="Distribution"
     )

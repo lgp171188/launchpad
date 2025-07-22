@@ -554,6 +554,10 @@
         for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
         urldata="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageURL"
         />
+    <lp:url
+        for="lp.registry.interfaces.externalpackage.IExternalPackage"
+        urldata="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageURL"
+        />
     <lp:navigation
         module="lp.registry.browser.distributionsourcepackage"
         classes="

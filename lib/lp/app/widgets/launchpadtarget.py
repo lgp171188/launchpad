@@ -28,6 +28,7 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
+from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import (
@@ -218,6 +219,11 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
             self.default_option = "package"
             self.distribution_widget.setRenderedValue(value.distribution)
             self.package_widget.setRenderedValue(value.sourcepackagename)
+        elif IExternalPackage.providedBy(value):
+            self.default_option = "package"
+            self.distribution_widget.setRenderedValue(value.distribution)
+            # TODO enriqueensanchz 2025-07-22: add a widget for externalpackage
+            # if necessary
         else:
             raise AssertionError("Not a valid value: %r" % value)
 

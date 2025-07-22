@@ -61,6 +61,9 @@ class LaunchpadTargetWidgetTestCase(TestCaseWithFactory):
         self.package = self.factory.makeDSPCache(
             distroseries=distroseries, sourcepackagename="snarf"
         )
+        self.externalpackage = self.factory.makeExternalPackage(
+            distribution=self.distribution, sourcepackagename="foo"
+        )
         self.project = self.factory.makeProduct("pting")
         field = Reference(__name__="target", schema=Interface, title="target")
         field = field.bind(Thing())
@@ -312,6 +315,18 @@ class LaunchpadTargetWidgetTestCase(TestCaseWithFactory):
             self.package.sourcepackagename,
             self.widget.package_widget._getCurrentValue(),
         )
+
+    def test_setRenderedValue_externalpackage(self):
+        # Passing an external package will set the widget's render state to
+        # 'externalpackage'.
+        self.widget.setUpSubWidgets()
+        self.widget.setRenderedValue(self.externalpackage)
+        self.assertEqual("package", self.widget.default_option)
+        self.assertEqual(
+            self.distribution,
+            self.widget.distribution_widget._getCurrentValue(),
+        )
+        self.assertEqual(None, self.widget.package_widget._getCurrentValue())
 
     def test_call(self):
         # The __call__ method setups the widgets and the options.

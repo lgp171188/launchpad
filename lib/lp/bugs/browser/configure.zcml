@@ -1180,6 +1180,10 @@
         layer="lp.bugs.publisher.BugsLayer"
         name="+bugs"/>
     <browser:defaultView
+        for="lp.registry.interfaces.externalpackage.IExternalPackage"
+        layer="lp.bugs.publisher.BugsLayer"
+        name="+bugs"/>
+    <browser:defaultView
         for="lp.registry.interfaces.person.IPerson"
         layer="lp.bugs.publisher.BugsLayer"
         name="+bugs"/>

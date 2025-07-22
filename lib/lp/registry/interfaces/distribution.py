@@ -878,6 +878,11 @@ class IDistributionView(
         distribution, or None.
         """
 
+    def getExternalPackage(name, packagetype, channel):
+        """Return an ExternalPackage with the given name, packagetype and
+        channel for this distribution.
+        """
+
     def getSourcePackageRelease(sourcepackagerelease):
         """Returns an IDistributionSourcePackageRelease
 
