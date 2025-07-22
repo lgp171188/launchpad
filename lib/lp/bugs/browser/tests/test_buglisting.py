@@ -55,6 +55,8 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         )
 
     def test_externalpackage_unknown_bugtracker_message(self):
+        # An ExternalPackage whose Distro does not use
+        # Launchpad for bug tracking should explain that.
         ep = self._makeExternalPackage()
         url = canonical_url(ep, rootsite="bugs")
         browser = self.getUserBrowser(url)
@@ -86,6 +88,9 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         )
 
     def test_externalpackage_unknown_bugtracker_no_button(self):
+        # An ExternalPackage whose Distro does not use
+        # Launchpad for bug tracking should not show the "Report a bug"
+        # button.
         ep = self._makeExternalPackage()
         url = canonical_url(ep, rootsite="bugs")
         browser = self.getUserBrowser(url)
@@ -110,6 +115,9 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         )
 
     def test_externalpackage_unknown_bugtracker_no_filters(self):
+        # An ExternalPackage whose Distro does not use
+        # Launchpad for bug tracking should not show links to "New
+        # bugs", "Open bugs", etc.
         dsp = self._makeExternalPackage()
         url = canonical_url(dsp, rootsite="bugs")
         browser = self.getUserBrowser(url)
@@ -133,7 +141,7 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         )
 
     def test_externalpackage_unknown_bugtracker_no_tags(self):
-        # A DistributionSourcePackage whose Distro does not use
+        # A ExternalPackage whose Distro does not use
         # Launchpad for bug tracking should not show links to search by
         # bug tags.
         ep = self._makeExternalPackage()

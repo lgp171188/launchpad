@@ -290,7 +290,7 @@ def get_visible_comments(comments, user=None):
 
 @implementer(ICanonicalUrlData)
 class BugTaskURL:
-    """External package URL creation rules."""
+    """BugTask URL creation rules."""
 
     rootsite = "bugs"
 
@@ -303,6 +303,7 @@ class BugTaskURL:
 
     @property
     def path(self):
+        # Only ExternalPackage can use +bugtask
         if IExternalPackage.providedBy(self.context.target):
             return f"+bug/{self.context.bug.id}/+bugtask/{self.context.id}"
 
@@ -343,20 +344,22 @@ class BugTargetTraversalMixin:
         # rather than making it look as though this task was "not found",
         # because it was filtered out by privacy-aware code.
         is_external_package = IExternalPackage.providedBy(context)
-
         for bugtask in bug.bugtasks:
             target = bugtask.target
-            if (
-                target == context
-                or is_external_package
-                and IExternalPackage.providedBy(target)
-                and target.sourcepackagename == context.sourcepackagename
-            ):
-                # for ExternalPackage we select the first package whose name is
-                # equal to the one from the context and later we will target
-                # other bugtask if required
 
-                # Security proxy this object on the way out.
+            if is_external_package:
+                # +external url lacks necessary data, so we only match
+                # distribution and sourcepackagename, then using +bugktask we
+                # can jump to the right one
+                if (
+                    IExternalPackage.providedBy(target)
+                    and target.sourcepackagename == context.sourcepackagename
+                    and target.distribution == context.distribution
+                ):
+                    return getUtility(IBugTaskSet).get(bugtask.id)
+
+            elif target == context:
+                # Security proxy the object on the way out
                 return getUtility(IBugTaskSet).get(bugtask.id)
 
         # If we've come this far, there's no task for the requested context.
@@ -385,11 +388,12 @@ class BugTaskNavigation(Navigation):
     @stepthrough("+bugtask")
     def traverse_bugtask(self, id):
         bugtask = getUtility(IBugTaskSet).get(int(id))
-        # Jumping to another bug is not allowed
+        # Jumping to a not matching bugtask is not allowed
         if bugtask.bug.id != self.context.bug.id:
             return
-        # Jumping to another sourcepackagename is not allowed
         if bugtask.sourcepackagename != self.context.sourcepackagename:
+            return
+        if bugtask.distribution != self.context.distribution:
             return
 
         return bugtask

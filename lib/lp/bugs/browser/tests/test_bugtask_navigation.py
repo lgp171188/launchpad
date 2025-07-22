@@ -6,6 +6,7 @@
 from zope.publisher.interfaces import NotFound
 from zope.security.proxy import removeSecurityProxy
 
+from lp.registry.interfaces.externalpackage import ExternalPackageType
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -61,39 +62,80 @@ class TestBugTaskTraversal(TestCaseWithFactory):
 
     def test_traversal_to_external_package_bugtask(self):
         # Test that traversal using +bugtask/id works
+        # Test that we can differ between bugtasks with same packagename and
+        # distribution, but different packagetype or channel
         bug = self.factory.makeBug()
-        ep = self.factory.makeExternalPackage()
+        distribution = self.factory.makeDistribution()
+        spn = self.factory.makeSourcePackageName(name="mypackage")
+
+        ep = self.factory.makeExternalPackage(
+            distribution=distribution,
+            sourcepackagename=spn,
+            packagetype=ExternalPackageType.SNAP,
+            channel=("11", "stable"),
+        )
+        ep_2 = self.factory.makeExternalPackage(
+            distribution=distribution,
+            sourcepackagename=spn,
+            packagetype=ExternalPackageType.SNAP,
+            channel=("11", "edge"),
+        )
+        ep_3 = self.factory.makeExternalPackage(
+            distribution=distribution,
+            sourcepackagename=spn,
+            packagetype=ExternalPackageType.CHARM,
+            channel=("11", "stable"),
+        )
+
         bugtask = self.factory.makeBugTask(bug=bug, target=ep)
         bugtask_url = canonical_url(bugtask)
-        ep_2 = self.factory.makeExternalPackage()
         bugtask_2 = self.factory.makeBugTask(bug=bug, target=ep_2)
         bugtask_url_2 = canonical_url(bugtask_2)
+        bugtask_3 = self.factory.makeBugTask(bug=bug, target=ep_3)
+        bugtask_url_3 = canonical_url(bugtask_3)
+        # makeBug creates the first and default bugtask
+        self.assertEqual(4, len(bug.bugtasks))
+
         self.assertEqual(
             bugtask_url,
             "http://bugs.launchpad.test/%s/+external/%s/+bug/%d/+bugtask/%s"
             % (
-                removeSecurityProxy(bugtask).distribution.name,
-                removeSecurityProxy(bugtask).target.name,
-                removeSecurityProxy(bugtask).bug.id,
-                removeSecurityProxy(bugtask).id,
+                bugtask.distribution.name,
+                bugtask.target.name,
+                bugtask.bug.id,
+                bugtask.id,
             ),
         )
         self.assertEqual(
             bugtask_url_2,
             "http://bugs.launchpad.test/%s/+external/%s/+bug/%d/+bugtask/%s"
             % (
-                removeSecurityProxy(bugtask_2).distribution.name,
-                removeSecurityProxy(bugtask_2).target.name,
-                removeSecurityProxy(bugtask_2).bug.id,
-                removeSecurityProxy(bugtask_2).id,
+                bugtask_2.distribution.name,
+                bugtask_2.target.name,
+                bugtask_2.bug.id,
+                bugtask_2.id,
             ),
         )
+        self.assertEqual(
+            bugtask_url_3,
+            "http://bugs.launchpad.test/%s/+external/%s/+bug/%d/+bugtask/%s"
+            % (
+                bugtask_3.distribution.name,
+                bugtask_3.target.name,
+                bugtask_3.bug.id,
+                bugtask_3.id,
+            ),
+        )
+
         obj, _, _ = test_traverse(bugtask_url)
-        obj_2, _, _ = test_traverse(bugtask_url_2)
         self.assertEqual(bugtask, obj)
-        self.assertEqual(bugtask_2, obj_2)
         self.assertEqual(ep, obj.target)
+        obj_2, _, _ = test_traverse(bugtask_url_2)
+        self.assertEqual(bugtask_2, obj_2)
         self.assertEqual(ep_2, obj_2.target)
+        obj_3, _, _ = test_traverse(bugtask_url_3)
+        self.assertEqual(bugtask_3, obj_3)
+        self.assertEqual(ep_3, obj_3.target)
 
     def test_traversal_to_default_external_package_bugtask(self):
         # Test that a traversing to a bug with an external package as default

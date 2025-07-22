@@ -16,7 +16,6 @@ from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
 )
-from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.services.webapp import Navigation, StandardLaunchpadFacets, redirection
 from lp.services.webapp.breadcrumb import Breadcrumb
@@ -25,10 +24,6 @@ from lp.services.webapp.interfaces import (
     IMultiFacetedBreadcrumb,
 )
 from lp.services.webapp.menu import Link
-from lp.services.webhooks.browser import WebhookTargetNavigationMixin
-from lp.translations.browser.customlanguagecode import (
-    HasCustomLanguageCodesTraversalMixin,
-)
 
 
 @implementer(ICanonicalUrlData)
@@ -77,16 +72,10 @@ class ExternalPackageLinksMixin:
 class ExternalPackageNavigation(
     Navigation,
     BugTargetTraversalMixin,
-    HasCustomLanguageCodesTraversalMixin,
-    TargetDefaultVCSNavigationMixin,
     StructuralSubscriptionTargetTraversalMixin,
-    WebhookTargetNavigationMixin,
 ):
     usedfor = IExternalPackage
 
     @redirection("+editbugcontact")
     def redirect_editbugcontact(self):
         return "+subscribe"
-
-    def traverse(self, name):
-        return None

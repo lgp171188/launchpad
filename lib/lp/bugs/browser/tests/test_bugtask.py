@@ -869,27 +869,31 @@ class TestBugTasksTableView(TestCaseWithFactory):
         fooix = self.factory.makeDistribution(displayname="Fooix")
         self.factory.makeDistroSeries(distribution=fooix, name="beta")
 
-        foo_spn = self.factory.makeSourcePackageName("foo")
-        bar_spn = self.factory.makeSourcePackageName("bar")
+        foo_spn = self.factory.makeSourcePackageName(name="foo")
+        bar_spn = self.factory.makeSourcePackageName(name="bar")
 
         foo_ociproject = self.factory.makeOCIProject(pillar=foo)
         barix_ociproject = self.factory.makeOCIProject(pillar=barix)
 
-        foo_ep_snap = self.factory.makeExternalPackage(foo_spn)
+        foo_ep_snap = self.factory.makeExternalPackage(
+            sourcepackagename=foo_spn
+        )
         foo_ep_charm = self.factory.makeExternalPackage(
-            foo_spn, packagetype=ExternalPackageType.CHARM
+            sourcepackagename=foo_spn, packagetype=ExternalPackageType.CHARM
         )
         foo_ep_charm_candidate = self.factory.makeExternalPackage(
-            foo_spn,
+            sourcepackagename=foo_spn,
             packagetype=ExternalPackageType.CHARM,
             channel=("12.1", "candidate"),
         )
-        bar_ep_snap = self.factory.makeExternalPackage(bar_spn)
+        bar_ep_snap = self.factory.makeExternalPackage(
+            sourcepackagename=bar_spn
+        )
         bar_ep_rock = self.factory.makeExternalPackage(
-            bar_spn, packagetype=ExternalPackageType.ROCK
+            sourcepackagename=bar_spn, packagetype=ExternalPackageType.ROCK
         )
         bar_ep_rock_candidate = self.factory.makeExternalPackage(
-            bar_spn,
+            sourcepackagename=bar_spn,
             packagetype=ExternalPackageType.ROCK,
             channel=("12.1", "candidate"),
         )
