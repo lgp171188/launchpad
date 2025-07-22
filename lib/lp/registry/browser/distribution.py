@@ -114,6 +114,7 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
 )
+from lp.registry.interfaces.externalpackage import ExternalPackageType
 from lp.registry.interfaces.ociproject import (
     OCI_PROJECT_ALLOW_CREATE,
     IOCIProjectSet,
@@ -182,6 +183,12 @@ class DistributionNavigation(
             )
         else:
             return dsp
+
+    @stepthrough("+external")
+    def traverse_external(self, name):
+        return self.context.getExternalPackage(
+            name, ExternalPackageType.UNKNOWN, None
+        )
 
     @stepthrough("+oci")
     def traverse_oci(self, name):
