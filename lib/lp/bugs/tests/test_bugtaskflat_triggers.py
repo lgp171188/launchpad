@@ -40,6 +40,7 @@ class BugTaskFlat(NamedTuple):
     distribution: Any
     distroseries: Any
     sourcepackagename: Any
+    packagetype: Any
     status: Any
     importance: Any
     assignee: Any
