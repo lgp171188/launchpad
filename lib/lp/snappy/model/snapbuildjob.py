@@ -358,7 +358,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         <component_version> is not mandatory.
         """
 
-        pattern = r"^[^+]+[+](?P<component_name>[^_]+)(?:_\d+)?\.comp$"
+        pattern = r"^[^+]+\+(?P<component_name>[^_]+)(?:_[^_]+)?\.comp$"
 
         match = re.match(pattern, filename)
         if match:
