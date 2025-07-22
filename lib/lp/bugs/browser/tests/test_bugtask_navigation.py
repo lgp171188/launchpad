@@ -58,3 +58,87 @@ class TestBugTaskTraversal(TestCaseWithFactory):
             "http://api.launchpad.test/1.0/%s/+bug/%d"
             % (bug.default_bugtask.target.name, bug.default_bugtask.bug.id),
         )
+
+    def test_traversal_to_external_package_bugtask(self):
+        # Test that traversal using +bugtask/id works
+        bug = self.factory.makeBug()
+        ep = self.factory.makeExternalPackage()
+        bugtask = self.factory.makeBugTask(bug=bug, target=ep)
+        bugtask_url = canonical_url(bugtask)
+        ep_2 = self.factory.makeExternalPackage()
+        bugtask_2 = self.factory.makeBugTask(bug=bug, target=ep_2)
+        bugtask_url_2 = canonical_url(bugtask_2)
+        self.assertEqual(
+            bugtask_url,
+            "http://bugs.launchpad.test/%s/+external/%s/+bug/%d/+bugtask/%s"
+            % (
+                removeSecurityProxy(bugtask).distribution.name,
+                removeSecurityProxy(bugtask).target.name,
+                removeSecurityProxy(bugtask).bug.id,
+                removeSecurityProxy(bugtask).id,
+            ),
+        )
+        self.assertEqual(
+            bugtask_url_2,
+            "http://bugs.launchpad.test/%s/+external/%s/+bug/%d/+bugtask/%s"
+            % (
+                removeSecurityProxy(bugtask_2).distribution.name,
+                removeSecurityProxy(bugtask_2).target.name,
+                removeSecurityProxy(bugtask_2).bug.id,
+                removeSecurityProxy(bugtask_2).id,
+            ),
+        )
+        obj, _, _ = test_traverse(bugtask_url)
+        obj_2, _, _ = test_traverse(bugtask_url_2)
+        self.assertEqual(bugtask, obj)
+        self.assertEqual(bugtask_2, obj_2)
+        self.assertEqual(ep, obj.target)
+        self.assertEqual(ep_2, obj_2.target)
+
+    def test_traversal_to_default_external_package_bugtask(self):
+        # Test that a traversing to a bug with an external package as default
+        # bugtask redirects to the bug's default bugtask using +bugtask/id.
+        ep = self.factory.makeExternalPackage()
+        bug = self.factory.makeBug(target=ep)
+        bug_url = canonical_url(bug, rootsite="bugs")
+        obj, view, request = test_traverse(bug_url)
+        view()
+        naked_view = removeSecurityProxy(view)
+        self.assertEqual(303, request.response.getStatus())
+        self.assertEqual(
+            naked_view.target,
+            canonical_url(bug.default_bugtask, rootsite="bugs"),
+        )
+        self.assertEqual(
+            removeSecurityProxy(view).target,
+            "http://bugs.launchpad.test/%s/+external/%s/+bug/%d/+bugtask/%s"
+            % (
+                bug.default_bugtask.distribution.name,
+                bug.default_bugtask.target.name,
+                bug.default_bugtask.bug.id,
+                bug.default_bugtask.id,
+            ),
+        )
+
+    def test_traversal_to_default_external_package_bugtask_on_api(self):
+        # Traversing to a bug with an external package as default task
+        # redirects to the +bugtask/id also in the API.
+        ep = self.factory.makeExternalPackage()
+        bug = self.factory.makeBug(target=ep)
+        obj, view, request = test_traverse(
+            "http://api.launchpad.test/1.0/%s/+bug/%d"
+            % (
+                removeSecurityProxy(ep).distribution.name,
+                bug.default_bugtask.bug.id,
+            )
+        )
+        self.assertEqual(
+            removeSecurityProxy(view).target,
+            "http://api.launchpad.test/1.0/%s/+external/%s/+bug/%d/+bugtask/%s"
+            % (
+                bug.default_bugtask.distribution.name,
+                bug.default_bugtask.target.name,
+                bug.default_bugtask.bug.id,
+                bug.default_bugtask.id,
+            ),
+        )
