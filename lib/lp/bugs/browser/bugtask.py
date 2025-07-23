@@ -19,6 +19,7 @@ __all__ = [
     "BugTaskTableRowView",
     "BugTaskTextView",
     "BugTaskView",
+    "BugTaskURL",
     "can_add_package_task_to_bug",
     "can_add_project_task_to_bug",
     "get_comments_for_bugtask",
@@ -153,7 +154,7 @@ from lp.services.webapp.authorization import (
 )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.escaping import html_escape, structured
-from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.interfaces import ICanonicalUrlData, ILaunchBag
 
 vocabulary_registry = getVocabularyRegistry()
 
@@ -287,6 +288,28 @@ def get_visible_comments(comments, user=None):
     return visible_comments
 
 
+@implementer(ICanonicalUrlData)
+class BugTaskURL:
+    """BugTask URL creation rules."""
+
+    rootsite = "bugs"
+
+    def __init__(self, context):
+        self.context = context
+
+    @property
+    def inside(self):
+        return self.context.target
+
+    @property
+    def path(self):
+        # Only ExternalPackage can use +bugtask
+        if IExternalPackage.providedBy(self.context.target):
+            return f"+bug/{self.context.bug.id}/+bugtask/{self.context.id}"
+
+        return "+bug/%s" % self.context.bug.id
+
+
 class BugTargetTraversalMixin:
     """Mix-in in class that provides .../+bug/NNN traversal."""
 
@@ -320,29 +343,26 @@ class BugTargetTraversalMixin:
         # anonymous user is presented with a login screen at the correct URL,
         # rather than making it look as though this task was "not found",
         # because it was filtered out by privacy-aware code.
-
-        externalpackage_bugtask = None
-
+        is_external_package = IExternalPackage.providedBy(context)
         for bugtask in bug.bugtasks:
-            if bugtask.target == context:
-                # Security proxy this object on the way out.
+            target = bugtask.target
+
+            if is_external_package:
+                # +external url lacks necessary data, so we only match
+                # distribution and sourcepackagename, then using +bugktask we
+                # can jump to the right one
+                if (
+                    IExternalPackage.providedBy(target)
+                    and target.sourcepackagename == context.sourcepackagename
+                    and target.distribution == context.distribution
+                ):
+                    return getUtility(IBugTaskSet).get(bugtask.id)
+
+            elif target == context:
+                # Security proxy the object on the way out
                 return getUtility(IBugTaskSet).get(bugtask.id)
 
-            if (
-                externalpackage_bugtask is None
-                and IExternalPackage.providedBy(bugtask.target)
-            ):
-                # enriqueesanchz 2025-07-15 TODO: set +external urls for
-                # ExternalPackages. Currently we select the first
-                # ExternalPackage that appears if we don't have other match
-                externalpackage_bugtask = getUtility(IBugTaskSet).get(
-                    bugtask.id
-                )
-
         # If we've come this far, there's no task for the requested context.
-        if externalpackage_bugtask:
-            return externalpackage_bugtask
-
         # If we are attempting to navigate past the non-existent bugtask,
         # we raise NotFound error. eg +delete or +edit etc.
         # Otherwise we are simply navigating to a non-existent task and so we
@@ -364,6 +384,19 @@ class BugTaskNavigation(Navigation):
     """Navigation for the `IBugTask`."""
 
     usedfor = IBugTask
+
+    @stepthrough("+bugtask")
+    def traverse_bugtask(self, id):
+        bugtask = getUtility(IBugTaskSet).get(int(id))
+        # Jumping to a not matching bugtask is not allowed
+        if bugtask.bug.id != self.context.bug.id:
+            return
+        if bugtask.sourcepackagename != self.context.sourcepackagename:
+            return
+        if bugtask.distribution != self.context.distribution:
+            return
+
+        return bugtask
 
     @stepthrough("attachments")
     def traverse_attachments(self, name):

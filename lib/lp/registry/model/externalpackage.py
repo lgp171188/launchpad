@@ -147,6 +147,23 @@ class ExternalPackage(
         """See `IBugTarget`."""
         return self.distribution
 
+    @property
+    def bug_reporting_guidelines(self):
+        return
+
+    @property
+    def content_templates(self):
+        return
+
+    @property
+    def bug_reported_acknowledgement(self):
+        """See `IBugTarget`."""
+        return self.distribution.bug_reported_acknowledgement
+
     def _getOfficialTagClause(self):
         """See `IBugTarget`."""
         return self.distribution._getOfficialTagClause()
+
+    def _customizeSearchParams(self, search_params):
+        """Customize `search_params` for this external package."""
+        search_params.setExternalPackage(self)

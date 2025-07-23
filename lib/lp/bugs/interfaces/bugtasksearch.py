@@ -38,7 +38,7 @@ from lp.bugs.interfaces.bugtask import (
     IBugTask,
 )
 from lp.services.fields import SearchTag
-from lp.services.searchbuilder import NULL, all, any
+from lp.services.searchbuilder import NULL, all, any, not_equals
 from lp.soyuz.interfaces.component import IComponent
 
 
@@ -155,6 +155,7 @@ class BugTaskSearchParams:
         milestone_tag=None,
         assignee=None,
         sourcepackagename=None,
+        packagetype=None,
         owner=None,
         attachmenttype=None,
         orderby=None,
@@ -200,6 +201,7 @@ class BugTaskSearchParams:
         self.milestone_tag = milestone_tag
         self.assignee = assignee
         self.sourcepackagename = sourcepackagename
+        self.packagetype = packagetype
         self.owner = owner
         self.attachmenttype = attachmenttype
         self.user = user
@@ -307,7 +309,15 @@ class BugTaskSearchParams:
         else:
             # This is a sourcepackage in a distribution.
             self.distribution = sourcepackage.distribution
+        self.packagetype = NULL
         self.sourcepackagename = sourcepackage.sourcepackagename
+
+    def setExternalPackage(self, externalpackage):
+        """Set the externalpackage context on which to filter the search."""
+        self.distribution = externalpackage.distribution
+        # Currently we are only filtering by having any packagetype
+        self.packagetype = not_equals(None)
+        self.sourcepackagename = externalpackage.sourcepackagename
 
     def setOCIProject(self, ociproject):
         """Set the distribution context on which to filter the search."""
@@ -331,6 +341,7 @@ class BugTaskSearchParams:
             IDistributionSourcePackage,
         )
         from lp.registry.interfaces.distroseries import IDistroSeries
+        from lp.registry.interfaces.externalpackage import IExternalPackage
         from lp.registry.interfaces.milestone import IMilestone
         from lp.registry.interfaces.ociproject import IOCIProject
         from lp.registry.interfaces.product import IProduct
@@ -359,6 +370,8 @@ class BugTaskSearchParams:
             self.setSourcePackage(target)
         elif IDistributionSourcePackage.providedBy(instance):
             self.setSourcePackage(target)
+        elif IExternalPackage.providedBy(instance):
+            self.setExternalPackage(target)
         elif IProjectGroup.providedBy(instance):
             self.setProjectGroup(target)
         elif IOCIProject.providedBy(instance):

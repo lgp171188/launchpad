@@ -93,6 +93,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
 from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
@@ -1149,6 +1150,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         distribution_context = self._distributionContext()
         distroseries_context = self._distroSeriesContext()
         distrosourcepackage_context = self._distroSourcePackageContext()
+        externalpackage_context = self._externalPackageContext()
         sourcepackage_context = self._sourcePackageContext()
         ociproject_context = self._ociprojectContext()
 
@@ -1157,6 +1159,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
             or productseries_context
             or distrosourcepackage_context
             or sourcepackage_context
+            or externalpackage_context
         ):
             return ["id", "summary", "importance", "status", "heat"]
         elif distribution_context or distroseries_context:
@@ -1763,6 +1766,13 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         Return the IDistributionSourcePackage if yes, otherwise return None.
         """
         return IDistributionSourcePackage(self.context, None)
+
+    def _externalPackageContext(self):
+        """Is this page being viewed in an external package context?
+
+        Return the IExternalPackage if yes, otherwise return None.
+        """
+        return IExternalPackage(self.context, None)
 
     def _ociprojectContext(self):
         """Is this page being viewed in an OCI project context?

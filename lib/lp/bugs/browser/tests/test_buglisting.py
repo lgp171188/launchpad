@@ -33,6 +33,10 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         distro = self.factory.makeDistribution("test-distro")
         return self.factory.makeDistributionSourcePackage("test-dsp", distro)
 
+    def _makeExternalPackage(self):
+        distro = self.factory.makeDistribution("ep-distro")
+        return self.factory.makeExternalPackage("ep", distribution=distro)
+
     def test_distributionsourcepackage_unknown_bugtracker_message(self):
         # A DistributionSourcePackage whose Distro does not use
         # Launchpad for bug tracking should explain that.
@@ -50,12 +54,45 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
             extract_text(top_portlet[0]),
         )
 
+    def test_externalpackage_unknown_bugtracker_message(self):
+        # An ExternalPackage whose Distro does not use
+        # Launchpad for bug tracking should explain that.
+        ep = self._makeExternalPackage()
+        url = canonical_url(ep, rootsite="bugs")
+        browser = self.getUserBrowser(url)
+        top_portlet = find_tags_by_class(browser.contents, "top-portlet")
+        self.assertTrue(
+            len(top_portlet) > 0, "Tag with class=top-portlet not found"
+        )
+        # An external package from url will use unknown type
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
+            ep - Unknown in Ep-distro
+            does not use Launchpad for bug tracking.
+            Getting started with bug tracking in Launchpad.""",
+            extract_text(top_portlet[0]),
+        )
+
     def test_distributionsourcepackage_unknown_bugtracker_no_button(self):
         # A DistributionSourcePackage whose Distro does not use
         # Launchpad for bug tracking should not show the "Report a bug"
         # button.
         dsp = self._makeDistributionSourcePackage()
         url = canonical_url(dsp, rootsite="bugs")
+        browser = self.getUserBrowser(url)
+        self.assertIs(
+            None,
+            find_tag_by_id(browser.contents, "involvement"),
+            "Involvement portlet with Report-a-bug button should "
+            "not be shown",
+        )
+
+    def test_externalpackage_unknown_bugtracker_no_button(self):
+        # An ExternalPackage whose Distro does not use
+        # Launchpad for bug tracking should not show the "Report a bug"
+        # button.
+        ep = self._makeExternalPackage()
+        url = canonical_url(ep, rootsite="bugs")
         browser = self.getUserBrowser(url)
         self.assertIs(
             None,
@@ -77,12 +114,38 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
             "portlet-bugfilters should not be shown.",
         )
 
+    def test_externalpackage_unknown_bugtracker_no_filters(self):
+        # An ExternalPackage whose Distro does not use
+        # Launchpad for bug tracking should not show links to "New
+        # bugs", "Open bugs", etc.
+        dsp = self._makeExternalPackage()
+        url = canonical_url(dsp, rootsite="bugs")
+        browser = self.getUserBrowser(url)
+        self.assertIs(
+            None,
+            find_tag_by_id(browser.contents, "portlet-bugfilters"),
+            "portlet-bugfilters should not be shown.",
+        )
+
     def test_distributionsourcepackage_unknown_bugtracker_no_tags(self):
         # A DistributionSourcePackage whose Distro does not use
         # Launchpad for bug tracking should not show links to search by
         # bug tags.
         dsp = self._makeDistributionSourcePackage()
         url = canonical_url(dsp, rootsite="bugs")
+        browser = self.getUserBrowser(url)
+        self.assertIs(
+            None,
+            find_tag_by_id(browser.contents, "portlet-tags"),
+            "portlet-tags should not be shown.",
+        )
+
+    def test_externalpackage_unknown_bugtracker_no_tags(self):
+        # A ExternalPackage whose Distro does not use
+        # Launchpad for bug tracking should not show links to search by
+        # bug tags.
+        ep = self._makeExternalPackage()
+        url = canonical_url(ep, rootsite="bugs")
         browser = self.getUserBrowser(url)
         self.assertIs(
             None,

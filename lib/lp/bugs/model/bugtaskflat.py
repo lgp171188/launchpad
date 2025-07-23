@@ -40,6 +40,7 @@ class BugTaskFlat(StormBase):
     distroseries = Reference(distroseries_id, "DistroSeries.id")
     sourcepackagename_id = Int(name="sourcepackagename")
     sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+    packagetype = Int(name="packagetype")
     ociproject_id = Int(name="ociproject")
     ociproject = Reference(ociproject_id, "OCIProject.id")
     status = DBEnum(enum=(BugTaskStatus, BugTaskStatusSearch))

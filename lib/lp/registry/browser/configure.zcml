@@ -554,10 +554,6 @@
         for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
         urldata="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageURL"
         />
-    <lp:url
-        for="lp.registry.interfaces.externalpackage.IExternalPackage"
-        urldata="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageURL"
-        />
     <lp:navigation
         module="lp.registry.browser.distributionsourcepackage"
         classes="
@@ -606,6 +602,18 @@
         factory="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageFormatterAPI"
         provides="zope.traversing.interfaces.IPathAdapter"
         for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
+        />
+    <lp:url
+        for="lp.registry.interfaces.externalpackage.IExternalPackage"
+        urldata="lp.registry.browser.externalpackage.ExternalPackageURL"
+        />
+    <lp:navigation
+        module="lp.registry.browser.externalpackage"
+        classes="ExternalPackageNavigation"
+        />
+    <lp:menus
+        module="lp.registry.browser.externalpackage"
+        classes="ExternalPackageFacets"
         />
     <adapter
         name="fmt"

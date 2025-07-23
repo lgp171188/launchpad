@@ -44,6 +44,7 @@ from lp.registry.enums import (
     BugSharingPolicy,
     DistributionDefaultTraversalPolicy,
 )
+from lp.registry.interfaces.externalpackage import ExternalPackageType
 from lp.registry.interfaces.person import IPersonSet, PersonVisibility
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
@@ -848,6 +849,7 @@ class TestBugTasksTableView(TestCaseWithFactory):
         # Distro tasks follow, sorted by package, distribution, then
         # series (by version in the case of distribution series).
         # OCI projects comes after their pillars.
+        # ExternalPackages comes last, ordered by packagetype and channel
         foo = self.factory.makeProduct(displayname="Foo")
         self.factory.makeProductSeries(product=foo, name="2.0")
         self.factory.makeProductSeries(product=foo, name="1.0")
@@ -867,11 +869,34 @@ class TestBugTasksTableView(TestCaseWithFactory):
         fooix = self.factory.makeDistribution(displayname="Fooix")
         self.factory.makeDistroSeries(distribution=fooix, name="beta")
 
-        foo_spn = self.factory.makeSourcePackageName("foo")
-        bar_spn = self.factory.makeSourcePackageName("bar")
+        foo_spn = self.factory.makeSourcePackageName(name="foo")
+        bar_spn = self.factory.makeSourcePackageName(name="bar")
 
         foo_ociproject = self.factory.makeOCIProject(pillar=foo)
         barix_ociproject = self.factory.makeOCIProject(pillar=barix)
+
+        foo_ep_snap = self.factory.makeExternalPackage(
+            sourcepackagename=foo_spn
+        )
+        foo_ep_charm = self.factory.makeExternalPackage(
+            sourcepackagename=foo_spn, packagetype=ExternalPackageType.CHARM
+        )
+        foo_ep_charm_candidate = self.factory.makeExternalPackage(
+            sourcepackagename=foo_spn,
+            packagetype=ExternalPackageType.CHARM,
+            channel=("12.1", "candidate"),
+        )
+        bar_ep_snap = self.factory.makeExternalPackage(
+            sourcepackagename=bar_spn
+        )
+        bar_ep_rock = self.factory.makeExternalPackage(
+            sourcepackagename=bar_spn, packagetype=ExternalPackageType.ROCK
+        )
+        bar_ep_rock_candidate = self.factory.makeExternalPackage(
+            sourcepackagename=bar_spn,
+            packagetype=ExternalPackageType.ROCK,
+            channel=("12.1", "candidate"),
+        )
 
         expected_targets = [
             bar,
@@ -884,10 +909,16 @@ class TestBugTasksTableView(TestCaseWithFactory):
             barix.getSourcePackage(bar_spn),
             barix.getSeries("beta").getSourcePackage(bar_spn),
             barix.getSeries("aaa-release").getSourcePackage(bar_spn),
+            bar_ep_snap,
+            bar_ep_rock,
+            bar_ep_rock_candidate,
             fooix.getSourcePackage(bar_spn),
             fooix.getSeries("beta").getSourcePackage(bar_spn),
             barix.getSourcePackage(foo_spn),
             barix.getSeries("alpha").getSourcePackage(foo_spn),
+            foo_ep_snap,
+            foo_ep_charm,
+            foo_ep_charm_candidate,
         ]
 
         bug = self.factory.makeBug(target=expected_targets[0])

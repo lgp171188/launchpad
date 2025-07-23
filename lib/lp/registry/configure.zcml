@@ -622,6 +622,20 @@
                 enable_bugfiling_duplicate_search
                 "/>
     </class>
+    <adapter
+        for="lp.registry.interfaces.externalpackage.IExternalPackage"
+        provides="lp.services.webapp.interfaces.ILaunchpadContainer"
+        factory="lp.services.webapp.publisher.LaunchpadContainer"/>
+    <adapter
+        provides="lp.app.interfaces.launchpad.IServiceUsage"
+        for="lp.registry.interfaces.externalpackage.IExternalPackage"
+        factory="lp.registry.adapters.sourcepackage_to_distribution"
+        permission="zope.Public"/>
+    <adapter
+        for="lp.registry.interfaces.externalpackage.IExternalPackage"
+        provides="lp.services.webapp.interfaces.IBreadcrumb"
+        factory="lp.registry.browser.externalpackage.ExternalPackageBreadcrumb"/>
+
 
     <!-- CommercialSubscription -->
 
