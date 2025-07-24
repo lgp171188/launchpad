@@ -1173,6 +1173,36 @@ class TestBugTaskDeleteView(TestCaseWithFactory):
         bugtask_url = canonical_url(bugtask, rootsite="bugs")
         return bug, bugtask, target_name, bugtask_url
 
+    def test_delete_current_default_bugtask(self):
+        # Test that the deleting the default bugtask results redirects to the
+        # new default one.
+        (
+            bug,
+            bugtask,
+            target_name,
+            bugtask_url,
+        ) = self._create_bugtask_to_delete()
+        default_bugtask = bug.default_bugtask
+
+        login_person(bug.owner)
+        form = {"field.actions.delete_bugtask": "Delete"}
+        view = create_initialized_view(
+            bug.default_bugtask, name="+delete", form=form, principal=bug.owner
+        )
+        self.assertEqual([bug.default_bugtask], bug.bugtasks)
+        notifications = view.request.response.notifications
+        self.assertEqual(1, len(notifications))
+        expected = (
+            "This bug no longer affects %s."
+            % default_bugtask.target.bugtargetdisplayname
+        )
+        self.assertEqual(expected, notifications[0].message)
+
+        # The view redirects to the new default bugtask
+        new_default_url = canonical_url(bug.default_bugtask, rootsite="bugs")
+        self.assertEqual(new_default_url, view._next_url)
+        self.assertEqual(bugtask_url, view._next_url)
+
     def test_ajax_delete_current_bugtask(self):
         # Test that deleting the current bugtask returns a JSON dict
         # containing the URL of the bug's default task to redirect to.

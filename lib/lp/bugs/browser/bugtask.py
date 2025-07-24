@@ -1809,9 +1809,6 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
             "This bug no longer affects %s." % bugtask.bugtargetdisplayname
         )
         error_message = None
-        # We set the next_url here before the bugtask is deleted since later
-        # the bugtask will not be available if required to construct the url.
-        self._next_url = self._return_url
 
         try:
             bugtask.delete()
@@ -1819,6 +1816,12 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
         except CannotDeleteBugtask as e:
             error_message = str(e)
             self.request.response.addErrorNotification(error_message)
+
+        self._next_url = self._return_url
+        next_url = canonical_url(bug.default_bugtask, rootsite="bugs")
+        if self._return_url == deleted_bugtask_url:
+            self._next_url = next_url
+
         if self.request.is_ajax:
             if error_message:
                 self.request.response.setHeader(
@@ -1833,7 +1836,6 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
             # We can't do the redirect here since the XHR caller won't see it
             # so we return the URL to go to and let the caller do it.
             if self._return_url == deleted_bugtask_url:
-                next_url = canonical_url(bug.default_bugtask, rootsite="bugs")
                 self.request.response.setHeader(
                     "Content-type", "application/json"
                 )
