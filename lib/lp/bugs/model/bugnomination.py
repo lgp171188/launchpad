@@ -119,7 +119,15 @@ class BugNomination(StormBase):
             for task in self.bug.bugtasks:
                 if not task.distribution == distribution:
                     continue
-                if task.sourcepackagename is not None:
+                if task.packagetype is not None:
+                    targets.append(
+                        distroseries.getExternalPackageSeries(
+                            task.sourcepackagename,
+                            task.packagetype,
+                            task.channel,
+                        )
+                    )
+                elif task.sourcepackagename is not None:
                     targets.append(
                         distroseries.getSourcePackage(task.sourcepackagename)
                     )
@@ -234,6 +242,7 @@ class BugNominationSet:
             filter_args = dict(distroseries_id=target.series.id)
         else:
             return None
+        # IExternalPackageSeries does not support bug nominations
         store = IStore(BugNomination)
         return store.find(BugNomination, bug=bug, **filter_args).one()
 

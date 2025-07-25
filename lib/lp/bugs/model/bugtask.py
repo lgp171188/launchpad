@@ -83,6 +83,7 @@ from lp.registry.interfaces.externalpackage import (
     ExternalPackageType,
     IExternalPackage,
 )
+from lp.registry.interfaces.externalpackageseries import IExternalPackageSeries
 from lp.registry.interfaces.milestone import IMilestoneSet
 from lp.registry.interfaces.milestonetag import IProjectGroupMilestoneTag
 from lp.registry.interfaces.ociproject import IOCIProject
@@ -198,7 +199,11 @@ def bug_target_from_key(
         else:
             return distribution
     elif distroseries:
-        if sourcepackagename:
+        if sourcepackagename and packagetype:
+            return distroseries.getExternalPackageSeries(
+                sourcepackagename, packagetype, removeSecurityProxy(channel)
+            )
+        elif sourcepackagename:
             return distroseries.getSourcePackage(sourcepackagename)
         else:
             return distroseries
@@ -234,6 +239,11 @@ def bug_target_to_key(target):
         values["sourcepackagename"] = target.sourcepackagename
     elif IExternalPackage.providedBy(target):
         values["distribution"] = target.distribution
+        values["sourcepackagename"] = target.sourcepackagename
+        values["packagetype"] = target.packagetype
+        values["channel"] = removeSecurityProxy(target).channel
+    elif IExternalPackageSeries.providedBy(target):
+        values["distroseries"] = target.distroseries
         values["sourcepackagename"] = target.sourcepackagename
         values["packagetype"] = target.packagetype
         values["channel"] = removeSecurityProxy(target).channel

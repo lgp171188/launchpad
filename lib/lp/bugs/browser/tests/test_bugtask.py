@@ -693,6 +693,20 @@ class TestBugTasksTableView(TestCaseWithFactory):
         self.view.initialize()
         self.assertIs(None, self.view.getTargetLinkTitle(bug_task.target))
 
+    def test_getTargetLinkTitle_externalpackage(self):
+        # The target link title is always none for external packages.
+        target = self.factory.makeExternalPackage()
+        bug_task = self.factory.makeBugTask(bug=self.bug, target=target)
+        self.view.initialize()
+        self.assertIs(None, self.view.getTargetLinkTitle(bug_task.target))
+
+    def test_getTargetLinkTitle_externalpackageseries(self):
+        # The target link title is always none for external packages.
+        target = self.factory.makeExternalPackageSeries()
+        bug_task = self.factory.makeBugTask(bug=self.bug, target=target)
+        self.view.initialize()
+        self.assertIs(None, self.view.getTargetLinkTitle(bug_task.target))
+
     def test_getTargetLinkTitle_unpublished_distributionsourcepackage(self):
         # The target link title states that the package is not published
         # in the current release.
@@ -886,9 +900,17 @@ class TestBugTasksTableView(TestCaseWithFactory):
             packagetype=ExternalPackageType.CHARM,
             channel=("12.1", "candidate"),
         )
+
         bar_ep_snap = self.factory.makeExternalPackage(
-            sourcepackagename=bar_spn
+            sourcepackagename=bar_spn, distribution=barix
         )
+        bar_ep_snap_series_1 = self.factory.makeExternalPackageSeries(
+            sourcepackagename=bar_spn, distroseries=barix.getSeries("alpha")
+        )
+        bar_ep_snap_series_2 = self.factory.makeExternalPackageSeries(
+            sourcepackagename=bar_spn, distroseries=barix.getSeries("beta")
+        )
+
         bar_ep_rock = self.factory.makeExternalPackage(
             sourcepackagename=bar_spn, packagetype=ExternalPackageType.ROCK
         )
@@ -910,6 +932,8 @@ class TestBugTasksTableView(TestCaseWithFactory):
             barix.getSeries("beta").getSourcePackage(bar_spn),
             barix.getSeries("aaa-release").getSourcePackage(bar_spn),
             bar_ep_snap,
+            bar_ep_snap_series_1,
+            bar_ep_snap_series_2,
             bar_ep_rock,
             bar_ep_rock_candidate,
             fooix.getSourcePackage(bar_spn),
