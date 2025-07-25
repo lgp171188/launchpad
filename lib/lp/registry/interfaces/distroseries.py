@@ -708,6 +708,13 @@ class IDistroSeriesPublic(
         object. The source package may not be published in the distro series.
         """
 
+    def getExternalPackageSeries(name, packagetype, channel):
+        """Return an external package in this distro series by name.
+
+        The name given may be a string or an ISourcePackageName-providing
+        object.
+        """
+
     def getTranslatableSourcePackages():
         """Return a list of Source packages in this distribution series
         that can be translated.

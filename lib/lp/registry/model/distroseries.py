@@ -69,6 +69,7 @@ from lp.registry.interfaces.sourcepackagename import (
     ISourcePackageName,
     ISourcePackageNameSet,
 )
+from lp.registry.model.externalpackageseries import ExternalPackageSeries
 from lp.registry.model.milestone import HasMilestonesMixin, Milestone
 from lp.registry.model.packaging import Packaging
 from lp.registry.model.person import Person
@@ -1089,6 +1090,20 @@ class DistroSeries(
                 return None
         return getUtility(ISourcePackageFactory).new(
             sourcepackagename=name, distroseries=self
+        )
+
+    def getExternalPackageSeries(self, name, packagetype, channel):
+        """See `IDistroSeries`."""
+        if ISourcePackageName.providedBy(name):
+            sourcepackagename = name
+        else:
+            sourcepackagename = getUtility(ISourcePackageNameSet).queryByName(
+                name
+            )
+            if sourcepackagename is None:
+                return None
+        return ExternalPackageSeries(
+            self, sourcepackagename, packagetype, channel
         )
 
     def getBinaryPackage(self, name):

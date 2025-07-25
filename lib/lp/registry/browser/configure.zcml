@@ -605,15 +605,29 @@
         />
     <lp:url
         for="lp.registry.interfaces.externalpackage.IExternalPackage"
-        urldata="lp.registry.browser.externalpackage.ExternalPackageURL"
+        path_expression="string:+external/${name}"
+        attribute_to_parent="distribution"
+        />
+    <lp:url
+        for="lp.registry.interfaces.externalpackageseries.IExternalPackageSeries"
+        path_expression="string:+external/${name}"
+        attribute_to_parent="distroseries"
         />
     <lp:navigation
         module="lp.registry.browser.externalpackage"
         classes="ExternalPackageNavigation"
         />
+    <lp:navigation
+        module="lp.registry.browser.externalpackageseries"
+        classes="ExternalPackageSeriesNavigation"
+        />
     <lp:menus
         module="lp.registry.browser.externalpackage"
         classes="ExternalPackageFacets"
+        />
+    <lp:menus
+        module="lp.registry.browser.externalpackageseries"
+        classes="ExternalPackageSeriesFacets"
         />
     <adapter
         name="fmt"
