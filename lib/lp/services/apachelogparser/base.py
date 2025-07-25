@@ -152,10 +152,11 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
                 daily_downloads[country_code] = 0
             daily_downloads[country_code] += 1
         except Exception as e:
-            # Update parsed_bytes to the end of the last line we parsed
-            # successfully, log this as an error and break the loop so that
-            # we return.
-            parsed_bytes -= len(line)
+            # We log an error here but leave the parsed_bytes
+            # unchanged so that in the next run, the remaining
+            # lines in the log file, if any, are parsed without
+            # getting stuck at the same broken line till the log
+            # file in question is rotated out.
             logger.error('Error (%s) while parsing "%s"' % (e, line_text))
             break
 
