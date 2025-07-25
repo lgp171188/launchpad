@@ -294,7 +294,7 @@ class TestLogFileParsing(TestCase):
         )
         self.assertIn("Error", self.logger.getLogBuffer())
         self.assertEqual(downloads, {})
-        self.assertEqual(parsed_bytes, 0)
+        self.assertEqual(parsed_bytes, 9)
 
     def _assertResponseWithGivenStatusIsIgnored(self, status):
         """Assert that responses with the given status are ignored."""
@@ -543,6 +543,39 @@ class TestParsedFilesDetection(TestCase):
         # Since we parsed the first line above, we'll be told to start where
         # the first line ends.
         self.assertEqual(len(first_line), position)
+
+    def test_parsed_file_incomplete_parsing_parser_error_previous_time(self):
+        logger = BufferLogger()
+        log_file = os.path.join(
+            here, "apache-log-files/librarian-log-with-format-error.log"
+        )
+        with open(log_file) as fd:
+            downloads, parsed_bytes, parsed_lines = parse_file(
+                fd,
+                start_position=0,
+                logger=logger,
+                get_download_key=get_path_download_key,
+            )
+            self.assertIn("Error", logger.getLogBuffer())
+            self.assertEqual(downloads, {})
+            self.assertEqual(parsed_bytes, 13)
+
+        with open(log_file) as fd:
+            lines = fd.readlines()
+
+        ParsedApacheLog(lines[0], len(lines[0]))
+        files_to_parse = list(get_files_to_parse([log_file]))
+        self.assertEqual(1, len(files_to_parse))
+        fd, position = files_to_parse[0]
+        downloads, parsed_bytes, parsed_lines = parse_file(
+            fd,
+            start_position=position,
+            logger=logger,
+            get_download_key=get_path_download_key,
+        )
+        self.assertEqual(1, len(downloads))
+        self.assertEqual(len(lines[1]), parsed_bytes - len(lines[0]))
+        self.assertEqual(1, parsed_lines)
 
     def test_different_files_with_same_name(self):
         # Thanks to log rotation, two runs of our script may see files with
