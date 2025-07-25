@@ -134,6 +134,27 @@ class TestExternalPackage(TestCaseWithFactory):
             self.externalpackage.display_name,
         )
 
+    def test_matches(self):
+        """Test if two externalpackages matches in sourcepackagename and
+        distribution.
+        """
+        self.assertTrue(
+            self.externalpackage.isMatching(self.externalpackage_maven)
+        )
+
+        other_spn = self.factory.makeSourcePackageName()
+        other_ep_1 = self.factory.makeExternalPackage(
+            sourcepackagename=other_spn,
+            distribution=self.distribution,
+        )
+        self.assertFalse(self.externalpackage.isMatching(other_ep_1))
+
+        other_distro = self.factory.makeDistribution()
+        other_ep_2 = self.factory.makeExternalPackage(
+            sourcepackagename=self.sourcepackagename, distribution=other_distro
+        )
+        self.assertFalse(self.externalpackage.isMatching(other_ep_2))
+
     def test_compare(self):
         """Test __eq__ and __neq__"""
         self.assertEqual(self.externalpackage, self.externalpackage_copy)

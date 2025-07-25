@@ -4,7 +4,6 @@
 __all__ = [
     "ExternalPackageBreadcrumb",
     "ExternalPackageNavigation",
-    "ExternalPackageURL",
     "ExternalPackageFacets",
 ]
 
@@ -19,29 +18,7 @@ from lp.bugs.browser.structuralsubscription import (
 from lp.registry.interfaces.externalpackage import IExternalPackage
 from lp.services.webapp import Navigation, StandardLaunchpadFacets, redirection
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.interfaces import (
-    ICanonicalUrlData,
-    IMultiFacetedBreadcrumb,
-)
-from lp.services.webapp.menu import Link
-
-
-@implementer(ICanonicalUrlData)
-class ExternalPackageURL:
-    """External package URL creation rules."""
-
-    rootsite = None
-
-    def __init__(self, context):
-        self.context = context
-
-    @property
-    def inside(self):
-        return self.context.distribution
-
-    @property
-    def path(self):
-        return "+external/%s" % self.context.name
+from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 
 
 @implementer(IHeadingBreadcrumb, IMultiFacetedBreadcrumb)
@@ -60,13 +37,6 @@ class ExternalPackageFacets(StandardLaunchpadFacets):
     enable_only = [
         "bugs",
     ]
-
-
-class ExternalPackageLinksMixin:
-    def new_bugs(self):
-        base_path = "+bugs"
-        get_data = "?field.status:list=NEW"
-        return Link(base_path + get_data, "New bugs", site="bugs")
 
 
 class ExternalPackageNavigation(

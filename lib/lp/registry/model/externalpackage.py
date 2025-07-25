@@ -111,6 +111,14 @@ class ExternalPackage(
         """See `IExternalPackage`."""
         return self.display_name
 
+    def isMatching(self, other) -> bool:
+        """See `IExternalURL`."""
+        return (
+            IExternalPackage.providedBy(other)
+            and self.sourcepackagename.id == other.sourcepackagename.id
+            and self.distribution.id == other.distribution.id
+        )
+
     def __eq__(self, other: "ExternalPackage") -> str:
         """See `IExternalPackage`."""
         return (
