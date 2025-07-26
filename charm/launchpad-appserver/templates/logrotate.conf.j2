@@ -1,7 +1,8 @@
 {{ logs_dir }}/launchpad.log
 {
-    rotate 21
-    daily
+    {{ logrotate_frequency }}
+    dateformat {{ logrotate_dateformat }}
+    rotate {{ logrotate_n_files }}
     dateext
     delaycompress
     compress
@@ -10,7 +11,7 @@
     create 0644 syslog adm
     sharedscripts
     postrotate
-        invoke-rc.d rsyslog rotate >/dev/null
+        /usr/lib/rsyslog/rsyslog-rotate
     endscript
 }
 

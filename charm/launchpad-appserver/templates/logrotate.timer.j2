@@ -1,0 +1,7 @@
+[Unit]
+Description={{ logrotate_frequency }} rotation of log files
+
+[Timer]
+OnCalendar=
+OnCalendar={{ logrotate_frequency }}
+AccuracySec=5min
