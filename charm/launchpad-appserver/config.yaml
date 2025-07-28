@@ -76,6 +76,10 @@ options:
       components of Launchpad.  Any random string of a reasonable size (64
       characters) is ok.
     default:
+  logrotate_frequency:
+    type: string
+    description: Frequency of logrotate (daily or hourly)
+    default: daily
   mailman_archive_url_template:
     type: string
     description: Template expanded to form URLs for Launchpad list archives.

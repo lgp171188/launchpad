@@ -75,6 +75,17 @@ def configure_gunicorn(config):
 
 
 def configure_logrotate(config):
+    logrotate_frequency = config.get("logrotate_frequency")
+    if logrotate_frequency == "hourly":
+        # aprox 21 days worth of hourly logs
+        config["logrotate_n_files"] = "500"
+        config["logrotate_dateformat"] = "-%Y%m%d-%H"
+    else:
+        # Default to daily if it's not 'hourly'
+        config["logrotate_frequency"] = "daily"
+        config["logrotate_n_files"] = "21"
+        config["logrotate_dateformat"] = "-%Y%m%d"
+
     hookenv.log("Writing logrotate configuration.")
     templating.render(
         "logrotate.conf.j2",
@@ -82,6 +93,22 @@ def configure_logrotate(config):
         config,
         perms=0o644,
     )
+
+    hookenv.log(f"Setting logrotate rotation to {logrotate_frequency}.")
+    if logrotate_frequency == "hourly":
+        templating.render(
+            "logrotate.timer.override.j2",
+            "/etc/systemd/system/logrotate.timer.d/override.conf",
+            config,
+            perms=0o644,
+        )
+    else:
+        subprocess.run(
+            ["rm", "/etc/systemd/system/logrotate.timer.d/override.conf"],
+            check=True,
+        )
+
+    subprocess.run(["systemctl", "daemon-reload"], check=True)
 
 
 def config_files():
