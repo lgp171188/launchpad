@@ -104,7 +104,11 @@ def configure_logrotate(config):
         )
     else:
         subprocess.run(
-            ["rm", "/etc/systemd/system/logrotate.timer.d/override.conf"],
+            [
+                "rm",
+                "-f",
+                "/etc/systemd/system/logrotate.timer.d/override.conf",
+            ],
             check=True,
         )
 
