@@ -454,7 +454,9 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
             password = maven_publish_auth
 
         # Generate settings.xml content
-        settings_xml = self._get_maven_settings_xml(username, password)
+        settings_xml = self._get_maven_settings_xml(
+            username, password, maven_publish_url
+        )
 
         with open(os.path.join(maven_dir, "settings.xml"), "w") as f:
             f.write(settings_xml)
@@ -464,9 +466,9 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
             [
                 "mvn",
                 "deploy:deploy-file",
-                f"-DpomFile={pom_path}",
                 f"-Dfile={jar_path}",
-                "-DrepositoryId=central",
+                f"-DpomFile={pom_path}",
+                "-DrepositoryId=artifactory",
                 f"-Durl={maven_publish_url}",
                 "--settings={}".format(
                     os.path.join(maven_dir, "settings.xml")
@@ -483,11 +485,12 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
         self._publish_properties(maven_publish_url, artifact_name)
 
-    def _get_maven_settings_xml(self, username, password):
+    def _get_maven_settings_xml(self, username, password, repository_url):
         """Generate Maven settings.xml content.
 
         :param username: Maven repository username
         :param password: Maven repository password
+        :param repository_url: Artifactory repository URL
         :return: XML content as string
         """
         # Get proxy settings from config
@@ -529,7 +532,7 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
         servers = (
             "    <servers>\n"
             "        <server>\n"
-            "            <id>central</id>\n"
+            "            <id>artifactory</id>\n"
             f"            <username>{username}</username>\n"
             f"            <password>{password}</password>\n"
             "        </server>\n"
@@ -551,14 +554,21 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
                 "    </proxies>\n"
             )
 
+        # Profile with repositories and pluginRepositories
         profiles = (
             "    <profiles>\n"
             "        <profile>\n"
-            "            <id>system</id>\n"
+            "            <id>artifactory</id>\n"
+            "            <repositories>\n"
+            "                <repository>\n"
+            "                    <id>artifactory</id>\n"
+            f"                    <url>{repository_url}</url>\n"
+            "                </repository>\n"
+            "            </repositories>\n"
             "            <pluginRepositories>\n"
             "                <pluginRepository>\n"
-            "                    <id>central</id>\n"
-            "                    <url>file:///usr/share/maven-repo</url>\n"
+            "                    <id>artifactory</id>\n"
+            f"                    <url>{repository_url}</url>\n"
             "                </pluginRepository>\n"
             "            </pluginRepositories>\n"
             "        </profile>\n"
@@ -567,13 +577,33 @@ class CraftPublishingJob(CraftRecipeBuildJobDerived):
 
         active_profiles = (
             "    <activeProfiles>\n"
-            "        <activeProfile>system</activeProfile>\n"
+            "        <activeProfile>artifactory</activeProfile>\n"
             "    </activeProfiles>\n"
-            "</settings>"
+        )
+
+        # Mirror that redirects everything to Artifactory
+        mirrors = (
+            "    <mirrors>\n"
+            "        <mirror>\n"
+            "            <id>artifactory</id>\n"
+            "            <name>Maven Repository Manager</name>\n"
+            f"            <url>{repository_url}</url>\n"
+            "            <mirrorOf>*</mirrorOf>\n"
+            "        </mirror>\n"
+            "    </mirrors>\n"
         )
 
         # Combine all parts
-        return header + schema + servers + proxies + profiles + active_profiles
+        return (
+            header
+            + schema
+            + servers
+            + proxies
+            + profiles
+            + active_profiles
+            + mirrors
+            + "</settings>"
+        )
 
     def _make_session(self) -> requests.Session:
         """Make a suitable requests session for talking to Artifactory."""
