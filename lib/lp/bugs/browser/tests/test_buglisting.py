@@ -195,7 +195,7 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         )
         self.assertTextMatchesExpressionIgnoreWhitespace(
             """
-            test-sp in Test-distro Test-series does not
+            test-sp - Unknown in Test-series does not
             use Launchpad for bug tracking.
             Getting started with bug tracking in Launchpad.""",
             extract_text(top_portlet[0]),
