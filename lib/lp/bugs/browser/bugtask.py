@@ -127,7 +127,11 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
 from lp.registry.interfaces.distroseries import IDistroSeries, IDistroSeriesSet
-from lp.registry.interfaces.externalpackage import IExternalPackage
+from lp.registry.interfaces.externalpackage import (
+    IExternalPackage,
+    IExternalURL,
+)
+from lp.registry.interfaces.externalpackageseries import IExternalPackageSeries
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
@@ -303,8 +307,7 @@ class BugTaskURL:
 
     @property
     def path(self):
-        # Only ExternalPackage can use +bugtask
-        if IExternalPackage.providedBy(self.context.target):
+        if IExternalURL.providedBy(self.context.target):
             return f"+bug/{self.context.bug.id}/+bugtask/{self.context.id}"
 
         return "+bug/%s" % self.context.bug.id
@@ -343,23 +346,18 @@ class BugTargetTraversalMixin:
         # anonymous user is presented with a login screen at the correct URL,
         # rather than making it look as though this task was "not found",
         # because it was filtered out by privacy-aware code.
-        is_external_package = IExternalPackage.providedBy(context)
+
+        # Check if it uses +external url
+        is_external = IExternalURL.providedBy(context)
+
         for bugtask in bug.bugtasks:
             target = bugtask.target
 
-            if is_external_package:
-                # +external url lacks necessary data, so we only match
-                # distribution and sourcepackagename, then using +bugktask we
-                # can jump to the right one
-                if (
-                    IExternalPackage.providedBy(target)
-                    and target.sourcepackagename == context.sourcepackagename
-                    and target.distribution == context.distribution
-                ):
+            if is_external:
+                if context.isMatching(target):
+                    # Security proxy the object on the way out
                     return getUtility(IBugTaskSet).get(bugtask.id)
-
             elif target == context:
-                # Security proxy the object on the way out
                 return getUtility(IBugTaskSet).get(bugtask.id)
 
         # If we've come this far, there's no task for the requested context.
@@ -1853,6 +1851,11 @@ def bugtask_sort_key(bugtask):
 
     Designed to make sense when bugtargetdisplayname is shown.
     """
+    # The key is structured so that comparisons between elements are consistent
+    # across different types of bug targets.
+    # Elements from different sort keys should have the same typing so we can
+    # compare them. That's why the fourth element is a channel or None
+    # and the fifth element is a Version object or None,
     if IDistribution.providedBy(bugtask.target):
         key = (None, bugtask.target.displayname, None, None, None, None)
     elif IDistroSeries.providedBy(bugtask.target):
@@ -1883,19 +1886,42 @@ def bugtask_sort_key(bugtask):
             None,
             None,
         )
+    # Version should only be compared to items with same object type
     elif ISourcePackage.providedBy(bugtask.target):
         key = (
             bugtask.target.sourcepackagename.name,
             bugtask.target.distribution.displayname,
+            None,
+            None,
+            Version(bugtask.target.distroseries.version),
+            None,
+        )
+    elif IExternalPackageSeries.providedBy(bugtask.target):
+        key = (
+            bugtask.target.sourcepackagename.name,
+            bugtask.target.distribution.displayname,
+            bugtask.target.packagetype,
+            bugtask.target.channel,
             Version(bugtask.target.distroseries.version),
             None,
             None,
             None,
         )
     elif IProduct.providedBy(bugtask.target):
-        key = (None, None, None, bugtask.target.displayname, None, None)
+        key = (
+            None,
+            None,
+            None,
+            None,
+            None,
+            bugtask.target.displayname,
+            None,
+            None,
+        )
     elif IProductSeries.providedBy(bugtask.target):
         key = (
+            None,
+            None,
             None,
             None,
             None,
@@ -1906,11 +1932,20 @@ def bugtask_sort_key(bugtask):
     elif IOCIProject.providedBy(bugtask.target):
         ociproject = bugtask.target
         pillar = ociproject.pillar
-        key = [None, None, None, None, None, ociproject.displayname]
+        key = [
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            ociproject.displayname,
+        ]
         if IDistribution.providedBy(pillar):
-            key[1] = pillar.displayname
-        elif IProduct.providedBy(pillar):
             key[3] = pillar.displayname
+        elif IProduct.providedBy(pillar):
+            key[5] = pillar.displayname
         key = tuple(key)
     else:
         raise AssertionError("No sort key for %r" % bugtask.target)

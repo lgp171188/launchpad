@@ -17,6 +17,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
+from lp.registry.interfaces.externalpackage import ExternalPackageType
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.interfaces import IStore
 from lp.services.webapp.interfaces import OAuthPermission
@@ -458,6 +459,39 @@ class TestDistroSeries(TestCaseWithFactory):
         self.assertFalse(
             naked_distroseries.publishing_options["publish_i18n_index"]
         )
+
+    def test_getExternalPackageSeries(self):
+        # Test that we get the ExternalPackageSeries that belongs to the
+        # distribution with the proper attributes
+        distroseries = self.factory.makeDistroSeries()
+        sourcepackagename = self.factory.getOrMakeSourcePackageName(
+            "my-package"
+        )
+        channel = ("22.04", "candidate", "staging")
+        externalpackageseries = distroseries.getExternalPackageSeries(
+            name=sourcepackagename,
+            packagetype=ExternalPackageType.ROCK,
+            channel=channel,
+        )
+        self.assertEqual(externalpackageseries.distroseries, distroseries)
+        self.assertEqual(externalpackageseries.name, "my-package")
+        self.assertEqual(
+            externalpackageseries.packagetype, ExternalPackageType.ROCK
+        )
+        self.assertEqual(externalpackageseries.channel, channel)
+
+        # We can have external package series without channel
+        externalpackageseries = distroseries.getExternalPackageSeries(
+            name=sourcepackagename,
+            packagetype=ExternalPackageType.SNAP,
+            channel=None,
+        )
+        self.assertEqual(externalpackageseries.distroseries, distroseries)
+        self.assertEqual(externalpackageseries.name, "my-package")
+        self.assertEqual(
+            externalpackageseries.packagetype, ExternalPackageType.SNAP
+        )
+        self.assertEqual(externalpackageseries.channel, None)
 
 
 class TestDistroSeriesPackaging(TestCaseWithFactory):

@@ -5608,6 +5608,28 @@ class LaunchpadObjectFactory(ObjectFactory):
             sourcepackagename, packagetype, channel
         )
 
+    def makeExternalPackageSeries(
+        self,
+        sourcepackagename=None,
+        packagetype=None,
+        channel=None,
+        distroseries=None,
+    ):
+        if sourcepackagename is None or isinstance(sourcepackagename, str):
+            sourcepackagename = self.getOrMakeSourcePackageName(
+                sourcepackagename
+            )
+        if distroseries is None:
+            distroseries = self.makeDistroSeries()
+        if packagetype is None:
+            packagetype = ExternalPackageType.SNAP
+        if channel is None:
+            channel = ("12.1", "stable", None)
+
+        return distroseries.getExternalPackageSeries(
+            sourcepackagename, packagetype, channel
+        )
+
     def makeEmailMessage(
         self,
         body=None,

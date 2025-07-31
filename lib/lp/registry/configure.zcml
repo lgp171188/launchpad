@@ -636,6 +636,23 @@
         provides="lp.services.webapp.interfaces.IBreadcrumb"
         factory="lp.registry.browser.externalpackage.ExternalPackageBreadcrumb"/>
 
+    <!-- ExternalPackageSeries -->
+    <class
+        class="lp.registry.model.externalpackageseries.ExternalPackageSeries">
+        <allow
+            interface="lp.registry.interfaces.externalpackageseries.IExternalPackageSeriesView"/>
+        <allow
+            interface="lp.bugs.interfaces.bugtarget.ISeriesBugTarget"/>
+    </class>
+    <adapter
+        provides="lp.app.interfaces.launchpad.IServiceUsage"
+        for="lp.registry.interfaces.externalpackageseries.IExternalPackageSeries"
+        factory="lp.registry.adapters.sourcepackage_to_distribution"
+        permission="zope.Public"/>
+    <adapter
+        for="lp.registry.interfaces.externalpackageseries.IExternalPackageSeries"
+        provides="lp.services.webapp.interfaces.IBreadcrumb"
+        factory="lp.registry.browser.externalpackageseries.ExternalPackageSeriesBreadcrumb"/>
 
     <!-- CommercialSubscription -->
 

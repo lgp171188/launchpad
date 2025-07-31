@@ -319,6 +319,13 @@ class BugTaskSearchParams:
         self.packagetype = not_equals(None)
         self.sourcepackagename = externalpackage.sourcepackagename
 
+    def setExternalPackageSeries(self, externalpackageseries):
+        """Set the externalpackage context on which to filter the search."""
+        self.distroseries = externalpackageseries.distroseries
+        # Currently we are only filtering by having any packagetype
+        self.packagetype = not_equals(None)
+        self.sourcepackagename = externalpackageseries.sourcepackagename
+
     def setOCIProject(self, ociproject):
         """Set the distribution context on which to filter the search."""
         self.ociproject = ociproject

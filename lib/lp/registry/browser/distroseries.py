@@ -64,6 +64,7 @@ from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.distroseriesdifference import (
     IDistroSeriesDifferenceSource,
 )
+from lp.registry.interfaces.externalpackage import ExternalPackageType
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -180,6 +181,12 @@ class DistroSeriesNavigation(
         check_distroseries_translations_viewable(self.context)
 
         return distroserieslang
+
+    @stepthrough("+external")
+    def external(self, name):
+        return self.context.getExternalPackageSeries(
+            name, ExternalPackageType.UNKNOWN, None
+        )
 
     @stepthrough("+source")
     def source(self, name):
