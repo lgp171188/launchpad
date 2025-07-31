@@ -706,7 +706,7 @@ class TestCraftPublishingJob(TestCaseWithFactory):
         args_str = " ".join(args)
 
         # Check for required Maven arguments
-        self.assertIn("-DrepositoryId=central", args_str)
+        self.assertIn("-DrepositoryId=artifactory", args_str)
         self.assertIn(
             "-Durl=https://example.com/artifactory/repository", args_str
         )
