@@ -934,14 +934,17 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
 
     def getMergeCriteria(self):
         """See `IBranchMergeProposal`."""
-        can_be_merged, criteria = self.checkMergeCriteria()
+        can_be_merged, can_be_force_merged, criteria = (
+            self.checkMergeCriteria()
+        )
 
         return {
             "can_be_merged": can_be_merged,
+            "can_be_force_merged": can_be_force_merged,
             "criteria": criteria,
         }
 
-    def checkMergeCriteria(self, force=False):
+    def checkMergeCriteria(self):
         """See `IBranchMergeProposal`."""
 
         # TODO ines-almeida 2025-05-05: the mergeability criteria should be
@@ -954,61 +957,53 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
             MergeProposalCriteria.IS_IN_PROGRESS: (
                 self.isInProgress,
                 "Invalid status for merging",
+                False,
             ),
             MergeProposalCriteria.HAS_NO_CONFLICTS: (
                 self.hasNoConflicts,
                 "Diff contains conflicts",
+                True,
             ),
             MergeProposalCriteria.DIFF_IS_UP_TO_DATE: (
                 self.diffIsUpToDate,
                 "New changes were pushed too recently",
+                False,
             ),
             MergeProposalCriteria.HAS_NO_PENDING_PREREQUISITE: (
                 self.hasNoPendingPrerequisite,
                 "Prerequisite branch not merged",
+                False,
             ),
             MergeProposalCriteria.IS_APPROVED: (
                 self.isApproved,
                 "Proposal has not been approved",
+                False,
             ),
             MergeProposalCriteria.CI_CHECKS_PASSED: (
                 self.CIChecksPassed,
                 "CI checks failed",
+                False,
             ),
         }
 
-        criteria_to_run = [
-            MergeProposalCriteria.IS_IN_PROGRESS,
-            MergeProposalCriteria.HAS_NO_CONFLICTS,
-            MergeProposalCriteria.DIFF_IS_UP_TO_DATE,
-        ]
-
-        # This is only a criteria if there is a prerequisit branch
-        if self.merge_prerequisite is not None:
-            criteria_to_run.append(
-                MergeProposalCriteria.HAS_NO_PENDING_PREREQUISITE
-            )
-
-        # Criteria defined by project owners (skipped if 'force' merge)
-        if not force:
-            criteria_to_run.append(MergeProposalCriteria.IS_APPROVED)
-            criteria_to_run.append(MergeProposalCriteria.CI_CHECKS_PASSED)
-
-        result = True
+        can_be_merged = True
+        can_be_force_merged = True
         status = {}
-        for criteria in criteria_to_run:
-            check, error = MERGE_CRITERIA[criteria]
+        for key, criteria in MERGE_CRITERIA.items():
+            check, error, is_required = criteria
             passed = check()
 
-            key = str(criteria)
-            status[key] = {"passed": passed}
+            key = str(key)
+            status[key] = {"passed": passed, "is_required": is_required}
             if passed is None:
                 status[key]["error"] = "Not implemented"
             elif not passed:
                 status[key]["error"] = error
-                result = False
+                can_be_merged = False
+                if is_required:
+                    can_be_force_merged = False
 
-        return result, status
+        return can_be_merged, can_be_force_merged, status
 
     def canIMerge(self, person):
         """See `IBranchMergeProposal`."""
@@ -1043,8 +1038,10 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         if not self.personCanMerge(person):
             raise Unauthorized()
 
-        can_be_merged, criteria = self.checkMergeCriteria(force)
-        if not can_be_merged:
+        can_be_merged, can_be_force_merged, criteria = (
+            self.checkMergeCriteria()
+        )
+        if not can_be_merged and not (force and can_be_force_merged):
             failed_checks = [
                 item["error"]
                 for item in criteria.values()
@@ -1113,8 +1110,10 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         if not self.personCanMerge(person):
             raise Unauthorized()
 
-        can_be_merged, criteria = self.checkMergeCriteria(force)
-        if not can_be_merged:
+        can_be_merged, can_be_force_merged, criteria = (
+            self.checkMergeCriteria()
+        )
+        if not can_be_merged and not (force and can_be_force_merged):
             failed_checks = [
                 item["error"]
                 for item in criteria.values()

@@ -3854,11 +3854,15 @@ class TestBranchMergeProposalMergeCriteria(
         self.useFixture(GitHostingFixture())
 
         self.expected_criteria = {
-            "is_in_progress": {"passed": True},
-            "has_no_conflicts": {"passed": True},
-            "diff_is_up_to_date": {"passed": True},
-            "is_approved": {"passed": True},
-            "CI_checks_passed": {"passed": True},
+            "is_in_progress": {"passed": True, "is_required": False},
+            "has_no_conflicts": {"passed": True, "is_required": True},
+            "diff_is_up_to_date": {"passed": True, "is_required": False},
+            "is_approved": {"passed": True, "is_required": False},
+            "CI_checks_passed": {"passed": True, "is_required": False},
+            "has_no_pending_prerequisite": {
+                "passed": True,
+                "is_required": False,
+            },
         }
 
     def test_checkMergeCriteria_all_passed(self):
@@ -3871,45 +3875,29 @@ class TestBranchMergeProposalMergeCriteria(
             )
         self.proposal.next_preview_diff_job.start()
         self.proposal.next_preview_diff_job.complete()
-        can_merge, criteria = self.proposal.checkMergeCriteria()
+        can_merge, can_force, criteria = self.proposal.checkMergeCriteria()
         self.assertTrue(can_merge)
+        self.assertTrue(can_force)
         self.assertDictEqual(self.expected_criteria, criteria)
 
     def test_checkMergeCriteria_some_failed(self):
         # If some criteria are not met, checkMergeCriteria returns a tuple with
         # False, and a dict stating which criteria failed.
-        can_merge, criteria = self.proposal.checkMergeCriteria()
+        can_merge, can_force, criteria = self.proposal.checkMergeCriteria()
         self.assertFalse(can_merge)
+        self.assertTrue(can_force)
         expected_criteria = self.expected_criteria
         expected_criteria["diff_is_up_to_date"] = {
             "passed": False,
+            "is_required": False,
             "error": "New changes were pushed too recently",
         }
         expected_criteria["is_approved"] = {
             "passed": False,
+            "is_required": False,
             "error": "Proposal has not been approved",
         }
         self.assertDictEqual(expected_criteria, criteria)
-
-    def test_checkMergeCriteria_force(self):
-        # Some criteria can be skippedf with force=True
-
-        self.proposal.next_preview_diff_job.start()
-        self.proposal.next_preview_diff_job.complete()
-
-        # Return False if not using force=True
-        can_merge, criteria = self.proposal.checkMergeCriteria()
-        self.assertFalse(can_merge)
-        expected_criteria = self.expected_criteria
-        expected_criteria["is_approved"] = {
-            "passed": False,
-            "error": "Proposal has not been approved",
-        }
-        self.assertDictEqual(expected_criteria, criteria)
-
-        # Return False if not using force=True
-        can_merge, criteria = self.proposal.checkMergeCriteria(force=True)
-        self.assertTrue(can_merge)
 
     def test_checkMergeCriteria_with_prerequisite(self):
         # When there is a prerequisite branch, its criteria is included
@@ -3934,18 +3922,23 @@ class TestBranchMergeProposalMergeCriteria(
         expected_criteria = self.expected_criteria
         if self.git:
             expected_can_merge = False
+            expected_can_force = True
             expected_criteria["has_no_pending_prerequisite"] = {
                 "passed": False,
+                "is_required": False,
                 "error": "Prerequisite branch not merged",
             }
         else:
             expected_can_merge = True
+            expected_can_force = True
             expected_criteria["has_no_pending_prerequisite"] = {
                 "passed": None,
+                "is_required": False,
                 "error": "Not implemented",
             }
-        can_merge, criteria = proposal.checkMergeCriteria()
+        can_merge, can_force, criteria = proposal.checkMergeCriteria()
         self.assertEqual(expected_can_merge, can_merge)
+        self.assertEqual(expected_can_force, can_force)
         self.assertDictEqual(expected_criteria, criteria)
 
     def test_getMergeCriteria_initial_state(self):
@@ -3953,18 +3946,25 @@ class TestBranchMergeProposalMergeCriteria(
         # the merge criteria statuses
         expected_criteria = {
             "can_be_merged": False,
+            "can_be_force_merged": True,
             "criteria": {
-                "is_in_progress": {"passed": True},
-                "has_no_conflicts": {"passed": True},
+                "is_in_progress": {"passed": True, "is_required": False},
+                "has_no_conflicts": {"passed": True, "is_required": True},
                 "diff_is_up_to_date": {
                     "passed": False,
+                    "is_required": False,
                     "error": "New changes were pushed too recently",
                 },
                 "is_approved": {
                     "passed": False,
+                    "is_required": False,
                     "error": "Proposal has not been approved",
                 },
-                "CI_checks_passed": {"passed": True},
+                "CI_checks_passed": {"passed": True, "is_required": False},
+                "has_no_pending_prerequisite": {
+                    "passed": True,
+                    "is_required": False,
+                },
             },
         }
 
@@ -3984,6 +3984,7 @@ class TestBranchMergeProposalMergeCriteria(
         response = self.proposal.getMergeCriteria()
         expected_response = {
             "can_be_merged": True,
+            "can_be_force_merged": True,
             "criteria": self.expected_criteria,
         }
         self.assertDictEqual(expected_response, response)
@@ -4001,28 +4002,33 @@ class TestBranchMergeProposalMergeCriteria(
 
         expected_response = {
             "can_be_merged": False,
+            "can_be_force_merged": True,
             "criteria": {
-                "is_in_progress": {"passed": True},
-                "has_no_conflicts": {"passed": True},
+                "is_in_progress": {"passed": True, "is_required": False},
+                "has_no_conflicts": {"passed": True, "is_required": True},
                 "diff_is_up_to_date": {
                     "passed": False,
+                    "is_required": False,
                     "error": "New changes were pushed too recently",
-                },
-                "has_no_pending_prerequisite": {
-                    "passed": False,
-                    "error": "Prerequisite branch not merged",
                 },
                 "is_approved": {
                     "passed": False,
+                    "is_required": False,
                     "error": "Proposal has not been approved",
                 },
-                "CI_checks_passed": {"passed": True},
+                "CI_checks_passed": {"passed": True, "is_required": False},
+                "has_no_pending_prerequisite": {
+                    "passed": False,
+                    "is_required": False,
+                    "error": "Prerequisite branch not merged",
+                },
             },
         }
 
         if not self.git:
             expected_response["criteria"]["has_no_pending_prerequisite"] = {
                 "passed": None,
+                "is_required": False,
                 "error": "Not implemented",
             }
 

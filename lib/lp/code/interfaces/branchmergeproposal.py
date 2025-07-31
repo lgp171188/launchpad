@@ -636,7 +636,7 @@ class IBranchMergeProposalView(Interface):
             'criteria' key contains details about each check."
         """
 
-    def checkMergeCriteria(force=False):
+    def checkMergeCriteria():
         """Check if the merge proposal meets all criteria for merging.
 
         The hard criteria are:
@@ -648,8 +648,6 @@ class IBranchMergeProposalView(Interface):
         The criteria skipped by using force=True tag:
         - Has at least one approval from a trusted reviewer
         - CI checks have passed
-
-        :param force: Whether to skip approval and CI checks
 
         :return: A tuple of (bool, list) where the bool indicates if all
             criteria are met, and the list contains failed criteria.
